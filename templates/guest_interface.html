@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buslinnes - Rutas en Vivo</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="/buslinnes/assets/css/styles.css">
+  <style>
+    /* Ajustes específicos para mapa en guest */
+    .map-section { height: calc(100vh - var(--header-height) - 40px); }
+    #map-container, #map { height: 100%; min-height: 480px; }
+    #map-container {
+      border: 4px solid #8059d4;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+  </style>
+  <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+</head>
+<body>
+  <!-- Enlace de salto para navegación con teclado -->
+  <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Saltar al contenido principal</a>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="header-container">
+        <div class="header-left">
+          <a href="/buslinnes/index.php" class="logo" aria-label="Inicio">
+            <span class="logo-icon">
+              <img src="/buslinnes/assets/img/logomorado.svg" alt="Logo Buslinnes">
+            </span>
+          </a>
+          <span class="separator"></span>
+          <form class="search-box" role="search">
+            <!-- Label visible solo para tecnologías asistivas -->
+            <label for="searchInput" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Buscar rutas o buses</label>
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar rutas o buses" aria-describedby="no-results-guest">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+          </form>
+          <div id="no-results-guest" style="display:none;color:#555;margin-left:12px;margin-top:6px" role="status" aria-live="polite"></div>
+          <button id="darkToggle" class="dark-toggle" type="button" aria-label="Cambiar modo oscuro" aria-pressed="false">
+            <i class="fas fa-moon" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="header-right">
+          <a href="/buslinnes/public/login.php" class="btn btn-primary logout-desktop">
+            <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+            <span>Iniciar Sesión</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="main-content" style="padding-top: 10px;" role="main">
+      <!-- Encabezado principal para jerarquía de contenido -->
+      <h1 style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Rutas de buses en vivo</h1>
+      <section class="map-section">
+        <div id="map-container" tabindex="0" aria-label="Mapa interactivo de rutas en vivo">
+          <div id="map"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="/buslinnes/assets/js/security.js"></script>
+  <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+  <script>
+    // Initialize map
+    const map = L.map('map').setView([7.119349, -73.122741], 13);
+
+    // variables para ubicación del usuario
+    let userLocation = null;
+    let userMarker = null;
+
+    function maybeShowUserMarker() {
+      if (!userLocation || !map) {
+        console.log('maybeShowUserMarker ignorada', {userLocation, hasMap: !!map});
+        return;
+      }
+      if (!userMarker) {
+        console.log('Creando marcador de usuario en', userLocation);
+        const userIcon = L.divIcon({
+          className: 'user-location-icon',
+          html: '<i class="fas fa-user"></i>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 24]
+        });
+        userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
+          .bindPopup('Tu ubicación');
+        map.setView([userLocation.lat, userLocation.lng], 14);
+      } else {
+        userMarker.setLatLng([userLocation.lat, userLocation.lng]);
+      }
+    }
+
+    // estilos para icono (mismo estilo que interfaz de pasajero)
+    (function(){
+      const style = document.createElement('style');
+      style.textContent = `
+        .user-location-icon i {
+          color: #4c1d95;
+          font-size: 24px;
+          text-shadow: 0 0 2px #fff;
+        }
+
+        .user-location-icon {
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          background: rgba(49, 16, 106, 0.28);
+          border: 2px solid rgba(49, 16, 106, 0.82);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: visible;
+          box-shadow: 0 0 0 8px rgba(49, 16, 106, 0.34), 0 0 16px rgba(49, 16, 106, 0.28);
+        }
+
+        .user-location-icon::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: 50%;
+          border: 2px solid rgba(49, 16, 106, 0.66);
+          pointer-events: none;
+          animation: user-location-pulse 1.6s ease-out infinite;
+        }
+
+        body.dark .user-location-icon i {
+          color: #8059d4;
+        }
+
+        body.dark .user-location-icon {
+          background: rgba(128, 89, 212, 0.12);
+          border-color: rgba(128, 89, 212, 0.35);
+          box-shadow: 0 0 0 6px rgba(128, 89, 212, 0.18);
+        }
+
+        body.dark .user-location-icon::after {
+          border-color: rgba(128, 89, 212, 0.5);
+        }
+
+        @keyframes user-location-pulse {
+          0% {
+            transform: scale(0.92);
+            opacity: 0.9;
+          }
+          70% {
+            transform: scale(1.35);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1.45);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    })();
+
+    function requestUserLocation() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(pos => {
+        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        maybeShowUserMarker();
+      }, err => { console.warn('No se obtuvo ubicación:', err.message); }, { enableHighAccuracy:true, timeout:5000 });
+      navigator.geolocation.watchPosition(pos => {
+        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        maybeShowUserMarker();
+      }, err => { console.warn('Error siguiendo ubicación:', err.message); }, { enableHighAccuracy:true, maximumAge:5000, timeout:10000 });
+    }
+    requestUserLocation();
+
+    const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    });
+
+    const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors, © CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    });
+
+    lightTiles.addTo(map);
+
+    function applyMapTheme() {
+      const isDark = document.body.classList.contains('dark');
+      if (isDark) {
+        if (map.hasLayer(lightTiles)) map.removeLayer(lightTiles);
+        if (!map.hasLayer(darkTiles)) map.addLayer(darkTiles);
+      } else {
+        if (map.hasLayer(darkTiles)) map.removeLayer(darkTiles);
+        if (!map.hasLayer(lightTiles)) map.addLayer(lightTiles);
+      }
+    }
+
+    // Sync tile theme with current mode and future toggles
+    applyMapTheme();
+    const darkToggle = document.getElementById('darkToggle');
+    if (darkToggle) {
+      // Refrescar aria-pressed según estado de modo
+      const syncDarkToggleState = () => {
+        const isDark = document.body.classList.contains('dark');
+        darkToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+      };
+
+      darkToggle.addEventListener('click', function() {
+        setTimeout(() => {
+          applyMapTheme();
+          syncDarkToggleState();
+        }, 0);
+      });
+
+      syncDarkToggleState();
+    }
+
+    // Cargar rutas reales desde la API y dibujarlas (igual que en listar_rutas.php)
+    const colores = ['#2563eb','#dc2626','#16a34a','#ca8a04','#7c3aed'];
+    let colorIdx = 0;
+    const boundsCoords = [];
+    const routeLayers = {}; // almacenará { poly, wpg, name, description }
+
+    function dibujarRuta(r, pathCoords) {
+      pathCoords.forEach(p => boundsCoords.push(p));
+      const color = colores[colorIdx % colores.length];
+      colorIdx++;
+      const line = L.polyline(pathCoords, {
+        color: color,
+        weight: 5,
+        opacity: 0.7,
+        lineJoin: 'round',
+        lineCap: 'round'
+      }).addTo(map);
+      line.bindPopup(`<strong>${r.nom_ruta}</strong><br>${r.inicio_ruta} → ${r.fin_ruta}`);
+      
+      const startMk = L.circleMarker(pathCoords[0], { radius: 6, color: 'green', fillColor: 'green', weight: 2 }).addTo(map);
+      const endMk = L.circleMarker(pathCoords[pathCoords.length - 1], { radius: 6, color: 'red', fillColor: 'red', weight: 2 }).addTo(map);
+      
+      return { line, startMk, endMk };
+    }
+
+    // Helpers: distancia haversine y distancia mínima a poly
+    function toRad(x){return x*Math.PI/180}
+    function haversineDistance(lat1, lon1, lat2, lon2){ const R=6371000; const dLat=toRad(lat2-lat1); const dLon=toRad(lon2-lon1); const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
+    function getMinDistanceToPoly(poly, point){ try{ const latlngs = poly.getLatLngs && poly.getLatLngs() || []; const flat = Array.isArray(latlngs[0]) ? latlngs.flat(Infinity) : latlngs; let min=Infinity; flat.forEach(ll=>{ const d=haversineDistance(point.lat, point.lng, ll.lat, ll.lng); if(d<min) min=d; }); return min===Infinity?1e9:min;}catch(e){return 1e9;} }
+
+    async function cargarYDibujarRutas() {
+      try {
+        const response = await securityHelper.get('/buslinnes/src/rutas/api_listar_rutas.php');
+        
+        // Parse JSON from Response object if needed
+        let data = response;
+        if (response instanceof Response) {
+          data = await response.json();
+        }
+        
+        // Validate that we have an array of routes
+        const rutas = Array.isArray(data) ? data : (data?.rutas || data?.data || []);
+        
+        if (!Array.isArray(rutas) || rutas.length === 0) {
+          console.warn('No se recibieron rutas válidas:', data);
+          return;
+        }
+
+        for (const r of rutas) {
+          // Construir coordenadas para OSRM incluyendo waypoints si existen
+          let coordsStr = `${r.inicio_lng},${r.inicio_lat}`;
+          if (Array.isArray(r.waypoints) && r.waypoints.length > 0) {
+            r.waypoints.sort((a,b) => (a.orden || 0) - (b.orden || 0));
+            r.waypoints.forEach(wp => { coordsStr += `;${wp.lng},${wp.lat}`; });
+          }
+          coordsStr += `;${r.fin_lng},${r.fin_lat}`;
+          const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+          try {
+            const respOsrm = await fetch(url);
+            const data = await respOsrm.json();
+            if (data && data.code === 'Ok' && data.routes && data.routes[0]) {
+              const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+              const { line, startMk, endMk } = dibujarRuta(r, coords);
+
+              // Dibujar marcadores de waypoints (naranja) en un layerGroup para poder ocultarlos
+              let wpgGroup = null;
+              if (r.waypoints && r.waypoints.length > 0) {
+                wpgGroup = L.layerGroup();
+                r.waypoints.forEach((wp, idx) => {
+                  const mk = L.circleMarker([wp.lat, wp.lng], { radius:5, color:'#FFA500', fillColor:'#FFA500', weight:2 })
+                    .bindPopup(`<strong>${wp.nombre || 'Waypoint ' + (idx+1)}</strong>`);
+                  wpgGroup.addLayer(mk);
+                  boundsCoords.push([wp.lat, wp.lng]);
+                });
+                wpgGroup.addTo(map);
+              }
+
+              // Guardar referencia para búsqueda (incluyendo marcadores de inicio/fin)
+              routeLayers[String(r.id_ruta || r.id || r.codigo || r.nom_ruta)] = {
+                poly: line,
+                wpg: wpgGroup,
+                startMk: startMk,
+                endMk: endMk,
+                name: r.nom_ruta || '',
+                description: `${r.inicio_ruta || ''} → ${r.fin_ruta || ''}`
+              };
+            } else {
+              const { line, startMk, endMk } = dibujarRuta(r, [[r.inicio_lat, r.inicio_lng], [r.fin_lat, r.fin_lng]]);
+              routeLayers[String(r.id_ruta || r.id || r.codigo || r.nom_ruta)] = { 
+                poly: line, 
+                wpg: null, 
+                startMk: startMk,
+                endMk: endMk,
+                name: r.nom_ruta || '', 
+                description: `${r.inicio_ruta || ''} → ${r.fin_ruta || ''}` 
+              };
+            }
+          } catch (e) {
+            const { line, startMk, endMk } = dibujarRuta(r, [[r.inicio_lat, r.inicio_lng], [r.fin_lat, r.fin_lng]]);
+            routeLayers[String(r.id_ruta || r.id || r.codigo || r.nom_ruta)] = { 
+              poly: line, 
+              wpg: null, 
+              startMk: startMk,
+              endMk: endMk,
+              name: r.nom_ruta || '', 
+              description: `${r.inicio_ruta || ''} → ${r.fin_ruta || ''}` 
+            };
+          }
+        }
+
+        // Exponer globalmente para debug/búsqueda desde otros scripts
+        window.routeLayersGlobal = routeLayers;
+
+        if (boundsCoords.length > 0) map.fitBounds(boundsCoords, { padding: [30, 30], maxZoom: 15 });
+      } catch (err) {
+        console.error('No se pudieron cargar las rutas:', err);
+      }
+    }
+
+    // Dibujar rutas reales
+    cargarYDibujarRutas();
+    L.control.scale().addTo(map);
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+
+      // Filtrar rutas dibujadas en el mapa
+      try {
+        const layers = window.routeLayersGlobal || routeLayers;
+        let anyVisible = false;
+        Object.entries(layers).forEach(([id, obj]) => {
+          const name = (obj.name || '').toLowerCase();
+          const desc = (obj.description || '').toLowerCase();
+          const matches = name.includes(searchTerm) || desc.includes(searchTerm) || id.toLowerCase().includes(searchTerm);
+
+          if (obj.poly) {
+            if (matches) {
+              if (!map.hasLayer(obj.poly)) obj.poly.addTo(map);
+              anyVisible = true;
+            } else {
+              if (map.hasLayer(obj.poly)) map.removeLayer(obj.poly);
+            }
+          }
+          if (obj.wpg) {
+            if (matches) {
+              if (!map.hasLayer(obj.wpg)) obj.wpg.addTo(map);
+            } else {
+              if (map.hasLayer(obj.wpg)) map.removeLayer(obj.wpg);
+            }
+          }
+          
+          // Ocultar/mostrar marcadores de inicio y fin
+          if (obj.startMk) {
+            if (matches) {
+              if (!map.hasLayer(obj.startMk)) obj.startMk.addTo(map);
+            } else {
+              if (map.hasLayer(obj.startMk)) map.removeLayer(obj.startMk);
+            }
+          }
+          if (obj.endMk) {
+            if (matches) {
+              if (!map.hasLayer(obj.endMk)) obj.endMk.addTo(map);
+            } else {
+              if (map.hasLayer(obj.endMk)) map.removeLayer(obj.endMk);
+            }
+          }
+        });
+
+        const noResultsEl = document.getElementById('no-results-guest');
+        if (!anyVisible) {
+          if (userLocation && Object.keys(routeLayers).length>0) {
+            const suggestions = Object.entries(routeLayers).map(([id,obj])=>({id,name:obj.name,dist:getMinDistanceToPoly(obj.poly,userLocation)})).sort((a,b)=>a.dist-b.dist).slice(0,3);
+            noResultsEl.innerHTML = 'No hay resultados. Rutas cercanas: ' + suggestions.map(s=>`<strong>${s.name}</strong>`).join(', ');
+          } else {
+            noResultsEl.innerHTML = 'No hay resultados. Intenta otro término.';
+          }
+          noResultsEl.style.display = '';
+        } else {
+          noResultsEl.style.display = 'none';
+        }
+
+        // Si la búsqueda está vacía, reajustar bounds mostrando todo
+        if (!searchTerm.trim() && boundsCoords.length > 0) {
+          map.fitBounds(boundsCoords, { padding: [30, 30], maxZoom: 15 });
+        }
+      } catch (err) {
+        console.warn('Error filtrando rutas en mapa:', err);
+      }
+    });
+
+    // (showAll and live-buses removed — guest search now only filters map routes)
+
+  </script>
+</body>
+</html>

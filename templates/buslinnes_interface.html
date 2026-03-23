@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   
+        <!-- notificasiones -->
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script>
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          window.OneSignalInstance = null;
+          
+          OneSignalDeferred.push(async function(OneSignal) {
+            try {
+              // Configuración que funciona tanto en localhost como en ngrok
+              const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+              const swPath = isLocalhost ? '/OneSignalSDKWorker.js' : '/buslinnes/OneSignalSDKWorker.js';
+              
+              await OneSignal.init({
+                appId: "5f5d1290-a2ef-43ce-866d-d2efefec6041",
+                safari_web_id: "web.onesignal.auto.0e731bf1-0f8d-4c8c-8593-03e4c907000a",
+                allowLocalhostAsSecureOrigin: true,
+                serviceWorkerParam: { scope: '/' },
+                serviceWorkerPath: swPath,
+              });
+              
+              console.log('🌐 Dominio:', window.location.hostname);
+              console.log('📍 Service Worker path:', swPath);
+              
+              window.OneSignalInstance = OneSignal;
+              console.log('✅ OneSignal inicializado correctamente');
+              
+              // Verificar y solicitar permisos de notificaciones
+              const checkAndRequestPermission = async () => {
+                try {
+                  const currentPermission = await OneSignal.Notifications.permission;
+                  console.log('Estado actual de permisos:', currentPermission);
+                  
+                  if (currentPermission === false) {
+                    // Permiso no concedido, solicitar
+                    const result = await OneSignal.Notifications.requestPermission();
+                    console.log('✅ Permiso solicitado, resultado:', result);
+                  } else {
+                    console.log('✅ Ya tienes permisos de notificación');
+                  }
+                } catch (e) {
+                  console.log('⚠️ Error al solicitar permisos:', e.message);
+                  // Si falla automáticamente, esperar a interacción del usuario
+                  document.body.addEventListener('click', async function requestOnClick() {
+                    try {
+                      await OneSignal.Notifications.requestPermission();
+                      console.log('✅ Permisos solicitados tras click');
+                      document.body.removeEventListener('click', requestOnClick);
+                    } catch (err) {
+                      console.log('Usuario rechazó permisos');
+                    }
+                  }, { once: true });
+                }
+              };
+              
+              // Esperar un poco para que el DOM esté listo
+              setTimeout(checkAndRequestPermission, 500);
+              
+              // Si hay JWT con id_usuario y rol, configurar para recibir notificaciones dirigidas
+              var token = typeof localStorage !== 'undefined' && localStorage.getItem('jwt_token');
+              if (token) {
+                try {
+                  var base64Url = token.split('.')[1];
+                  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                  var json = JSON.parse(decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                  }).join('')));
+                  if (json.id_usuario) {
+                    await OneSignal.login(String(json.id_usuario));
+                    console.log('✅ Usuario suscrito:', json.id_usuario);
+                  }
+                  if (json.id_rol) {
+                    try {
+                      // OneSignal v16 usa OneSignal.User.addTag(key, value)
+                      if (OneSignal.User && typeof OneSignal.User.addTag === 'function') {
+                        await OneSignal.User.addTag("rol_id", String(json.id_rol));
+                        console.log('✅ Rol asignado correctamente:', json.id_rol);
+                      } else {
+                        console.warn('⚠️ OneSignal.User.addTag no disponible. Disponibles:', Object.keys(OneSignal.User || {}));
+                      }
+                    } catch (tagError) {
+                      console.error('❌ Error al asignar rol:', tagError);
+                      console.log('🔍 Métodos disponibles en OneSignal.User:', Object.keys(OneSignal.User || {}));
+                    }
+                  }
+                } catch (e) {
+                  console.error('Error al configurar usuario/rol:', e);
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error al inicializar OneSignal:', error);
+            }
+          });
+        </script>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buslinnes - Sistema de Gestión de Transporte</title>
+    <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/admin.css">
+    <script src="/buslinnes/assets/js/darkmode.js?v=2" defer></script>
+    <script>
+        // Validación inmediata de rol - se ejecuta antes de mostrar contenido
+        (function() {
+            function parseJwt(token) {
+                try {
+                    const base64Url = token.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+                    return JSON.parse(jsonPayload);
+                } catch (e) { return null; }
+            }
+
+            function redirectByRole(rol) {
+                // Redirigir según el rol del usuario a su página correspondiente
+                const rolLower = rol ? rol.toLowerCase() : '';
+                if (rolLower === 'pasajero') {
+                    window.location.replace('/buslinnes/templates/passenger_interface.html');
+                } else if (rolLower === 'conductor') {
+                    window.location.replace('/buslinnes/templates/driver_interface.html');
+                } else if (rolLower === 'admin') {
+                    // Ya está en la página correcta, no hacer nada
+                    return true;
+                } else {
+                    // Rol no reconocido, ir al login
+                    window.location.replace('/buslinnes/public/login.php');
+                }
+                return false;
+            }
+
+            // Ocultar contenido inmediatamente
+            if (document.body) {
+                document.body.style.display = 'none';
+            } else {
+                // Si el body aún no existe, esperar a que se cree
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.style.display = 'none';
+                });
+            }
+
+            // Validar token y rol
+            const token = localStorage.getItem('jwt_token');
+            
+            if (!token) {
+                window.location.replace('/buslinnes/public/login.php');
+                return;
+            }
+
+            const payload = parseJwt(token);
+            
+            // Verificar si el token está expirado
+            if (!payload || !payload.exp || Date.now() / 1000 > payload.exp) {
+                localStorage.removeItem('jwt_token');
+                window.location.replace('/buslinnes/public/login.php');
+                return;
+            }
+            
+            // Validar que el usuario tenga el rol de admin
+            const rolPermitido = payload.rol ? payload.rol.toLowerCase() : '';
+            const rolesPermitidos = ['admin'];
+            
+            if (!rolesPermitidos.includes(rolPermitido)) {
+                // Usuario no tiene permisos, redirigir a su página según su rol
+                if (!redirectByRole(payload.rol)) {
+                    return; // La redirección ya se hizo
+                }
+            }
+
+            // Si pasa todas las validaciones, mostrar contenido
+            function showContent() {
+                if (document.body) {
+                    document.body.style.display = '';
+                }
+            }
+            
+            if (document.body) {
+                showContent();
+            } else {
+                document.addEventListener('DOMContentLoaded', showContent);
+            }
+        })();
+    </script>
+
+</head>
+<body>
+    <!-- Added skip link to allow keyboard users to saltar navegación repetitiva (WCAG 2.4.1) -->
+    <a class="sr-only" href="#main-content">Saltar al contenido principal</a>
+
+    <div class="container">
+        <!-- Sidebar ahora con role y etiqueta accesible (WCAG 1.3.1) -->
+        <nav class="sidebar" id="sidebar" role="navigation" aria-label="Menú principal">
+            <div class="nav-menu">
+                <!-- Mobile-only profile (se muestra solo en tablet/móvil) -->
+                <div class="mobile-profile" aria-hidden="false">
+    <div class="user-avatar" id="userAvatarMobile">AD</div>
+    <div class="user-info">
+        <div class="user-name-mobile" id="userNameMobile">Admin</div>
+        <div class="user-role-mobile">Administrador</div>
+    </div>
+    <a href="/buslinnes/public/logout.php" class="btn btn-primary mobile-logout">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Salir</span>
+    </a>
+</div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/notificaciones/listar_notificaciones.php" class="nav-link" data-section="notificaciones">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificaciones</span>
+                    </a>
+                </div>
+                <!-- Sidebar botones en el orden solicitado -->
+                <div class="nav-item">
+                    <a href="/buslinnes/src/buses/listar_buses.php" class="nav-link" data-section="buses">
+                        <i class="fas fa-bus"></i>
+                        <span>Buses</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/conductores/listar_conductores.php" class="nav-link" data-section="conductores">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Conductores</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/mantenimiento/listar_mantenimiento.php" class="nav-link" data-section="mantenimiento">
+                        <i class="fas fa-tools"></i>
+                        <span>Mantenimiento</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/parque automotor/listar_parque_automotor.php" class="nav-link" data-section="parque-automotor">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Parque Automotor</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/pasajeros/listar_pasajeros.php" class="nav-link" data-section="pasajeros">
+                        <i class="fas fa-user"></i>
+                        <span>Pasajeros</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/propietarios/listar_propietarios.php" class="nav-link" data-section="propietarios">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Propietarios</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/ruta bus/listar_rutas_buses.php" class="nav-link" data-section="ruta-bus">
+                        <i class="fas fa-route"></i>
+                        <span>Ruta Bus</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/rutas/listar_rutas.php" class="nav-link" data-section="rutas">
+                        <i class="fas fa-route"></i>
+                        <span>Rutas</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/roles/listar_roles.php" class="nav-link" data-section="roles">
+                        <i class="fas fa-user-tag"></i>
+                        <span>Roles</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/usuarios/listar_usuarios.php" class="nav-link" data-section="usuarios">
+                        <i class="fas fa-users"></i>
+                        <span>Usuarios</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/buslinnes/src/usuarios_roles/listar_usuarios_roles.php" class="nav-link" data-section="usuarios-roles">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Usuarios Roles</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header marcado semánticamente; se añaden relaciones aria para los toggles (WCAG 4.1.2) -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="toggle-btn" id="toggleSidebar" type="button" aria-label="Abrir o cerrar menú" aria-controls="sidebar" aria-expanded="false">
+                        <i class="fas fa-bars" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="header-right">
+                    <button class="dark-toggle" id="darkToggle" type="button" aria-label="Cambiar modo oscuro" aria-pressed="false">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </button>
+                    <button class="notification-btn" type="button" aria-label="Ver incidentes">
+                        <i class="fas fa-bell" aria-hidden="true"></i>
+                    </button>
+                    <div class="user-profile">
+    <div class="user-avatar" id="userAvatarDesktop">AD</div>
+    <div class="user-info">
+        <div class="user-name" id="userNameDesktop">Alecs</div>
+        <div class="user-role"><strong>ADMINISTRADOR</strong></div>
+    </div>
+</div>
+                    </div>
+                    <!-- Logout visible solo en desktop -->
+                    <a href="/buslinnes/public/logout.php" class="btn btn-primary logout-desktop">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <!-- Main content con identificador para la skip link (WCAG 2.4.1) -->
+            <main class="content" id="main-content">
+                <!-- Dashboard Section -->
+                <section id="dashboard-section" class="content-section" aria-labelledby="dashboard-title">
+                    <div class="content-header">
+                        <div class="content-title-box">
+                            <h1 class="content-title" id="dashboard-title">Dashboard</h1>
+                        </div>
+                        <div class="content-actions">
+                            <button class="btn btn-primary" id="descargarReporteBtn">
+        <i class="fas fa-file-download"></i> Descargar reporte mensual PDF
+    </button>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon buses">
+                                    <i class="fas fa-bus"></i>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="stat-buses">DEMO</div>
+                            <div class="stat-label">Buses Activos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon conductores">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="stat-conductores">DEMO</div>
+                            <div class="stat-label">Conductores</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon pasajeros">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="stat-pasajeros">DEMO</div>
+                            <div class="stat-label">Pasajeros Registrados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon rutas">
+                                    <i class="fas fa-route"></i>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="stat-rutas">DEMO</div>
+                            <div class="stat-label">Rutas Activas</div>
+                        </div>
+                    </div>
+
+                  
+
+                <!-- Similar sections for other modules would go here -->
+                <section id="conductores-section" class="content-section" style="display: none;" aria-labelledby="conductores-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="conductores-title">Gestión de Conductores</h2>
+                        <p class="content-subtitle">Administrar personal de conducción</p>
+                    </div>
+                    <!-- Content for conductores -->
+                </section>
+
+                <section id="pasajeros-section" class="content-section" style="display: none;" aria-labelledby="pasajeros-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="pasajeros-title">Gestión de Pasajeros</h2>
+                        <p class="content-subtitle">Administrar usuarios del sistema</p>
+                    </div>
+                    <!-- Content for pasajeros -->
+                </section>
+
+                <section id="rutas-section" class="content-section" style="display: none;" aria-labelledby="rutas-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="rutas-title">Gestión de Rutas</h2>
+                        <p class="content-subtitle">Administrar rutas de transporte</p>
+                    </div>
+                    <!-- Content for rutas -->
+                </section>
+
+                <section id="tarjetas-section" class="content-section" style="display: none;" aria-labelledby="tarjetas-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="tarjetas-title">Gestión de Tarjetas</h2>
+                        <p class="content-subtitle">Administrar tarjetas de pago</p>
+                    </div>
+                    <!-- Content for tarjetas -->
+                </section>
+
+                <section id="empresas-section" class="content-section" style="display: none;" aria-labelledby="empresas-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="empresas-title">Gestión de Empresas</h2>
+                        <p class="content-subtitle">Administrar empresas de transporte</p>
+                    </div>
+                    <!-- Content for empresas -->
+                </section>
+
+                <section id="mantenimiento-section" class="content-section" style="display: none;" aria-labelledby="mantenimiento-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="mantenimiento-title">Gestión de Mantenimiento</h2>
+                        <p class="content-subtitle">Programar y seguir mantenimientos</p>
+                    </div>
+                    <!-- Content for mantenimiento -->
+                </section>
+
+                <section id="reportes-section" class="content-section" style="display: none;" aria-labelledby="reportes-title">
+                    <div class="content-header">
+                        <h2 class="content-title" id="reportes-title">Reportes</h2>
+                        <p class="content-subtitle">Análisis y estadísticas del sistema</p>
+                    </div>
+                    <!-- Content for reportes -->
+                </section>
+            </main>
+
+            <!-- Modals -->
+            <!-- Modal con roles ARIA para accesibilidad (WCAG 4.1.2) -->
+            <div class="modal" id="busModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="busModalTitle">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title" id="busModalTitle">Agregar Nuevo Bus</h2>
+                        <button class="close" aria-label="Cerrar" onclick="closeModal('busModal')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addBusForm">
+                            <div class="form-group">
+                                <label for="matricula" class="form-label">Matrícula</label>
+                                <input type="text" id="matricula" class="form-input" placeholder="Ingrese matrícula">
+                            </div>
+                            <div class="form-group">
+                                <label for="conductor" class="form-label">Conductor</label>
+                                <select id="conductor" class="form-input">
+                                    <option value="">Seleccione conductor</option>
+                                    <option value="1">Juan Pérez</option>
+                                    <option value="2">María García</option>
+                                    <option value="3">Carlos López</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ruta" class="form-label">Ruta</label>
+                                <select id="ruta" class="form-input">
+                                    <option value="">Seleccione ruta</option>
+                                    <option value="1">Centro - Norte</option>
+                                    <option value="2">Sur - Este</option>
+                                    <option value="3">Centro - Oeste</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="estado" class="form-label">Estado</label>
+                                <select id="estado" class="form-input">
+                                    <option value="">Seleccione estado</option>
+                                    <option value="activo">Activo</option>
+                                    <option value="inactivo">Inactivo</option>
+                                    <option value="mantenimiento">En Mantenimiento</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeModal('busModal')">Cancelar</button>
+                        <button class="btn btn-primary" onclick="submitBusForm()">Guardar Bus</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="/buslinnes/assets/js/sidebar.js"></script>
+<script src="/buslinnes/assets/js/security.js"></script>
+<script src="/buslinnes/assets/js/app_lockdown.js"></script>
+<script src="/buslinnes/assets/js/token_manager.js"></script>
+<script>
+// Utilidades de accesibilidad y autenticación
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+let activeModal = null;
+let modalOpener = null;
+
+// Validar JWT en localStorage antes de mostrar la página
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) { return null; }
+}
+
+function enforceAuth() {
+    if (!localStorage.getItem('jwt_token')) {
+        window.location.replace('/buslinnes/public/login.php');
+        return;
+    }
+
+    const token = localStorage.getItem('jwt_token');
+    if (token) {
+        const payload = parseJwt(token);
+
+        if (!payload || !payload.exp || Date.now() / 1000 > payload.exp) {
+            localStorage.removeItem('jwt_token');
+            window.location.replace('/buslinnes/public/login.php');
+            return;
+        }
+
+        const rolPermitido = payload.rol ? payload.rol.toLowerCase() : '';
+        const rolesPermitidos = ['admin'];
+        if (!rolesPermitidos.includes(rolPermitido)) {
+            const rolUsuario = payload.rol ? payload.rol.toLowerCase() : '';
+            if (rolUsuario === 'pasajero') {
+                window.location.replace('/buslinnes/templates/passenger_interface.html');
+            } else if (rolUsuario === 'conductor') {
+                window.location.replace('/buslinnes/templates/driver_interface.html');
+            } else {
+                window.location.replace('/buslinnes/public/login.php');
+            }
+        }
+    }
+}
+
+function capitalizeWord(w) {
+    if (!w) return '';
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+}
+
+function formatDisplayName(fullName) {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean).map(capitalizeWord);
+    if (parts.length >= 4) {
+        return `${parts[0]} ${parts[2]}`; // primer nombre + primer apellido
+    }
+    if (parts.length === 3) {
+        return `${parts[0]} ${parts[2]}`; // first + last
+    }
+    if (parts.length === 2) {
+        return `${parts[0]} ${parts[1]}`;
+    }
+    return parts[0] || '';
+}
+
+function initialsFromName(name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'A';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function setAdminName() {
+    const token = localStorage.getItem('jwt_token');
+    if (token) {
+        const payload = parseJwt(token);
+        const rawName = payload && (payload.nombre || payload.nombre_usuario || '');
+        if (rawName) {
+            const displayName = formatDisplayName(rawName);
+            document.getElementById('userNameDesktop').textContent = displayName;
+            document.getElementById('userNameMobile').textContent = displayName;
+            const initials = initialsFromName(displayName);
+            document.getElementById('userAvatarDesktop').textContent = initials;
+            document.getElementById('userAvatarMobile').textContent = initials.charAt(0);
+        }
+    }
+}
+
+// Modal accesible: abrir, cerrar y trampa de foco
+function openModal(modalId, triggerEl = document.activeElement) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    activeModal = modal;
+    modalOpener = triggerEl;
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+
+    const focusables = modal.querySelectorAll(FOCUSABLE_SELECTOR);
+    const first = focusables.length ? focusables[0] : modal;
+    first.focus();
+
+    document.addEventListener('keydown', handleModalKeydown);
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+
+    document.removeEventListener('keydown', handleModalKeydown);
+    const returnFocus = modalOpener && modalOpener.focus ? modalOpener : null;
+    activeModal = null;
+    if (returnFocus) {
+        returnFocus.focus();
+    }
+}
+
+function handleModalKeydown(event) {
+    if (!activeModal) return;
+    const focusables = Array.from(activeModal.querySelectorAll(FOCUSABLE_SELECTOR));
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closeModal(activeModal.id);
+        return;
+    }
+    if (event.key === 'Tab') {
+        if (!focusables.length) return;
+        const currentIndex = focusables.indexOf(document.activeElement);
+        if (event.shiftKey) {
+            if (currentIndex <= 0) {
+                focusables[focusables.length - 1].focus();
+                event.preventDefault();
+            }
+        } else {
+            if (currentIndex === -1 || currentIndex === focusables.length - 1) {
+                focusables[0].focus();
+                event.preventDefault();
+            }
+        }
+    }
+}
+
+// Sincronizar dashboard con la base de datos
+async function actualizarDashboard() {
+    try {
+        const response = await securityHelper.get('/buslinnes/dashboard_data.php');
+        
+        // Verificar si la respuesta es OK
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error HTTP:', response.status, errorText);
+            throw new Error(`Error ${response.status}: ${errorText.substring(0, 100)}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error del servidor:', data.message || data.error);
+            return;
+        }
+        
+        document.getElementById('stat-buses').textContent = parseInt(data.buses) || 0;
+        document.getElementById('stat-conductores').textContent = parseInt(data.conductores) || 0;
+        document.getElementById('stat-pasajeros').textContent = parseInt(data.pasajeros) || 0;
+        document.getElementById('stat-rutas').textContent = parseInt(data.rutas) || 0;
+    } catch (error) {
+        console.error('Error al cargar estadísticas del dashboard:', error);
+        document.getElementById('stat-buses').textContent = 'Error';
+        document.getElementById('stat-conductores').textContent = 'Error';
+        document.getElementById('stat-pasajeros').textContent = 'Error';
+        document.getElementById('stat-rutas').textContent = 'Error';
+    }
+}
+
+// Ajustar aria-pressed del dark mode toggle
+function syncDarkToggle() {
+    const darkToggle = document.getElementById('darkToggle');
+    if (!darkToggle) return;
+    const isDark = document.body.classList.contains('dark');
+    darkToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    enforceAuth();
+    setAdminName();
+    actualizarDashboard();
+    syncDarkToggle();
+
+    // Manejar cambio de modo oscuro (en caso de toggle manual)
+    const darkToggle = document.getElementById('darkToggle');
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+            // darkmode.js gestiona clases; aquí solo sincronizamos aria-pressed con un pequeño retardo
+            setTimeout(syncDarkToggle, 0);
+        });
+    }
+
+    // Ajustar estado aria de las secciones iniciales
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => {
+        const visible = section.style.display !== 'none';
+        section.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        if (visible) {
+            section.setAttribute('tabindex', '-1');
+        }
+    });
+
+    // Navegar a incidentes desde el botón de notificaciones
+    const notificationBtn = document.querySelector('.notification-btn');
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', function() {
+            window.location.href = '/buslinnes/src/incidentes/listar_incidentes.php';
+        });
+    }
+
+    // Descarga de reporte mensual
+    const descargarBtn = document.getElementById('descargarReporteBtn');
+    if (descargarBtn) {
+        descargarBtn.addEventListener('click', function() {
+            const fecha = new Date();
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = fecha.getFullYear();
+            window.open(`/buslinnes/reporte_mensual.php?mes=${mes}&anio=${anio}`, '_blank');
+        });
+    }
+
+    // Cerrar modal al hacer click fuera del contenido
+    const busModal = document.getElementById('busModal');
+    if (busModal) {
+        busModal.addEventListener('mousedown', (e) => {
+            if (e.target === busModal) {
+                closeModal('busModal');
+            }
+        });
+    }
+
+    // Forzar recarga si la página se muestra desde caché de historial
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+});
+
+// Logout seguro con desconexión de OneSignal
+document.addEventListener('DOMContentLoaded', function() {
+  const logoutLinks = document.querySelectorAll('a[href=\"/buslinnes/public/logout.php\"]');
+  logoutLinks.forEach(link => {
+    link.addEventListener('click', async function(event) {
+      event.preventDefault();
+      if (window.OneSignalInstance) {
+        try {
+          await window.OneSignalInstance.logout();
+          console.log('✅ Desconectado de OneSignal desde interfaz');
+        } catch (e) {
+          console.warn('⚠️ Error al desconectar:', e);
+        }
+      }
+      localStorage.removeItem('jwt_token');
+      window.location.href = '/buslinnes/public/logout.php';
+    });
+  });
+});
+</script>
+</body>
+</html>

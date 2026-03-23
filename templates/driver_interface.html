@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buslinnes - Panel del Conductor</title>
+  <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+  <!-- OneSignal Notificaciones Push -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalInstance = null;
+    
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const swPath = isLocalhost ? '/OneSignalSDKWorker.js' : '/buslinnes/OneSignalSDKWorker.js';
+        
+        await OneSignal.init({
+          appId: "5f5d1290-a2ef-43ce-866d-d2efefec6041",
+          safari_web_id: "web.onesignal.auto.0e731bf1-0f8d-4c8c-8593-03e4c907000a",
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerParam: { scope: '/' },
+          serviceWorkerPath: swPath,
+        });
+        
+        console.log('🌐 Dominio:', window.location.hostname);
+        console.log('📍 Service Worker path:', swPath);
+        
+        window.OneSignalInstance = OneSignal;
+        console.log('✅ OneSignal inicializado correctamente');
+        
+        const checkAndRequestPermission = async () => {
+          try {
+            const currentPermission = await OneSignal.Notifications.permission;
+            console.log('Estado actual de permisos:', currentPermission);
+            
+            if (currentPermission === false) {
+              const result = await OneSignal.Notifications.requestPermission();
+              console.log('✅ Permiso solicitado, resultado:', result);
+            } else {
+              console.log('✅ Ya tienes permisos de notificación');
+            }
+          } catch (e) {
+            console.log('⚠️ Error al solicitar permisos:', e.message);
+            document.body.addEventListener('click', async function requestOnClick() {
+              try {
+                await OneSignal.Notifications.requestPermission();
+                console.log('✅ Permisos solicitados tras click');
+                document.body.removeEventListener('click', requestOnClick);
+              } catch (err) {
+                console.log('Usuario rechazó permisos');
+              }
+            }, { once: true });
+          }
+        };
+        
+        setTimeout(checkAndRequestPermission, 500);
+        
+        var token = typeof localStorage !== 'undefined' && localStorage.getItem('jwt_token');
+        if (token) {
+          try {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var json = JSON.parse(decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')));
+            if (json.id_usuario) {
+              await OneSignal.login(String(json.id_usuario));
+              console.log('✅ Usuario suscrito:', json.id_usuario);
+            }
+            if (json.id_rol) {
+              try {
+                if (OneSignal.User && typeof OneSignal.User.addTag === 'function') {
+                  await OneSignal.User.addTag("rol_id", String(json.id_rol));
+                  console.log('✅ Rol asignado correctamente:', json.id_rol);
+                } else {
+                  console.warn('⚠️ OneSignal.User.addTag no disponible. Disponibles:', Object.keys(OneSignal.User || {}));
+                }
+              } catch (tagError) {
+                console.error('❌ Error al asignar rol:', tagError);
+                console.log('🔍 Métodos disponibles en OneSignal.User:', Object.keys(OneSignal.User || {}));
+              }
+            }
+          } catch (e) {
+            console.error('Error al configurar usuario/rol:', e);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al inicializar OneSignal:', error);
+      }
+    });
+  </script>
+  
+  <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="/buslinnes/assets/css/driver.css?v=20260317">
+  <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-container">
+        <div class="header-left">
+          <div class="logo">
+            <div class="logo-icon">
+              <img src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo">
+            </div>
+          </div>
+          <div class="separator"></div>
+          <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar rutas..." aria-label="Buscar rutas">
+            <i class="fas fa-search search-icon"></i>
+          </div>
+          <button id="showAllRoutesBtn" class="btn btn-light route-filter-btn" title="Ver todas las rutas">
+            <i class="fas fa-map-marked-alt"></i><span>Rutas</span>
+          </button>
+          <!-- botón de "Mi Ruta" visible y activo -->
+          <button id="showAssignedBtn" class="btn btn-light route-filter-btn hidden" title="Mi ruta asignada">
+            <i class="fas fa-route"></i><span>Mi Ruta</span>
+          </button>
+          <button id="darkToggle" class="dark-toggle" type="button" aria-label="Cambiar modo oscuro">
+            <i class="fas fa-moon"></i>
+          </button>
+          <button id="mobileMenuToggle" class="burger-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+        <div class="header-right">
+          <a href="/buslinnes/src/notificaciones_conductor/listar_notificaciones_conductor.php" class="btn btn-light notif-bell" title="Ver mis notificaciones">
+            <i class="fas fa-bell"></i>
+            <span class="notif-dot"></span>
+          </a>
+          <div class="user-profile">
+            <div class="user-avatar" id="userAvatar">CD</div>
+            <div class="user-info">
+              <div class="user-name" id="userName">Cargando...</div>
+              <div class="user-role"><strong id="userRole">CONDUCTOR</strong></div>
+            </div>
+          </div>
+          <a href="/buslinnes/public/logout.php" class="btn btn-primary logout-desktop">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Cerrar Sesión</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div id="mobileMenuBackdrop" class="mobile-menu-backdrop" aria-hidden="true"></div>
+    <nav id="mobileMenu" class="mobile-menu" aria-hidden="true">
+      <div class="mobile-menu-header">
+        <span>Menú</span>
+        <button id="mobileMenuClose" class="mobile-menu-close" type="button" aria-label="Cerrar menú">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="mobile-profile">
+        <div class="user-avatar" id="userAvatarMobile">CD</div>
+        <div class="user-info">
+          <div class="user-name" id="userNameMobile">Conductor</div>
+          <div class="user-role"><strong id="userRoleMobile">CONDUCTOR</strong></div>
+        </div>
+      </div>
+      <div class="mobile-menu-actions">
+        <button id="darkToggleMobile" class="mobile-menu-item mobile-theme-toggle" type="button" aria-label="Cambiar modo oscuro" aria-pressed="false">
+          <div class="icon-circle">
+            <i class="fas fa-moon"></i>
+          </div>
+          <span>Modo oscuro</span>
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <a href="/buslinnes/src/notificaciones_conductor/listar_notificaciones_conductor.php" class="mobile-menu-item">
+          <div class="icon-circle">
+            <i class="fas fa-bell"></i>
+            <span class="notif-dot"></span>
+          </div>
+          <span>Notificaciones</span>
+          <i class="fas fa-chevron-right"></i>
+        </a>
+        <a href="/buslinnes/public/logout.php" class="mobile-menu-item">
+          <div class="icon-circle logout-icon">
+            <i class="fas fa-sign-out-alt"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <div class="routes-map-layout routes-map-layout-driver">
+        <!-- Sidebar flotante para mostrar solo la ruta asignada -->
+        <aside class="routes-sidebar routes-sidebar-floating" id="routes-list-container">
+          <div id="routes-list" class="routes-list-driver"></div>
+          <!-- Eliminado no-results que no se usa -->
+        </aside>
+
+        <section class="map-section map-section-fill">
+          <div id="map-placeholder" class="map-placeholder">
+            <div class="placeholder-content">
+              <div class="map-emoji">📍</div>
+              <h2>Selecciona o busca una ruta</h2>
+              <p>Usa el campo de búsqueda o el listado para visualizarla en el mapa.</p>
+            </div>
+          </div>
+
+          <div id="map-container" class="hidden"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/buslinnes/assets/js/security.js"></script>
+  <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+  <script src="/buslinnes/assets/js/driver_incidente_toast.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = '/buslinnes/src/rutas/api_listar_rutas.php';
+    const colores = ['#2563eb','#dc2626','#16a34a','#ca8a04','#7c3aed','#9333ea','#ea580c','#0891b2'];
+    let routes = [];
+    let selectedRoute = null;
+    let map = null;
+    let currentTileLayer = null;
+
+    const routesListContainer = document.getElementById('routes-list-container');
+    const mapPlaceholder = document.getElementById('map-placeholder');
+    const mapContainer = document.getElementById('map-container');
+
+    const mapUrls = {
+      light: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    };
+
+    function updateMapTheme() {
+      if (!map) return;
+      const isDark = document.body.classList.contains('dark');
+      const mapUrl = isDark ? mapUrls.dark : mapUrls.light;
+      const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' + (isDark ? ' | &copy; <a href="https://carto.com/">CARTO</a>' : '');
+      if (currentTileLayer) map.removeLayer(currentTileLayer);
+      currentTileLayer = L.tileLayer(mapUrl, { attribution, maxZoom: 19 }).addTo(map);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') updateMapTheme();
+      });
+    });
+    observer.observe(document.body, { attributes: true });
+
+    async function fetchRoutes() {
+      try {
+        const response = await securityHelper.get(API_URL);
+        
+        // Parse JSON from response
+        let data = await response.json();
+        console.log('API data:', data);
+        
+        // Validar que la respuesta sea un array
+        if (!Array.isArray(data)) {
+          // Intentar extraer el array de diferentes estructuras posibles
+          if (data && data.data && Array.isArray(data.data)) {
+            data = data.data;
+          } else if (data && data.rutas && Array.isArray(data.rutas)) {
+            data = data.rutas;
+          } else {
+            console.error('La respuesta no es un array válido:', data);
+            routes = [];
+            renderRoutes(true);
+            return;
+          }
+        }
+        
+        routes = data.map((r, idx) => ({
+          id: r.id_ruta,
+          number: String(r.id_ruta),
+          name: r.nom_ruta,
+          description: `${r.inicio_ruta} → ${r.fin_ruta}`,
+          buses: Number(r.buses_count) || 0,
+          frequency: '',
+          color: colores[idx % colores.length],
+          colorClass: `route-color-${idx % colores.length}`,
+          inicio_lat: r.inicio_lat,
+          inicio_lng: r.inicio_lng,
+          fin_lat: r.fin_lat,
+          fin_lng: r.fin_lng,
+          waypoints: r.waypoints || []
+        }));
+        // vista por defecto: mostrar primero "Mi Ruta"
+        renderRoutes(false);
+      } catch (e) {
+        console.error('Error fetching routes:', e);
+        routes = [];
+        renderRoutes(true);
+      }
+    }
+
+    // delegación de clic a los items: más robusto que listeners individuales
+    routesListContainer.addEventListener('click', e => {
+      const item = e.target.closest('.route-item');
+      if (!item) return;
+      const id = item.dataset.routeId;
+      const found = routes.find(r => String(r.id) === String(id));
+      if (found) handleRouteSelect(found);
+    });
+
+    // renderRoutes puede mostrar sólo la ruta asignada (modo por defecto) o todas
+    // cuando showAll==true.
+    function renderRoutes(showAll = false) {
+      routesListContainer.innerHTML = '';
+      
+      // Validar que routes sea un array
+      if (!Array.isArray(routes)) {
+        console.error('routes no es un array:', routes);
+        routes = [];
+      }
+      
+      if (showAll) {
+        // listar todas las rutas disponibles
+        routes.forEach(r => {
+          const el = document.createElement('div');
+          el.className = `route-item route-item-compact ${r.colorClass || ''}`;
+          el.dataset.routeId = r.id;
+          el.innerHTML = `
+            <div class="route-header route-header-compact">
+              <div class="route-info">
+                <div class="route-number route-number-compact"><i class="fas fa-bus" aria-hidden="true"></i></div>
+                <div class="route-details">
+                  <h3 class="route-title-compact">${r.name}</h3>
+                  <p class="route-desc-text">${r.description}</p>
+                </div>
+              </div>
+            </div>`;
+          el.addEventListener('click', () => handleRouteSelect(r));
+          routesListContainer.appendChild(el);
+        });
+      } else {
+        // vista normal: sólo la primera ruta (asignada)
+        if (routes.length > 0) {
+          const route = routes[0];
+          const routeElement = document.createElement('div');
+          routeElement.className = `route-item route-item-compact selected ${route.colorClass || ''}`;
+          routeElement.dataset.routeId = route.id;
+          routeElement.innerHTML = `
+            <div class="route-header route-header-compact">
+              <div class="route-info">
+                <div class="assigned-route-label">Mi Ruta Asignada</div>
+                <div class="route-number route-number-compact"><i class="fas fa-bus" aria-hidden="true"></i></div>
+                <div class="route-details">
+                  <h3 class="route-title-compact">${route.name}</h3>
+                  <p class="route-desc-text">${route.description}</p>
+                </div>
+              </div>
+            </div>
+          `;
+          routeElement.addEventListener('click', () => handleRouteSelect(route));
+          routesListContainer.appendChild(routeElement);
+          if (!selectedRoute || selectedRoute.id !== route.id) {
+            handleRouteSelect(route);
+          }
+        } else {
+          routesListContainer.innerHTML = '<div class="route-empty-state">No tienes ruta asignada actualmente.</div>';
+        }
+      }
+    }
+
+    async function handleRouteSelect(route) {
+      console.log('handleRouteSelect llamada con:', route);
+      selectedRoute = route;
+      mapPlaceholder.classList.add('hidden');
+      mapContainer.classList.remove('hidden');
+
+      map = window.buslinnesMap || null;
+      if (!map) {
+        console.log('Creando mapa nuevo');
+        map = L.map('map-container').setView([7.1193, -73.1227], 13);
+        window.buslinnesMap = map;
+      } else {
+        console.log('Mapa existente, limpiando capas anteriores');
+        map.eachLayer(layer => {
+          if (layer instanceof L.TileLayer) return;
+          if (layer instanceof L.Marker && layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'user-location-icon') {
+            return;
+          }
+          map.removeLayer(layer);
+        });
+      }
+      if (map && typeof map.invalidateSize === 'function') {
+        map.invalidateSize();
+        console.log('invalidateSize ejecutado');
+      }
+      updateMapTheme();
+      if (typeof maybeShowUserMarker === 'function') {
+        maybeShowUserMarker();
+      } else {
+        console.log('maybeShowUserMarker no disponible al dibujar ruta');
+      }
+
+      let osrmCoords = `${route.inicio_lng},${route.inicio_lat}`;
+      if (route.waypoints && route.waypoints.length > 0) {
+        route.waypoints.sort((a, b) => a.orden - b.orden);
+        route.waypoints.forEach(wp => {
+          osrmCoords += `;${wp.lng},${wp.lat}`;
+        });
+      }
+      osrmCoords += `;${route.fin_lng},${route.fin_lat}`;
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${osrmCoords}?overview=full&geometries=geojson`;
+      console.log('OSRM URL:', osrmUrl);
+      try {
+        const resp = await fetch(osrmUrl);
+        const data = await resp.json();
+        console.log('OSRM respuesta:', data.code, data.routes && data.routes.length);
+        let coords;
+        if (data.code === 'Ok' && data.routes && data.routes[0]) {
+          coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        } else {
+          coords = [[route.inicio_lat, route.inicio_lng], [route.fin_lat, route.fin_lng]];
+        }
+        console.log('Coordenadas para polyline:', coords.length, coords.slice(0,2));
+        const poly = L.polyline(coords, { color: route.color, weight: 5 }).addTo(map);
+        map.fitBounds(poly.getBounds().pad(0.1));
+        if (map && typeof map.invalidateSize === 'function') map.invalidateSize();
+        console.log('Polyline añadida y bounds ajustados');
+        L.circleMarker(coords[0], { radius:6, color:'#4c1d95', fillColor:'#4c1d95', weight:2 }).addTo(map);
+        L.circleMarker(coords[coords.length-1], { radius:6, color:'red', fillColor:'red', weight:2 }).addTo(map);
+        
+        if (route.waypoints && route.waypoints.length > 0) {
+          route.waypoints.forEach((wp, idx) => {
+            L.circleMarker([wp.lat, wp.lng], { 
+              radius: 5, 
+              color: '#FFA500', 
+              fillColor: '#FFA500', 
+              weight: 2 
+            }).bindPopup(`<strong>${wp.nombre || 'Waypoint ' + (idx + 1)}</strong>`).addTo(map);
+          });
+        }
+      } catch (e) {
+        console.error('OSRM error:', e);
+        const coords = [[route.inicio_lat, route.inicio_lng], [route.fin_lat, route.fin_lng]];
+        const poly = L.polyline(coords, { color: route.color, weight: 5 }).addTo(map);
+        map.fitBounds(poly.getBounds().pad(0.1));
+      }
+    }
+
+    fetchRoutes();
+    setInterval(fetchRoutes, 20000);
+
+    // botón para mostrar todas las rutas
+    const showAllBtn = document.getElementById('showAllRoutesBtn');
+    const showAssignedBtn = document.getElementById('showAssignedBtn');
+    function syncRouteModeButtons(showAllMode) {
+      if (!showAllBtn || !showAssignedBtn) return;
+      // En modo "Rutas" se muestra "Mi Ruta" para volver; en modo "Mi Ruta" se muestra "Rutas".
+      showAssignedBtn.classList.toggle('hidden', !showAllMode);
+      showAllBtn.classList.toggle('hidden', showAllMode);
+    }
+
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', () => {
+        renderRoutes(true);
+        // no ocultamos el placeholder; la visualización del mapa
+        // se deja para cuando el conductor seleccione una ruta.
+        if (typeof maybeShowUserMarker === 'function') maybeShowUserMarker();
+        syncRouteModeButtons(true);
+      });
+    }
+    if (showAssignedBtn) {
+      showAssignedBtn.addEventListener('click', () => {
+        renderRoutes(false);
+        if (typeof maybeShowUserMarker === 'function') maybeShowUserMarker();
+        syncRouteModeButtons(false);
+      });
+    }
+
+    // estado inicial: estamos en "Mi Ruta"
+    syncRouteModeButtons(false);
+
+  });
+  </script>
+  
+  <script>
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) { return null; }
+    }
+
+    function requireDriverPayload() {
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        window.location.href = '/buslinnes/public/login.php';
+        return null;
+      }
+
+      const payload = parseJwt(token);
+      const isExpired = !payload || !payload.exp || Date.now() / 1000 > payload.exp;
+      if (isExpired) {
+        localStorage.removeItem('jwt_token');
+        window.location.href = '/buslinnes/public/login.php';
+        return null;
+      }
+
+      const rol = (payload.nombre_rol || payload.rol || '').toLowerCase();
+      if (rol !== 'conductor' && rol !== 'admin') {
+        if (rol === 'pasajero') {
+          window.location.href = '/buslinnes/templates/passenger_interface.html';
+          return null;
+        }
+        window.location.href = '/buslinnes/public/login.php';
+        return null;
+      }
+
+      return payload;
+    }
+
+    function capitalizeWord(w) {
+      if (!w) return '';
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }
+
+    function formatDisplayName(fullName) {
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      const capped = parts.map(capitalizeWord);
+      if (capped.length >= 4) {
+        return `${capped[0]} ${capped[2]}`;
+      }
+      if (capped.length === 3) {
+        return `${capped[0]} ${capped[2]}`;
+      }
+      if (capped.length === 2) {
+        return `${capped[0]} ${capped[1]}`;
+      }
+      return capped[0] || '';
+    }
+
+    function initialsFromName(name) {
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return 'CD';
+      if (parts.length === 1) return parts[0][0].toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function setDriverProfile(payload) {
+      const rawName = payload && (payload.nombre || payload.nombre_usuario || '');
+      if (rawName) {
+        const displayName = formatDisplayName(rawName);
+        const initials = initialsFromName(displayName);
+        document.getElementById('userName').textContent = displayName;
+        document.getElementById('userAvatar').textContent = initials;
+        var mobileNameEl = document.getElementById('userNameMobile');
+        var mobileAvatarEl = document.getElementById('userAvatarMobile');
+        if (mobileNameEl) mobileNameEl.textContent = displayName;
+        if (mobileAvatarEl) mobileAvatarEl.textContent = initials;
+      }
+
+      const rolName = (payload && (payload.nombre_rol || payload.rol)) || 'conductor';
+      const roleText = rolName.toUpperCase();
+      var roleEl = document.getElementById('userRole');
+      var roleMobileEl = document.getElementById('userRoleMobile');
+      if (roleEl) roleEl.textContent = roleText;
+      if (roleMobileEl) roleMobileEl.textContent = roleText;
+    }
+
+    const payload = requireDriverPayload();
+    if (payload) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { setDriverProfile(payload); });
+      } else {
+        setDriverProfile(payload);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('searchInput');
+      const burger = document.getElementById('mobileMenuToggle');
+      const closeBtn = document.getElementById('mobileMenuClose');
+      const menu = document.getElementById('mobileMenu');
+      const backdrop = document.getElementById('mobileMenuBackdrop');
+      const darkToggleDesktop = document.getElementById('darkToggle');
+      const darkToggleMobile = document.getElementById('darkToggleMobile');
+      const routesListEl = document.getElementById('routes-list');
+      const noResultsEl = document.getElementById('no-results');
+      const handleEscape = (event) => { if (event.key === 'Escape') closeMenu(); };
+
+      function syncDarkToggleMobileState() {
+        if (!darkToggleMobile) return;
+        const isDark = document.body.classList.contains('dark');
+        darkToggleMobile.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+      }
+
+      if (darkToggleMobile && darkToggleDesktop) {
+        darkToggleMobile.addEventListener('click', () => {
+          darkToggleDesktop.click();
+          syncDarkToggleMobileState();
+        });
+
+        const darkObserver = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              syncDarkToggleMobileState();
+            }
+          });
+        });
+        darkObserver.observe(document.body, { attributes: true });
+        syncDarkToggleMobileState();
+      }
+
+      // Helpers (haversine distance in meters)
+      function toRad(x){return x*Math.PI/180;}
+      function haversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const dLat = toRad(lat2-lat1);
+        const dLon = toRad(lon2-lon1);
+        const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
+        const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+      }
+
+      function getMinDistanceToPoly(poly, point) {
+        try {
+          const latlngs = poly.getLatLngs ? poly.getLatLngs() : [];
+          const flat = Array.isArray(latlngs[0]) ? latlngs.flat(Infinity) : latlngs;
+          let minD = Infinity;
+          flat.forEach(ll => { const d = haversineDistance(point.lat, point.lng, ll.lat, ll.lng); if (d < minD) minD = d; });
+          return minD === Infinity ? 1e9 : minD;
+        } catch (e) { return 1e9; }
+      }
+
+      let userLocation = null;
+      let userMarker = null;
+
+      function maybeShowUserMarker() {
+        if (!userLocation || !window.buslinnesMap) {
+          console.log('maybeShowUserMarker ignorada', {userLocation, hasMap: !!window.buslinnesMap});
+          return;
+        }
+        const map = window.buslinnesMap;
+        if (!userMarker) {
+          console.log('Creando marcador de usuario en', userLocation);
+          const userIcon = L.divIcon({
+            className: 'user-location-icon',
+            html: '<i class="fas fa-user"></i>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 24]
+          });
+          userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
+            .bindPopup('Tu ubicación');
+          map.setView([userLocation.lat, userLocation.lng], 14);
+        } else {
+          userMarker.setLatLng([userLocation.lat, userLocation.lng]);
+        }
+      }
+
+      function requestUserLocation() {
+        if (!navigator.geolocation) return;
+        const infoEl = document.getElementById('location-info');
+        navigator.geolocation.getCurrentPosition(pos => {
+          userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          maybeShowUserMarker();
+        }, err => { console.warn('No se obtuvo ubicación:', err.message); }, { enableHighAccuracy:true, timeout:5000 });
+        navigator.geolocation.watchPosition(pos => {
+          userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          maybeShowUserMarker();
+        }, err => { console.warn('Error siguiendo ubicación:', err.message); }, { enableHighAccuracy:true, maximumAge:5000, timeout:10000 });
+      }
+      requestUserLocation();
+
+      // Toggle menu functions
+      const openMenu = () => { if (!menu||!backdrop||!burger) return; menu.classList.add('open'); backdrop.classList.add('visible'); document.body.classList.add('no-scroll'); burger.setAttribute('aria-expanded','true'); menu.setAttribute('aria-hidden','false'); backdrop.setAttribute('aria-hidden','false'); document.addEventListener('keydown', handleEscape); };
+      const closeMenu = () => { if (!menu||!backdrop||!burger) return; menu.classList.remove('open'); backdrop.classList.remove('visible'); document.body.classList.remove('no-scroll'); burger.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true'); backdrop.setAttribute('aria-hidden','true'); document.removeEventListener('keydown', handleEscape); };
+
+      // Search behaviour: filter list and sync map layers if available
+      if (searchInput) {
+        const searchIcon = document.querySelector('.search-icon');
+        if (searchIcon) searchIcon.addEventListener('click', () => searchInput.focus());
+
+        searchInput.addEventListener('input', function(e){
+          const searchTerm = (e.target.value || '').toLowerCase();
+          const routeCards = document.querySelectorAll('.route-card');
+          const routeItems = document.querySelectorAll('#routes-list .route-item, .route-item');
+
+          routeCards.forEach(card => {
+            const routeNumber = card.querySelector('.route-number')?.textContent.toLowerCase() || '';
+            const routeName = card.querySelector('.route-name')?.textContent.toLowerCase() || '';
+            const routeDescription = card.querySelector('.route-description')?.textContent.toLowerCase() || '';
+            const matches = routeNumber.includes(searchTerm) || routeName.includes(searchTerm) || routeDescription.includes(searchTerm);
+            card.classList.toggle('hidden', !matches);
+          });
+
+          // Sync map layers when dataset routeId is present
+          routeItems.forEach(item => {
+            const label = (item.textContent||'').toLowerCase();
+            const matches = label.includes(searchTerm);
+            item.classList.toggle('hidden', !matches);
+
+            const routeId = item.dataset.routeId;
+            const layers = window.routeLayersGlobal || window.routeLayers || {};
+            if (routeId && layers[routeId] && window.buslinnesMap) {
+              const obj = layers[routeId];
+              try {
+                if (matches) {
+                  if (obj.poly && !window.buslinnesMap.hasLayer(obj.poly)) obj.poly.addTo(window.buslinnesMap);
+                  if (obj.wpg && !window.buslinnesMap.hasLayer(obj.wpg)) obj.wpg.addTo(window.buslinnesMap);
+                } else {
+                  if (obj.poly && window.buslinnesMap.hasLayer(obj.poly)) window.buslinnesMap.removeLayer(obj.poly);
+                  if (obj.wpg && window.buslinnesMap.hasLayer(obj.wpg)) window.buslinnesMap.removeLayer(obj.wpg);
+                }
+              } catch(e){ console.warn('Error sincronizando capa', e); }
+            }
+          });
+
+          updateNoResults();
+        });
+      }
+
+      function updateNoResults() {
+        if (!noResultsEl) return;
+        const anyVisible = Array.from(document.querySelectorAll('#routes-list .route-item, .route-item')).some(el => !el.classList.contains('hidden'));
+        if (!anyVisible) {
+          const layers = window.routeLayersGlobal || window.routeLayers || {};
+          if (userLocation && Object.keys(layers).length > 0) {
+            const suggestions = Object.entries(layers).map(([id,obj]) => ({ id, name: (obj && obj.poly && obj.poly.getPopup ? (obj.poly.getPopup() && obj.poly.getPopup().getContent()) : id), dist: obj && obj.poly ? getMinDistanceToPoly(obj.poly, userLocation) : 1e9 })).sort((a,b)=>a.dist-b.dist).slice(0,3);
+            noResultsEl.innerHTML = 'No hay resultados. Rutas cercanas: ' + suggestions.map(s=>`<strong>${s.name||s.id}</strong>`).join(', ');
+          } else {
+            const sample = Array.from(document.querySelectorAll('#routes-list .route-item')).slice(0,3).map(el=>el.textContent.trim());
+            noResultsEl.innerHTML = 'No hay resultados. Prueba: ' + (sample.length ? sample.join(', ') : 'Intenta otra búsqueda');
+          }
+          if (noResultsEl) noResultsEl.classList.remove('hidden');
+        } else {
+          if (noResultsEl) noResultsEl.classList.add('hidden');
+        }
+      }
+
+      if (burger) burger.addEventListener('click', openMenu);
+      if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if (backdrop) backdrop.addEventListener('click', closeMenu);
+    });
+  </script>
+
+  <!-- Logout seguro con desconexión de OneSignal -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Interceptar todos los enlaces de logout
+      const logoutLinks = document.querySelectorAll('a[href="/buslinnes/public/logout.php"]');
+      
+      logoutLinks.forEach(link => {
+        link.addEventListener('click', async function(event) {
+          event.preventDefault();
+          
+          // Desconectar de OneSignal ANTES de ir a logout.php
+          if (window.OneSignalInstance) {
+            try {
+              await window.OneSignalInstance.logout();
+              console.log('✅ Desconectado de OneSignal desde interfaz');
+            } catch (e) {
+              console.warn('⚠️ Error al desconectar:', e);
+            }
+          }
+          
+          // Limpiar datos locales
+          localStorage.removeItem('jwt_token');
+          
+          // Ir a logout.php (que también desconectará por seguridad)
+          window.location.href = '/buslinnes/public/logout.php';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

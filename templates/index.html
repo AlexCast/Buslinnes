@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buslinnes - Sistema de Gestión de Transporte</title>
+    <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <meta name="theme-color" content="#ffffff">
+    <!--Estilos de la página-->
+    <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/index.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/cookie-banner.css">
+    <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <a href="/buslinnes/index.php" style="display:flex;align-items:center;">
+                    <img src="/buslinnes/assets/img/logo.png" alt="" class="logo-img">
+                    <span class="sr-only">Buslinnes - Inicio</span>
+                </a>
+            </div>
+
+            <!-- Cambio WCAG: Se añade aria-haspopup="true" para indicar que abre un menú -->
+            <button class="mobile-toggle" aria-controls="main-nav" aria-expanded="false" aria-haspopup="true" aria-label="Abrir menú">
+                <i class="fa fa-bars" aria-hidden="true"></i>
+            </button>
+
+            <nav id="main-nav" class="nav-menu" aria-label="Menú principal">
+                <a href="#features" class="nav-link">Características</a>
+                <a href="#how-it-works" class="nav-link">Cómo Funciona</a>
+                <a href="#testimonials" class="nav-link">Testimonios</a>
+                <a href="#footer" class="nav-link">Contacto</a>
+            </nav>
+
+            <div class="header-auth">
+                <!-- Cambio WCAG: aria-pressed ya estaba, pero ahora se actualizará dinámicamente con JS -->
+                <button id="darkToggle" class="btn btn-outline" aria-pressed="false" title="Alternar modo oscuro" aria-label="Alternar modo oscuro">
+                    <span aria-hidden="true">🌙</span>
+                </button>
+                <a href="/buslinnes/public/login.php" class="btn btn-outline">Entrar</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main>
+        <!-- Cambio WCAG: Se actualiza aria-labelledby para apuntar al nuevo h1 semántico -->
+        <section class="hero" aria-labelledby="hero-main-title">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <!-- Cambio WCAG: Se añade un h1 semántico único, oculto visualmente para lectores de pantalla -->
+                    <h1 id="hero-main-title" class="sr-only">Gestiona tu flota de transporte con Buslinnes</h1>
+                    
+                    <!-- Cambio WCAG: Se ocultan los h1 decorativos a los lectores de pantalla para evitar redundancia y mala semántica -->
+                    <div aria-hidden="true">
+                        <h1 id="hero-title">Gestiona tu flota</h1>
+                        <h1 id="hero-subtitle">de transporte</h1>
+                        <h1 id="hero-subtitle2">con Buslinnes</h1>
+                    </div>
+                    <!-- botones del hero eliminados intencionalmente para mantener sólo los del header -->
+                </div>
+                <!-- Cambio WCAG: Se elimina aria-hidden="false" por ser innecesario y generar ruido -->
+                <div class="hero-image">
+                    <img src="/buslinnes/assets/img/buslinnes.svg" alt="Sistema de gestión de transporte" class="hero-img-light">
+                    <img src="/buslinnes/assets/img/buslinnes2.svg" alt="Sistema de gestión de transporte" class="hero-img-dark">
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de características (sin imagen) -->
+        <section id="features" class="section" aria-labelledby="features-title">
+            <div class="container hero-container">
+                <div class="hero-content features-full-width">
+                    <h2 id="features-title">Características principales</h2>
+                    <div class="features-grid">
+                        <div class="feature-card feature-card-rutas">
+                            <i class="fas fa-map-marked-alt" aria-hidden="true"></i>
+                            <h3>Seguimiento en tiempo real</h3>
+                            <p>Monitorea la ubicación exacta de cada vehículo en tu flota y optimiza rutas automáticamente.</p>
+                        </div>
+                        <div class="feature-card feature-card-analisis">
+                            <i class="fas fa-chart-line" aria-hidden="true"></i>
+                            <h3>Análisis de datos</h3>
+                            <p>Obtén estadísticas detalladas sobre rendimiento, consumo y ocupación para tomar mejores decisiones.</p>
+                        </div>
+                        <div class="feature-card feature-card-gestion">
+                            <i class="fas fa-users" aria-hidden="true"></i>
+                            <h3>Gestión de personal</h3>
+                            <p>Administra turnos, licencias y evaluaciones de tus conductores desde una interfaz intuitiva.</p>
+                        </div>
+                        <div class="feature-card feature-card-usuarios">
+                            <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                            <h3>Web para pasajeros</h3>
+                            <p>Ofrece a tus usuarios información en tiempo real sobre rutas, horarios y ocupación.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Añadimos clase "section-spaced" para más separación -->
+        <section id="how-it-works" class="section section-spaced" aria-labelledby="how-title">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <h2 id="how-title">Cómo funciona</h2>
+                    <div class="steps-container">
+                        <div class="step">
+                            <!-- Cambio WCAG: Se ocultan los números decorativos para evitar lectura redundante -->
+                            <div class="step-number" aria-hidden="true">1</div>
+                            <div class="step-content">
+                                <h3><span class="highlight-text">Acceso Seguro</span></h3>
+                                <div class="step-description">
+                                    <p>El usuario inicia sesión y el sistema valida su rol y permisos.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number" aria-hidden="true">2</div>
+                            <div class="step-content">
+                                <h3><span class="highlight-text">Gestión de Información</span></h3>
+                                <div class="step-description">
+                                    <p>Se registran y administran buses, conductores y rutas mediante formularios estructurados.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number" aria-hidden="true">3</div>
+                            <div class="step-content">
+                                <h3><span class="highlight-text">Validación y Control</span></h3>
+                                <div class="step-description">
+                                    <p>Cada operación pasa por validaciones en servidor para evitar inconsistencias.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number" aria-hidden="true">4</div>
+                            <div class="step-content">
+                                <h3><span class="highlight-text">Almacenamiento Seguro</span></h3>
+                                <div class="step-description">
+                                    <p>Los datos se guardan en PostgreSQL con integridad referencial y control de estados.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="/buslinnes/assets/img/drawing.svg" alt="Integración del sistema de transporte">
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de Casos de Éxito (Testimonios) -->
+        <section id="testimonials" class="section section-spaced" aria-labelledby="testimonials-title">
+            <div class="container">
+                <div class="cs-header">
+                    <!-- Cambio WCAG: Se cambia <span> por <h2> para mantener la jerarquía y se añade el ID referenciado -->
+                    <h2 id="testimonials-title" class="cs-tag">Casos de éxito</h2>
+                    <p class="cs-description">Descubre cómo Buslinnes está transformando la movilidad urbana y optimizando flotas en toda la ciudad.</p>
+                </div>
+                <div class="cs-container">
+                    <div class="cs-column">
+                        <p class="cs-quote">"Desde que implementamos Buslinnes, hemos reducido nuestros costos operativos en un 30% y mejorado la satisfacción de nuestros pasajeros."</p>
+                        <div class="cs-author">
+                            <strong>María Rodríguez</strong>
+                            <span>Movilinea</span>
+                        </div>
+                    </div>
+                    <!-- Cambio WCAG: Se ocultan los separadores visuales -->
+                    <div class="cs-separator" aria-hidden="true"></div>
+                    <div class="cs-column">
+                        <p class="cs-quote">"La plataforma es intuitiva y nos ha permitido optimizar rutas y horarios con facilidad. El soporte técnico es excepcional."</p>
+                        <div class="cs-author">
+                            <strong>Carlos Méndez</strong>
+                            <span>BusMovile</span>
+                        </div>
+                    </div>
+                    <div class="cs-separator" aria-hidden="true"></div>
+                    <div class="cs-column">
+                        <p class="cs-quote">"Nuestros conductores adoran la aplicación móvil y los pasajeros están más satisfechos con nuestro servicio gracias a Buslinnes."</p>
+                        <div class="cs-author">
+                            <strong>Ana Gómez</strong>
+                            <span>LineSur</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer con ID para el enlace desde nav -->
+    <footer id="footer" class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="/buslinnes/assets/img/logomorado.png" alt="Logo Buslinnes" class="footer-logo-img">
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h3>Compañía</h3>
+                        <ul>
+                            <li><a href="/buslinnes/index/about.html" aria-label="Conoce más sobre nosotros">Sobre nosotros</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Recursos</h3>
+                        <ul>
+                            <li><a href="/buslinnes/index/docs.html" aria-label="Ver documentación">Documentación</a></li>
+                            <li><a href="/buslinnes/index/support.html" aria-label="Obtener soporte">Soporte</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Contacto</h3>
+                        <ul>
+                            <!-- Cambio WCAG: Se añade aria-hidden="true" a los iconos puramente decorativos -->
+                            <li><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Av. Tecnológica 123</li>
+                            <li><i class="fas fa-phone" aria-hidden="true"></i> +57 321 321 3210</li>
+                            <li><i class="fas fa-envelope" aria-hidden="true"></i> info@buslinnes.com</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Buslinnes. Todos los derechos reservados.</p>
+                <p><strong><a href="/buslinnes/templates/privacy.html">Privacidad</a> | <a href="/buslinnes/templates/terms.html">Términos</a></strong></p>
+            </div>
+        </div>
+    </footer>
+    <!-- Fondo bloqueador mientras el banner esté activo -->
+    <div class="cookie-banner__backdrop" id="cookie-banner-backdrop" hidden></div>
+    <!-- Banner de cookies accesible -->
+    <div
+        class="cookie-banner"
+        id="cookie-banner"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cookie-banner-title"
+        aria-describedby="cookie-banner-description"
+    >
+        <div class="cookie-banner__inner">
+            <div class="cookie-banner__content">
+                <h2 class="cookie-banner__title" id="cookie-banner-title">
+                    Preferencias de cookies
+                </h2>
+                <p class="cookie-banner__description" id="cookie-banner-description">
+                    Usamos cookies para mejorar tu experiencia, analizar el tráfico
+                    y personalizar contenidos. Puedes aceptar, rechazar o configurar
+                    tus preferencias. Para más información consulta nuestra
+                    <a href="/buslinnes/templates/privacy.html" class="cookie-banner__link">Política de Privacidad</a>,
+                    <a href="/buslinnes/templates/cookies.html" class="cookie-banner__link">Política de Cookies</a> y
+                    <a href="/buslinnes/templates/terms.html" class="cookie-banner__link">Términos y Condiciones</a>.
+                </p>
+                <div class="cookie-banner__consent">
+                    <input
+                        type="checkbox"
+                        id="cookie-consent-checkbox"
+                        class="cookie-banner__checkbox"
+                    />
+                    <label for="cookie-consent-checkbox" class="cookie-banner__checkbox-label">
+                        He leído y acepto la Política de Privacidad, Política de Cookies y los Términos y Condiciones.
+                    </label>
+                </div>
+                <p
+                    id="cookie-consent-warning"
+                    class="cookie-banner__warning"
+                    role="alert"
+                    aria-live="polite"
+                ></p>
+            </div>
+            <div class="cookie-banner__actions">
+                <button
+                    type="button"
+                    class="cookie-banner__button cookie-banner__button--primary"
+                    id="cookie-accept"
+                >
+                    Aceptar
+                </button>
+                <button
+                    type="button"
+                    class="cookie-banner__button cookie-banner__button--secondary"
+                    id="cookie-reject"
+                >
+                    Rechazar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/buslinnes/assets/js/index.js" defer></script>
+    <script src="/buslinnes/assets/js/legal-banner.js" defer></script>
+</body>
+</html>

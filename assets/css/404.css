@@ -1,0 +1,467 @@
+/* Estilos específicos para la página 404
+   Basados en los estilos usados en index.php (index.css) */
+
+/* =========================
+   VARIABLES — interfaz normal
+   ========================= */
+:root{
+    /* layout */
+    --header-height: 72px;
+    --container-max-width: 1200px;
+
+    /* branding / accents (modo normal) - rojo para 404 */
+    --accent: #d32f2f;         /* color de links principales / énfasis de error */
+    --text-color: #25212cff;     /* color de texto principal (modo normal) */
+    --header-text: #ffffff;      /* color general dentro del header (por defecto blanco) */
+
+    /* botones (modo normal) */
+    --btn-border: #d32f2f;           /* borde de btn-outline */
+    --btn-text: #d32f2f;             /* texto en botones outline */
+    --btn-hover-bg: #d32f2f;   /* fondo al hacer hover en btn-outline */
+    --btn-hover-text: #ffffff;       /* texto en hover de btn-outline */
+
+    /* primary button (modo normal) */
+    --btn-primary-bg: #ffffff;
+    --btn-primary-text: var(--accent);
+
+    /* footer (modo normal) */
+    --footer-bg: #ffebee;              /* rojo muy claro */
+    --footer-text-color: #4a0000;      /* texto oscuro rojizo */
+}
+
+/* =========================
+   RESET / BASE
+   ========================= */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html, body {
+    height:100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    scroll-padding-top: 80px;
+}
+
+/* =========================
+   BODY (INTERFAZ NORMAL)
+   ========================= */
+body {
+    color: var(--text-color);
+    line-height:1.6;
+    min-height:100vh;
+    position:relative;
+    background-color:#140000; /* fondo oscuro con tono rojizo */
+    overflow-x:hidden;
+    padding-top: var(--header-height); /* espacio para header fijo */
+}
+
+/* Fondo animado (por defecto) */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/buslinnes/assets/img/2pattern404.svg");
+    background-repeat: repeat;
+    background-size: 150px;
+    animation: mover-fondo 16s ease-out 1 forwards;
+    z-index: -1;
+}
+@keyframes mover-fondo {
+    0% { background-position: 0 0; }
+    8% { background-position: 70px 0; }
+    16% { background-position: 130px 0; }
+    24% { background-position: 180px 0; }
+    32% { background-position: 220px 0; }
+    40% { background-position: 255px 0; }
+    48% { background-position: 285px 0; }
+    56% { background-position: 310px 0; }
+    64% { background-position: 330px 0; }
+    72% { background-position: 345px 0; }
+    80% { background-position: 355px 0; }
+    88% { background-position: 362px 0; }
+    94% { background-position: 367px 0; }
+    100% { background-position: 370px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+}
+
+/* =========================
+   CONTAINER
+   ========================= */
+.container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: 0 20px;
+    padding-left: env(safe-area-inset-left, 20px);
+    padding-right: env(safe-area-inset-right, 20px);
+}
+
+/* =========================
+   HEADER (FIXED)
+   ========================= */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    z-index: 1200;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid #ffffff08;
+
+    /* color textual del header (usa variable para facilitar override) */
+    color: var(--header-text);
+}
+.header-container {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    gap: 12px;
+    padding: 0 20px; /* evita recortes laterales en pantallas pequeñas */
+    box-sizing: border-box;
+}
+
+/* Logo */
+.logo { display:flex; align-items:center; gap:10px; font-weight:700; }
+.logo-img{
+    width: 50px;
+    height: auto;
+    /* imagen por defecto (modo normal) */
+    content: url("/buslinnes/assets/img/logo404.svg");
+    display: inline-block;
+}
+
+/* Mobile toggle (hamburger) */
+.mobile-toggle {
+    display:none; /* se habilita en media queries */
+    background:transparent;
+    border:0;
+    color: var(--accent);
+    font-size:1.4rem;
+    cursor:pointer;
+    padding:8px;
+    line-height:1;
+}
+
+/* =========================
+   NAV
+   ========================= */
+.nav-menu {
+    display:flex;
+    gap:30px;
+    align-items:center;
+    justify-content:center;
+    transition:all 180ms ease-in-out;
+}
+.nav-link {
+    color: var(--accent);
+    text-decoration:none;
+    font-weight:500;
+    padding:6px 8px;
+    border-radius:6px;
+    transition:background .18s ease, transform .18s ease;
+}
+.nav-link:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+
+/* =========================
+   BOTONES (INTERFAZ NORMAL)
+   ========================= */
+.header-auth { display:flex; gap:12px; align-items:center; }
+
+/* base btn */
+.btn {
+    padding: 8px 14px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight:500;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+}
+
+/* outline (usa variables) */
+.btn-outline {
+    background:transparent;
+    border:2px solid var(--btn-border);
+    color: var(--btn-text);
+}
+.btn-outline:hover {
+    background: var(--btn-hover-bg);
+    color: var(--btn-hover-text);
+}
+
+/* primary (usa variables) */
+.btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border:2px solid var(--btn-border);
+}
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow:0 8px 18px rgba(0,0,0,0.18);
+    opacity: .96;
+}
+
+/* =========================
+   HERO / SECCIONES
+   ========================= */
+.hero {
+    min-height: calc(100vh - var(--header-height));
+    display:flex;
+    align-items:self-start;
+    padding: 48px 0;
+}
+.hero-container {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:40px;
+}
+
+.hero-content { flex:1; max-width:600px; color: var(--text-color); }
+.hero-content h1 { 
+    font-size: 4rem; 
+    line-height:1.1; 
+    margin-bottom:0px; 
+    background: var(--accent);
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: bold;
+    padding: 4px 20px;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+    clip-path: polygon(0 0, 5% 10%, 0 20%, 5% 30%, 0 40%, 5% 50%, 0 60%, 5% 70%, 0 80%, 5% 90%, 0 100%, 10% 95%, 20% 100%, 30% 95%, 40% 100%, 50% 95%, 60% 100%, 70% 95%, 80% 100%, 90% 95%, 100% 100%, 95% 90%, 100% 80%, 95% 70%, 100% 60%, 95% 50%, 100% 40%, 95% 30%, 100% 20%, 95% 10%, 100% 0);
+}
+
+.hero-content #hero-subtitle {
+    padding-right: 40px;
+}
+.hero-content #hero-title {
+    transform: rotate(-2deg);
+}
+.hero-content #hero-subtitle {
+    transform: rotate(2deg);
+}
+
+.hero p { font-size:1.05rem; margin-bottom:18px; opacity:0.92; color: var(--text-color); }
+.hero-buttons { display:flex; gap:12px; margin-top:6px; }
+
+.p-container {
+    background-color: #d1d1d1;
+    border: 1px solid var(--accent);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    margin-top: 20px;
+}
+body.dark .p-container {
+    background-color: #21252c;
+}
+
+.hero-image { flex:1; display:flex; justify-content:flex-end; }
+.hero-image img { width:100%; max-width:450px; height:auto; border-radius:16px; object-fit:contain; }
+
+.hero-img-light { display: block; }
+.hero-img-dark { display: none; }
+body.dark .hero-img-light { display: none; }
+body.dark .hero-img-dark { display: block; }
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 992px) {
+    :root { --header-height: 64px; } /* reduce header en pantallas medianas */
+    .container { padding: 0 14px; }
+    .mobile-toggle { display:inline-flex; }
+    .nav-menu {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: calc(var(--header-height) + 6px);
+        margin: 0;
+        padding: 12px 14px;
+        background: rgba(37, 33, 44, 0.938);
+        backdrop-filter: blur(1px);
+        flex-direction: column;
+        gap: 8px;
+        border-radius: 10px;
+        transform-origin: top;
+        transform: translateY(-6px) scaleY(0.98);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1100;
+    }
+
+    .nav-menu.open {
+        transform: translateY(0) scaleY(1);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .nav-menu .nav-link { display:block; padding:10px 12px; width:100%; box-sizing: border-box; }
+    .hero-container { flex-direction:column; text-align:center; gap:20px; }
+    .hero-content { max-width:100%; width:100%; padding: 0; }
+    .hero-image { justify-content:center; margin-top:10px; width:100%; }
+    .hero-image img { max-width:95%; max-height:360px; border-radius:12px; }
+    .header-auth { margin-left:auto; gap:8px; }
+}
+
+@media (max-width: 576px) {
+    :root { --header-height: 56px; }
+    .logo-img { width:40px; }
+    .hero-content h1 { font-size:2.5rem; }
+    .nav-menu { left:10px; right:10px; padding: 10px 12px; }
+    .hero-image img { max-height:240px; }
+    .mobile-toggle { font-size:1.2rem; padding:6px; }
+    .header-auth .btn { padding:8px 10px; font-size:0.95rem; }
+}
+
+/* =========================
+   FOOTER
+   ========================= */
+.site-footer {
+    margin-top: 60px;
+    padding: 50px 0 20px;
+    background: var(--footer-bg); /* Usa la variable para facilitar el cambio en modo oscuro */
+    color: var(--footer-text-color);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+
+.footer-bottom {
+    padding-top: 20px;
+    border-top: 1px solid #d32f2f;
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+/* =========================
+   UTILIDADES
+   ========================= */
+.sr-only {
+    position: absolute !important;
+    height: 1px; width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
+}
+
+/* QUITAR SCROLLBAR Para Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Para Firefox */
+html {
+  scrollbar-width: none; /* oculta la barra */
+}
+
+/* General */
+body {
+  -ms-overflow-style: none; /* IE y Edge antiguos */
+}
+
+/* =========================
+   MODO OSCURO — OVERRIDES
+   ========================= */
+body.dark {
+    /* swap de variables para modo oscuro - rojos */
+    --text-color: #ffecec;           /* texto claro ligeramente rosado */
+    --text-color-h1: var(--accent);
+    --header-text: #ffecec;
+
+    /* botones en modo oscuro */
+    --btn-border: #ef5350;
+    --btn-text: #ef5350;
+    --btn-hover-bg: #ef5350;
+    --btn-hover-text: #140000;
+
+    --btn-primary-bg: #f5f5f5;
+    --btn-primary-text: #121212;
+
+    /* fondo alternativo para modo oscuro */
+    background-image: url("/buslinnes/assets/img/pattern404.svg");
+    background-repeat: repeat;
+    background-size: 150px;
+
+    /* footer en modo oscuro */
+    --footer-bg: #2b0000;
+    --footer-text-color: #ffecec;
+}
+
+body.dark::before {
+    background-image: url("/buslinnes/assets/img/pattern404.svg");
+}
+
+/* logo en modo oscuro */
+body.dark .logo-img {
+    content: url("/buslinnes/assets/img/logo404.svg");
+}
+
+/* header en modo oscuro */
+body.dark header {
+    background: #ffffff0a;
+}
+
+/* Contenido hero en modo oscuro */
+body.dark .hero-content {
+    color: var(--text-color);
+}
+
+body.dark .hero-content h1 {
+    font-size: 4rem;
+    line-height: 1.1;
+    margin-bottom: 0px;
+    background: var(--accent);
+    color: #d1d1d1;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: bold;
+    padding: 4px 20px;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+    clip-path: polygon(0 0, 5% 10%, 0 20%, 5% 30%, 0 40%, 5% 50%, 0 60%, 5% 70%, 0 80%, 5% 90%, 0 100%, 10% 95%, 20% 100%, 30% 95%, 40% 100%, 50% 95%, 60% 100%, 70% 95%, 80% 100%, 90% 95%, 100% 100%, 95% 90%, 100% 80%, 95% 70%, 100% 60%, 95% 50%, 100% 40%, 95% 30%, 100% 20%, 95% 10%, 100% 0);
+}
+
+@media (max-width: 576px) {
+    body.dark .hero-content h1 {
+        font-size: 2.5rem; /* mismo tamaño que en modo normal */
+    }
+}
+
+/* =========================
+   ACCESIBILIDAD (WCAG 2.1 AA)
+   ========================= */
+/* Focus visible claro para todos los elementos interactivos */
+:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* Ocultar el menú móvil a lectores de pantalla y teclado cuando está cerrado */
+@media (max-width: 992px) {
+    .nav-menu {
+        visibility: hidden;
+        /* Retrasar visibility al cerrar para permitir la animación de opacidad */
+        transition: all 180ms ease-in-out, visibility 0s linear 180ms;
+    }
+    .nav-menu.open {
+        visibility: visible;
+        /* Aplicar visibility inmediatamente al abrir */
+        transition: all 180ms ease-in-out, visibility 0s linear 0s;
+    }
+}

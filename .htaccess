@@ -1,0 +1,16 @@
+# Especificar archivos de inicio por defecto
+DirectoryIndex index.php index.html index.php5 index.php7
+
+# Permitir acceso a archivos y directorios reales
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /buslinnes/
+    
+    # Reescribir solo archivos/directorios reales
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # No reescribir - dejar que Apache lance 404 natural
+</IfModule>
+
+# Página personalizada para error 404
+ErrorDocument 404 /buslinnes/public/404.php

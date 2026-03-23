@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Establecer Nueva Contraseña - Buslinnes</title>
+    <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/login.css">
+    <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+    <script src="/buslinnes/assets/js/security.js"></script>
+    <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <a href="/buslinnes/templates/index.html">
+                    <img class="logo-light" src="/buslinnes/assets/img/logo.svg" alt="Buslinnes Logo">
+                    <img class="logo-dark" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo (dark)">
+                </a>
+            </h1>
+            <p>Establecer Nueva Contraseña</p>
+        </div>
+
+        <div class="login-body">
+            <div style="text-align: center; margin: 15px 0; color: #666; font-size: 14px;">
+                Tu correo ha sido verificado. Ahora puedes establecer una nueva contraseña.
+            </div>
+
+            <div class="error-message" id="password-error"></div>
+            <div class="success-message" id="password-success"></div>
+
+            <form id="resetPasswordForm">
+                <div class="form-group">
+                    <label for="password" class="form-label">Nueva Contraseña</label>
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="Ingresa tu nueva contraseña" required minlength="6">
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-meter"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Confirma tu nueva contraseña" required minlength="6">
+                    </div>
+                </div>
+
+                <!-- Campo oculto para el token de verificación -->
+                <input type="hidden" name="token" id="token" value="">
+
+                <button type="submit" class="btn btn-primary" name="passwordSubmit">
+                    <i class="fas fa-check-circle"></i> Establecer Nueva Contraseña
+                </button>
+            </form>
+        </div>
+
+        <div class="login-footer">
+            <p>¿Ya recuerdas tu contraseña? <a href="/buslinnes/public/login.php">Iniciar Sesión</a></p>
+            <p>¿No tienes una cuenta? <a href="/buslinnes/public/login.php">Registrarse</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Obtener el token de la URL
+        function getTokenFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('token');
+        }
+
+        // Validar token al cargar la página
+        window.addEventListener('DOMContentLoaded', async function() {
+            const token = getTokenFromURL();
+            const tokenInput = document.getElementById('token');
+            const form = document.getElementById('resetPasswordForm');
+            const errorDiv = document.getElementById('password-error');
+            const successDiv = document.getElementById('password-success');
+
+            if (!token) {
+                errorDiv.textContent = 'No se encontró un token válido en la URL. Por favor, solicita un nuevo enlace de recuperación.';
+                errorDiv.style.display = 'block';
+                form.style.display = 'none';
+                return;
+            }
+
+            // Guardar el token en el campo oculto
+            tokenInput.value = token;
+
+            // Validar el token con el servidor
+            try {
+                const resp = await securityHelper.post('/buslinnes/public/verificar_token.php', {
+                    token: token,
+                    action: 'validate'
+                });
+                const data = await resp.json();
+                
+                if (!data.valid) {
+                    errorDiv.textContent = data.message || 'El enlace de recuperación no es válido o ha expirado. Por favor, solicita uno nuevo.';
+                    errorDiv.style.display = 'block';
+                    form.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error validando token:', error);
+                // Continuar de todas formas, el servidor validará al enviar
+            }
+        });
+
+        // Manejar el envío del formulario
+        document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const token = document.getElementById('token').value;
+            const errorDiv = document.getElementById('password-error');
+            const successDiv = document.getElementById('password-success');
+            const submitButton = this.querySelector('button[type="submit"]');
+
+            // Limpiar mensajes previos
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            // Validaciones del lado del cliente
+            if (!password || !confirmPassword) {
+                errorDiv.textContent = 'Por favor completa todos los campos';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Las contraseñas no coinciden';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorDiv.textContent = 'La contraseña debe tener al menos 6 caracteres';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            // Deshabilitar botón mientras se procesa
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+            try {
+                console.log('Enviando petición a nueva_contrasena.php...');
+                
+                const rawResp = await securityHelper.post('/buslinnes/public/nueva_contrasena.php', {
+                    token: token,
+                    password: password,
+                    confirm_password: confirmPassword,
+                    resetSubmit: 'Cambiar'
+                });
+
+                const data = await rawResp.json();
+                console.log('Datos recibidos:', data);
+
+                if (data.success) {
+                    successDiv.textContent = data.message || 'Tu contraseña ha sido cambiada exitosamente. Ahora puedes iniciar sesión.';
+                    successDiv.style.display = 'block';
+                    errorDiv.style.display = 'none';
+                    this.style.display = 'none';
+                    
+                    // Redirigir al login después de 3 segundos
+                    setTimeout(() => {
+                        window.location.href = '/buslinnes/public/login.php';
+                    }, 3000);
+                } else {
+                    errorDiv.textContent = data.message || 'Error al cambiar la contraseña. Por favor intenta nuevamente.';
+                    errorDiv.style.display = 'block';
+                    successDiv.style.display = 'none';
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-check-circle"></i> Establecer Nueva Contraseña';
+                }
+            } catch (error) {
+                console.error('Error completo:', error);
+                let errorMessage = 'Error de conexión: ' + error.message;
+                
+                // Intentar dar más información sobre el error
+                if (error.message.includes('JSON')) {
+                    errorMessage = 'Error del servidor: Respuesta inválida. Verifica que el archivo nueva_contrasena.php existe.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'No se pudo conectar al servidor. Verifica que Apache esté ejecutándose.';
+                }
+                
+                errorDiv.textContent = errorMessage;
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-check-circle"></i> Establecer Nueva Contraseña';
+            }
+        });
+    </script>
+</body>
+</html>

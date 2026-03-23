@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buslinnes - Rutas en Tiempo Real</title>
+  <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+  <!-- OneSignal Notificaciones Push -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalInstance = null;
+    
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        // Configuración que funciona tanto en localhost como en ngrok
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const swPath = isLocalhost ? '/OneSignalSDKWorker.js' : '/buslinnes/OneSignalSDKWorker.js';
+        
+        await OneSignal.init({
+          appId: "5f5d1290-a2ef-43ce-866d-d2efefec6041",
+          safari_web_id: "web.onesignal.auto.0e731bf1-0f8d-4c8c-8593-03e4c907000a",
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerParam: { scope: '/' },
+          serviceWorkerPath: swPath,
+        });
+        
+        console.log('🌐 Dominio:', window.location.hostname);
+        console.log('📍 Service Worker path:', swPath);
+        
+        window.OneSignalInstance = OneSignal;
+        console.log('✅ OneSignal inicializado correctamente');
+        
+        // Verificar y solicitar permisos de notificaciones
+        const checkAndRequestPermission = async () => {
+          try {
+            const currentPermission = await OneSignal.Notifications.permission;
+            console.log('Estado actual de permisos:', currentPermission);
+            
+            if (currentPermission === false) {
+              // Permiso no concedido, solicitar
+              const result = await OneSignal.Notifications.requestPermission();
+              console.log('✅ Permiso solicitado, resultado:', result);
+            } else {
+              console.log('✅ Ya tienes permisos de notificación');
+            }
+          } catch (e) {
+            console.log('⚠️ Error al solicitar permisos:', e.message);
+            // Si falla automáticamente, esperar a interacción del usuario
+            document.body.addEventListener('click', async function requestOnClick() {
+              try {
+                await OneSignal.Notifications.requestPermission();
+                console.log('✅ Permisos solicitados tras click');
+                document.body.removeEventListener('click', requestOnClick);
+              } catch (err) {
+                console.log('Usuario rechazó permisos');
+              }
+            }, { once: true });
+          }
+        };
+        
+        // Esperar un poco para que el DOM esté listo
+        setTimeout(checkAndRequestPermission, 500);
+        
+        // Si hay JWT con id_usuario, vincular suscripción
+        var token = typeof localStorage !== 'undefined' && localStorage.getItem('jwt_token');
+        if (token) {
+          try {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var json = JSON.parse(decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')));
+            if (json.id_usuario) {
+              await OneSignal.login(String(json.id_usuario));
+              console.log('✅ Usuario suscrito:', json.id_usuario);
+            }
+            if (json.id_rol) {
+              try {
+                // OneSignal v16 usa OneSignal.User.addTag(key, value)
+                if (OneSignal.User && typeof OneSignal.User.addTag === 'function') {
+                  await OneSignal.User.addTag("rol_id", String(json.id_rol));
+                  console.log('✅ Rol asignado correctamente:', json.id_rol);
+                } else {
+                  console.warn('⚠️ OneSignal.User.addTag no disponible. Disponibles:', Object.keys(OneSignal.User || {}));
+                }
+              } catch (tagError) {
+                console.error('❌ Error al asignar rol:', tagError);
+                console.log('🔍 Métodos disponibles en OneSignal.User:', Object.keys(OneSignal.User || {}));
+              }
+            }
+          } catch (e) {
+            console.error('Error al configurar usuario/rol:', e);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al inicializar OneSignal:', error);
+      }
+    });
+  </script>
+  
+  <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="/buslinnes/assets/css/passenger.css">
+  <!-- Aseguramos que darkmode.js se cargue correctamente -->
+  <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+</head>
+<body>
+  <!-- Skip link para saltar al contenido principal -->
+  <a href="#main-content" class="sr-only">Saltar al contenido principal</a>
+
+  <div class="container">
+    <!-- Header semántico con navegación -->
+    <header role="banner">
+      <div class="header-container">
+        <div class="header-left">
+          <div class="logo">
+            <div class="logo-icon">
+              <img src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo">
+            </div>
+          </div>
+          <div class="separator"></div>
+          <!-- Campo de búsqueda con etiqueta asociada -->
+          <div class="search-box">
+            <label for="searchInput" class="sr-only">Buscar rutas</label>
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar rutas...">
+            <button class="search-icon" type="button" aria-label="Buscar">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+          <button id="darkToggle" class="dark-toggle" type="button" aria-label="Cambiar modo oscuro">
+            <i class="fas fa-moon"></i>
+          </button>
+          <button id="mobileMenuToggle" class="burger-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+        <div class="header-right">
+          <a href="/buslinnes/src/notificaciones_pasajero/listar_notificaciones_pasajero.php" class="btn btn-light notif-bell" aria-label="Ver mis notificaciones">
+            <i class="fas fa-bell"></i>
+            <span class="notif-dot"></span>
+          </a>
+          <div class="user-profile">
+            <div class="user-avatar" id="userAvatar" aria-hidden="true">U</div>
+            <div class="user-info">
+              <div class="user-name" id="userName">Cargando...</div>
+              <div class="user-role"><strong id="userRole">PASAJERO</strong></div>
+            </div>
+          </div>
+          <a href="/buslinnes/public/logout.php" class="btn btn-primary logout-desktop">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+            <span>Cerrar Sesión</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Menú móvil con etiqueta de navegación -->
+    <div id="mobileMenuBackdrop" class="mobile-menu-backdrop" aria-hidden="true"></div>
+    <nav id="mobileMenu" class="mobile-menu" aria-hidden="true" aria-label="Menú principal móvil">
+      <div class="mobile-menu-header">
+        <span>Menú</span>
+        <button id="mobileMenuClose" class="mobile-menu-close" type="button" aria-label="Cerrar menú">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="mobile-profile">
+        <div class="user-avatar" id="userAvatarMobile" aria-hidden="true">U</div>
+        <div class="user-info">
+          <div class="user-name" id="userNameMobile">Usuario</div>
+          <div class="user-role"><strong id="userRoleMobile">PASAJERO</strong></div>
+        </div>
+      </div>
+      <div class="mobile-menu-actions">
+        <a href="/buslinnes/src/notificaciones_pasajero/listar_notificaciones_pasajero.php" class="mobile-menu-item">
+          <div class="icon-circle">
+            <i class="fas fa-bell" aria-hidden="true"></i>
+            <span class="notif-dot"></span>
+          </div>
+          <span>Notificaciones</span>
+          <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </a>
+        <a href="/buslinnes/public/logout.php" class="mobile-menu-item">
+          <div class="icon-circle logout-icon">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+          <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+      <!-- Encabezado principal de página -->
+      <h1 class="sr-only">Rutas en tiempo real</h1>
+
+      <div class="routes-map-layout">
+        <!-- Routes Sidebar -->
+        <aside class="routes-sidebar" id="routes-list-container" aria-label="Listado de rutas" role="navigation">
+          <div class="routes-sheet-head">
+            <span class="routes-sheet-grab" aria-hidden="true"></span>
+            <button id="routesSheetToggle" class="routes-sheet-toggle" type="button" aria-label="Contraer panel de rutas" aria-expanded="true" title="Contraer panel de rutas">
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="routes-sections" role="tablist" aria-label="Secciones de rutas">
+            <button id="tab-rutas" class="routes-tab active" type="button" role="tab" aria-selected="true" data-routes-view="all">Rutas</button>
+            <button id="tab-favs" class="routes-tab" type="button" role="tab" aria-selected="false" data-routes-view="favs">Mis favs</button>
+          </div>
+          <!-- Las rutas se cargarán aquí con JS -->
+          <ul id="routes-list" class="routes-list" role="list"></ul>
+          <div id="no-results" class="no-results hidden">No hay resultados. Prueba otro término o usa tu ubicación para ver rutas cercanas.</div>
+        </aside>
+
+        <!-- Map Section -->
+        <section class="map-section" aria-label="Mapa de rutas">
+          <!-- lugar para mensajes de geolocalización -->
+          <div id="location-info" class="location-info hidden"></div>
+          <!-- Placeholder before selecting a route -->
+          <div id="map-placeholder" class="map-placeholder">
+            <div class="placeholder-content">
+              <div class="map-emoji" aria-hidden="true">🗺️</div>
+              <h2>Selecciona una ruta</h2>
+              <p>Escoge una ruta de la lista para ver los buses en tiempo real</p>
+            </div>
+          </div>
+
+          <!-- Map will be shown here after selection -->
+          <div id="map-container" class="hidden" role="region" aria-label="Mapa interactivo de rutas"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/buslinnes/assets/js/security.js"></script>
+  <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+
+  <!-- Script para cargar información del usuario desde el token JWT -->
+  <script>
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) { return null; }
+    }
+
+    function capitalizeWord(w) {
+      if (!w) return '';
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }
+
+    function formatDisplayName(fullName) {
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      const capped = parts.map(capitalizeWord);
+      if (capped.length >= 4) {
+        return `${capped[0]} ${capped[2]}`; // primer nombre + primer apellido
+      }
+      if (capped.length === 3) {
+        return `${capped[0]} ${capped[2]}`; // first + last
+      }
+      if (capped.length === 2) {
+        return `${capped[0]} ${capped[1]}`;
+      }
+      return capped[0] || '';
+    }
+
+    function initialsFromName(name) {
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return 'U';
+      if (parts.length === 1) return parts[0][0].toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function setPassengerProfile() {
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        window.location.href = '/buslinnes/public/login.php';
+        return;
+      }
+
+      const payload = parseJwt(token);
+      if (!payload) {
+        localStorage.removeItem('jwt_token');
+        window.location.href = '/buslinnes/public/login.php';
+        return;
+      }
+
+      // Nombre completo desde payload.nombre (mismo que admin)
+      const rawName = payload.nombre || payload.nombre_usuario || '';
+      if (rawName) {
+        const displayName = formatDisplayName(rawName);
+        document.getElementById('userName').textContent = displayName;
+        document.getElementById('userAvatar').textContent = initialsFromName(displayName);
+      }
+
+      const rolName = payload.nombre_rol || payload.rol || 'pasajero';
+      document.getElementById('userRole').textContent = rolName.toUpperCase();
+      var roleMobileEl = document.getElementById('userRoleMobile');
+      if (roleMobileEl) {
+        roleMobileEl.textContent = rolName.toUpperCase();
+      }
+
+      var mobileNameEl = document.getElementById('userNameMobile');
+      var mobileAvatarEl = document.getElementById('userAvatarMobile');
+      if (mobileNameEl && rawName) {
+        mobileNameEl.textContent = formatDisplayName(rawName);
+      }
+      if (mobileAvatarEl && rawName) {
+        mobileAvatarEl.textContent = initialsFromName(formatDisplayName(rawName));
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setPassengerProfile);
+    } else {
+      setPassengerProfile();
+    }
+
+    // Funcionalidad del buscador de rutas
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('searchInput');
+      const burger = document.getElementById('mobileMenuToggle');
+      const closeBtn = document.getElementById('mobileMenuClose');
+      const menu = document.getElementById('mobileMenu');
+      const backdrop = document.getElementById('mobileMenuBackdrop');
+      const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+          closeMenu();
+        }
+      };
+      
+      if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+          const searchTerm = e.target.value.toLowerCase();
+          // Guardar el término actual para re-aplicarlo tras refrescos (drawRoutes cada 20s)
+          window.__buslinnesRouteSearchTerm = searchTerm;
+          const routeCards = document.querySelectorAll('.route-card');
+          const routeItems = document.querySelectorAll('#routes-list .route-item, #routes-list-container .route-item');
+
+          // Filtrar tarjetas con estructura más rica (.route-card)
+          routeCards.forEach(card => {
+            const routeNumber = card.querySelector('.route-number')?.textContent.toLowerCase() || '';
+            const routeName = card.querySelector('.route-name')?.textContent.toLowerCase() || '';
+            const routeDescription = card.querySelector('.route-description')?.textContent.toLowerCase() || '';
+            const matches = routeNumber.includes(searchTerm) || routeName.includes(searchTerm) || routeDescription.includes(searchTerm);
+            card.classList.toggle('hidden', !matches);
+          });
+
+          // Filtrar elementos simples (.route-item) y sincronizar mapa
+          routeItems.forEach(item => {
+            const label = (item.textContent || '').toLowerCase();
+            const matches = label.includes(searchTerm);
+            item.classList.toggle('hidden', !matches);
+
+            const routeId = item.dataset.routeId;
+            if (routeId && window.buslinnesMap && window.routeLayersGlobal) {
+              const layerObj = window.routeLayersGlobal[routeId];
+              if (layerObj && layerObj.poly) {
+                try {
+                  if (matches) {
+                    if (!window.buslinnesMap.hasLayer(layerObj.poly)) layerObj.poly.addTo(window.buslinnesMap);
+                    if (layerObj.wpg && !window.buslinnesMap.hasLayer(layerObj.wpg)) layerObj.wpg.addTo(window.buslinnesMap);
+                    if (layerObj.startMk && !window.buslinnesMap.hasLayer(layerObj.startMk)) layerObj.startMk.addTo(window.buslinnesMap);
+                    if (layerObj.endMk && !window.buslinnesMap.hasLayer(layerObj.endMk)) layerObj.endMk.addTo(window.buslinnesMap);
+                  } else {
+                    if (window.buslinnesMap.hasLayer(layerObj.poly)) window.buslinnesMap.removeLayer(layerObj.poly);
+                    if (layerObj.wpg && window.buslinnesMap.hasLayer(layerObj.wpg)) window.buslinnesMap.removeLayer(layerObj.wpg);
+                    if (layerObj.startMk && window.buslinnesMap.hasLayer(layerObj.startMk)) window.buslinnesMap.removeLayer(layerObj.startMk);
+                    if (layerObj.endMk && window.buslinnesMap.hasLayer(layerObj.endMk)) window.buslinnesMap.removeLayer(layerObj.endMk);
+                  }
+                } catch (err) {
+                  console.warn('Error sincronizando capa de ruta', routeId, err);
+                }
+              }
+            }
+          });
+          updateNoResults();
+        });
+        // click en icono busca/focus
+        const searchIcon = document.querySelector('.search-icon');
+        if (searchIcon) searchIcon.addEventListener('click', () => searchInput.focus());
+      }
+
+      // Toggle menú móvil
+      const openMenu = () => {
+        if (!menu || !backdrop || !burger) return;
+        menu.classList.add('open');
+        backdrop.classList.add('visible');
+        document.body.classList.add('no-scroll');
+        burger.setAttribute('aria-expanded', 'true');
+        menu.setAttribute('aria-hidden', 'false');
+        backdrop.setAttribute('aria-hidden', 'false');
+        document.addEventListener('keydown', handleEscape);
+      };
+
+      const closeMenu = () => {
+        if (!menu || !backdrop || !burger) return;
+        menu.classList.remove('open');
+        backdrop.classList.remove('visible');
+        document.body.classList.remove('no-scroll');
+        burger.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        backdrop.setAttribute('aria-hidden', 'true');
+        document.removeEventListener('keydown', handleEscape);
+      };
+
+      if (burger) burger.addEventListener('click', openMenu);
+      if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if (backdrop) backdrop.addEventListener('click', closeMenu);
+    });
+
+    // Cargar y mostrar rutas junto al mapa, sincronizado con listar_rutas.php
+    document.addEventListener('DOMContentLoaded', function() {
+      const mapContainer = document.getElementById('map-container');
+      const routesListEl = document.getElementById('routes-list');
+      const routesSidebarEl = document.getElementById('routes-list-container');
+      const routesSheetToggle = document.getElementById('routesSheetToggle');
+      const mapSectionEl = document.querySelector('.map-section');
+      if (!mapContainer || !routesListEl) return;
+
+      function setRoutesSheetCollapsed(collapsed) {
+        if (!routesSidebarEl) return;
+        routesSidebarEl.classList.toggle('collapsed', collapsed);
+
+        if (routesSheetToggle) {
+          routesSheetToggle.classList.toggle('is-collapsed', collapsed);
+          routesSheetToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          routesSheetToggle.setAttribute('aria-label', collapsed ? 'Expandir panel de rutas' : 'Contraer panel de rutas');
+          routesSheetToggle.setAttribute('title', collapsed ? 'Expandir panel de rutas' : 'Contraer panel de rutas');
+        }
+      }
+
+      if (routesSheetToggle && routesSidebarEl) {
+        routesSheetToggle.addEventListener('click', function() {
+          const nowCollapsed = !routesSidebarEl.classList.contains('collapsed');
+          setRoutesSheetCollapsed(nowCollapsed);
+        });
+
+        const mobileSheetQuery = window.matchMedia('(max-width: 768px)');
+        const syncSheetWithViewport = function(e) {
+          if (e.matches) {
+            setRoutesSheetCollapsed(true);
+          } else {
+            setRoutesSheetCollapsed(false);
+          }
+        };
+
+        syncSheetWithViewport(mobileSheetQuery);
+        if (typeof mobileSheetQuery.addEventListener === 'function') {
+          mobileSheetQuery.addEventListener('change', syncSheetWithViewport);
+        } else if (typeof mobileSheetQuery.addListener === 'function') {
+          mobileSheetQuery.addListener(syncSheetWithViewport);
+        }
+
+        const collapseOnMapInteraction = function(event) {
+          if (!mobileSheetQuery.matches) return;
+          if (routesSidebarEl.classList.contains('collapsed')) return;
+          if (routesSidebarEl.contains(event.target)) return;
+          setRoutesSheetCollapsed(true);
+        };
+
+        if (mapSectionEl) {
+          mapSectionEl.addEventListener('click', collapseOnMapInteraction);
+          mapSectionEl.addEventListener('touchstart', collapseOnMapInteraction, { passive: true });
+        }
+      }
+
+      // Mostrar mapa y ocultar placeholder. Reusar mapa global si existe para evitar dobles instancias
+      document.getElementById('map-placeholder').classList.add('hidden');
+      mapContainer.classList.remove('hidden');
+
+      // variables relacionadas con la geolocalización deben existir antes de usarse
+      let userLocation = null;
+      let userMarker = null; // marcador que mostraremos cuando tengamos ubicación + mapa
+
+      function maybeShowUserMarker() {
+        if (!userLocation || !window.buslinnesMap) {
+          console.log('maybeShowUserMarker ignorada', {userLocation, hasMap: !!window.buslinnesMap});
+          return;
+        }
+        const map = window.buslinnesMap;
+
+        if (!userMarker) {
+          console.log('Creando marcador de usuario en', userLocation);
+          // usar icono de persona en lugar de círculo
+          const userIcon = L.divIcon({
+            className: 'user-location-icon',
+            html: '<i class="fas fa-user"></i>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 24]
+          });
+          userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
+            .bindPopup('Tu ubicación');
+
+          // centrar en la ubicación la primera vez
+          map.setView([userLocation.lat, userLocation.lng], 14);
+        } else {
+          console.log('Moviendo marcador de usuario a', userLocation);
+          userMarker.setLatLng([userLocation.lat, userLocation.lng]);
+        }
+      }
+
+      let map = window.buslinnesMap || null;
+      let baseTileLayer = window.buslinnesBaseTileLayer || null;
+
+      const MAP_TILE_THEMES = {
+        light: {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attribution: '© OpenStreetMap contributors'
+        },
+        dark: {
+          url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          attribution: '© OpenStreetMap contributors © CARTO'
+        }
+      };
+
+      function applyMapTheme() {
+        if (!map) return;
+        const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+        const selectedTheme = MAP_TILE_THEMES[theme];
+
+        // Evitar "recargas" del mapa: solo cambiar tiles si realmente cambió el tema.
+        if (baseTileLayer && baseTileLayer._buslinnesTheme === theme) {
+          return;
+        }
+
+        // Reemplazar capa base para reflejar inmediatamente el modo visual actual.
+        if (baseTileLayer && map.hasLayer(baseTileLayer)) {
+          map.removeLayer(baseTileLayer);
+        }
+
+        baseTileLayer = L.tileLayer(selectedTheme.url, {
+          attribution: selectedTheme.attribution,
+          maxZoom: 19
+        }).addTo(map);
+        baseTileLayer._buslinnesTheme = theme;
+
+        window.buslinnesBaseTileLayer = baseTileLayer;
+      }
+  
+      if (!map) {
+        map = L.map('map-container').setView([7.1193,-73.1227],13);
+        applyMapTheme();
+        L.control.scale().addTo(map);
+        window.buslinnesMap = map;
+        // ya tenemos mapa, si ya conseguimos ubicación mostrémosla
+        maybeShowUserMarker();
+      } else {
+        applyMapTheme();
+      }
+
+      // Sincronizar el tema del mapa cuando el body cambie entre modo claro/oscuro.
+      const bodyClassObserver = new MutationObserver(function(mutations) {
+        const classMutation = mutations.some(function(m) { return m.attributeName === 'class'; });
+        if (classMutation) applyMapTheme();
+      });
+      bodyClassObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+      // UTIL: distancia haversine (metros)
+      function haversineDistance(lat1, lon1, lat2, lon2) {
+        function toRad(x){return x*Math.PI/180;}
+        const R = 6371000;
+        const dLat = toRad(lat2-lat1);
+        const dLon = toRad(lon2-lon1);
+        const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
+        const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+      }
+
+      function requestUserLocation() {
+        if (!navigator.geolocation) return;
+        const infoEl = document.getElementById('location-info');
+        // intento inicial para obtener la ubicación una sola vez
+        navigator.geolocation.getCurrentPosition(pos => {
+          userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          console.log('Ubicación obtenida', userLocation);
+          maybeShowUserMarker();
+          if (infoEl) { infoEl.classList.add('hidden'); }
+        }, err => {
+          console.warn('No se obtuvo ubicación:', err.message);
+          if (infoEl) {
+            infoEl.textContent = 'No se pudo obtener ubicación: ' + err.message;
+            infoEl.classList.remove('hidden');
+          }
+        }, { enableHighAccuracy:true, timeout:5000 });
+
+        // además, empezar a "vigilar" cambios de ubicación para actualizar el marcador
+        navigator.geolocation.watchPosition(pos => {
+          userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          maybeShowUserMarker();
+        }, err => {
+          console.warn('Error siguiendo ubicación:', err.message);
+        }, { enableHighAccuracy:true, maximumAge:5000, timeout:10000 });
+      }
+      // pedir/seguir ubicación del usuario (si el navegador lo permite)
+      requestUserLocation();
+
+      function setLoveButtonState(buttonEl, isLoved) {
+        if (!buttonEl) return;
+        buttonEl.classList.toggle('active', isLoved);
+        buttonEl.setAttribute('aria-pressed', isLoved ? 'true' : 'false');
+        buttonEl.setAttribute('title', isLoved ? 'Quitar de Mis favoritos' : 'Marcar como Mi favorito');
+      }
+
+      const lovedRouteIds = new Set();
+      let favoritesLoaded = false;
+      const FAVORITES_API = {
+        list: '/buslinnes/src/rutas_favoritas/api_listar_favoritas.php',
+        add: '/buslinnes/src/rutas_favoritas/api_agregar_favorita.php',
+        remove: '/buslinnes/src/rutas_favoritas/api_eliminar_favorita.php'
+      };
+      let activeRoutesView = 'all';
+      let latestSortedRoutes = [];
+      const colores = ['#2563eb','#dc2626','#16a34a','#ca8a04','#7c3aed','#9333ea','#ea580c','#0891b2'];
+      let colorIdx = 0;
+      const boundsCoords = [];
+      const routeLayers = {};
+      let activeRouteId = null;
+      let userInteractedWithMap = false;
+
+      if (map) {
+        map.on('movestart zoomstart', function() {
+          userInteractedWithMap = true;
+        });
+      }
+
+      async function loadFavoritesFromDb() {
+        if (favoritesLoaded) return;
+        try {
+          const response = await securityHelper.get(FAVORITES_API.list);
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+
+          const payload = await response.json();
+          const ids = Array.isArray(payload.route_ids) ? payload.route_ids : [];
+          lovedRouteIds.clear();
+          ids.forEach(id => lovedRouteIds.add(String(id)));
+          favoritesLoaded = true;
+        } catch (error) {
+          console.warn('No fue posible cargar favoritos desde DB:', error);
+          favoritesLoaded = true;
+        }
+      }
+
+      async function saveFavoriteToDb(routeId) {
+        const response = await securityHelper.post(FAVORITES_API.add, {
+          id_ruta: Number(routeId)
+        });
+
+        if (!response.ok) {
+          const statusInfo = `HTTP ${response.status} ${response.statusText}`;
+          let detail = 'No se pudo guardar favorito';
+          let fullResponse = null;
+          try {
+            fullResponse = await response.json();
+            detail = fullResponse.detail || fullResponse.error || detail;
+          } catch (e) {
+            const rawText = await response.text();
+            detail = rawText || detail;
+          }
+          
+          console.error('Error guardando favorito:', { statusInfo, fullResponse });
+          throw new Error(`${statusInfo} - ${detail}`);
+        }
+
+        return response.json();
+      }
+
+      async function removeFavoriteFromDb(routeId) {
+        const response = await securityHelper.delete(FAVORITES_API.remove, {
+          body: JSON.stringify({ id_ruta: Number(routeId) }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          const statusInfo = `HTTP ${response.status} ${response.statusText}`;
+          let detail = 'No se pudo eliminar favorito';
+          let fullResponse = null;
+          try {
+            fullResponse = await response.json();
+            detail = fullResponse.detail || fullResponse.error || detail;
+          } catch (e) {
+            const rawText = await response.text();
+            detail = rawText || detail;
+          }
+          
+          console.error('Error eliminando favorito:', { statusInfo, fullResponse });
+          throw new Error(`${statusInfo} - ${detail}`);
+        }
+
+        return response.json();
+      }
+
+      async function toggleFavorite(routeId, buttonEl) {
+        if (!routeId || !buttonEl) return;
+
+        const previousLoved = lovedRouteIds.has(routeId);
+        const nowLoved = !previousLoved;
+
+        console.log('toggleFavorite', { routeId, previousLoved, nowLoved });
+
+        if (nowLoved) {
+          lovedRouteIds.add(routeId);
+        } else {
+          lovedRouteIds.delete(routeId);
+        }
+
+        setLoveButtonState(buttonEl, nowLoved);
+        buttonEl.disabled = true;
+
+        try {
+          if (nowLoved) {
+            await saveFavoriteToDb(routeId);
+          } else {
+            await removeFavoriteFromDb(routeId);
+          }
+        } catch (error) {
+          if (previousLoved) {
+            lovedRouteIds.add(routeId);
+          } else {
+            lovedRouteIds.delete(routeId);
+          }
+
+          setLoveButtonState(buttonEl, previousLoved);
+          console.error('No se pudo sincronizar favorito:', error?.message || error);
+        } finally {
+          buttonEl.disabled = false;
+        }
+
+        if (activeRoutesView === 'favs') {
+          renderRoutesList(getRoutesForActiveView(latestSortedRoutes));
+          updateNoResults();
+        }
+      }
+
+      function getRoutesForActiveView(rutas) {
+        if (activeRoutesView === 'favs') {
+          return rutas.filter(route => lovedRouteIds.has(String(route.id_ruta)));
+        }
+        return rutas;
+      }
+
+      // Delegación para los botones de favorito (funciona aunque se re-renderice la lista)
+      routesListEl.addEventListener('click', function(event) {
+        const btn = event.target.closest('.route-love-btn');
+        if (!btn || !routesListEl.contains(btn)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const id = btn.dataset.routeId;
+        if (!id) return;
+
+        toggleFavorite(id, btn);
+      });
+
+      routesListEl.addEventListener('keydown', function(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const btn = event.target.closest('.route-love-btn');
+        if (!btn || !routesListEl.contains(btn)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const id = btn.dataset.routeId;
+        if (!id) return;
+
+        toggleFavorite(id, btn);
+      });
+
+      function updateRoutesTabsUI() {
+        const tabs = document.querySelectorAll('.routes-tab');
+        tabs.forEach(tab => {
+          const isActive = tab.dataset.routesView === activeRoutesView;
+          tab.classList.toggle('active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+      }
+
+      function renderRoutesList(rutas) {
+        routesListEl.innerHTML = '';
+        rutas.forEach(r => {
+          const li = document.createElement('li');
+          li.setAttribute('role', 'listitem');
+          li.className = 'route-list-item';
+
+          const routeId = String(r.id_ruta);
+          const routeName = String(r.nom_ruta || 'Ruta');
+          const isLoved = lovedRouteIds.has(routeId);
+
+          const item = document.createElement('div');
+          item.className = 'route-item';
+          item.dataset.routeId = routeId;
+          item.setAttribute('role', 'button');
+          item.setAttribute('tabindex', '0');
+          item.classList.add(routeLayers[r.id_ruta]?.colorClass || 'route-color-0');
+          item.setAttribute('aria-label', `${r.nom_ruta} ${r.inicio_ruta} hacia ${r.fin_ruta}`);
+          item.innerHTML = `
+            <div class="route-item-content">
+              <div class="route-main-info">
+                <div class="route-number-display">
+                  <i class="fas fa-bus" aria-hidden="true"></i>
+                </div>
+                <div class="route-text-group">
+                  <strong class="route-name">${r.nom_ruta}</strong>
+                  <div class="route-description">${r.inicio_ruta} → ${r.fin_ruta}</div>
+                </div>
+              </div>
+              <div class="route-actions">
+                <button
+                  type="button"
+                  class="route-love-btn ${isLoved ? 'active' : ''}"
+                  data-route-id="${routeId}"
+                  aria-pressed="${isLoved ? 'true' : 'false'}"
+                  aria-label="Marcar ${routeName} como Mi favorito"
+                  title="${isLoved ? 'Quitar de Mis favoritos' : 'Marcar como Mi favorito'}"
+                >
+                  <i class="heart-fa-icon fa-solid fas fa-heart" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>`;
+
+          const focusRoute = function() {
+            const layerObj = routeLayers[r.id_ruta];
+            if (layerObj && layerObj.poly) {
+              activeRouteId = String(r.id_ruta);
+
+              // Si por alguna razón ya hay capas ocultas (por buscador/otros),
+              // asegurarnos de mostrar la seleccionada y ocultar el resto,
+              // incluyendo marcadores de inicio/fin.
+              Object.entries(routeLayers).forEach(([id, obj]) => {
+                const shouldShow = id === activeRouteId;
+                try {
+                  if (obj?.poly) {
+                    if (shouldShow && !map.hasLayer(obj.poly)) obj.poly.addTo(map);
+                    if (!shouldShow && map.hasLayer(obj.poly)) map.removeLayer(obj.poly);
+                  }
+                  if (obj?.wpg) {
+                    if (shouldShow && !map.hasLayer(obj.wpg)) obj.wpg.addTo(map);
+                    if (!shouldShow && map.hasLayer(obj.wpg)) map.removeLayer(obj.wpg);
+                  }
+                  if (obj?.startMk) {
+                    if (shouldShow && !map.hasLayer(obj.startMk)) obj.startMk.addTo(map);
+                    if (!shouldShow && map.hasLayer(obj.startMk)) map.removeLayer(obj.startMk);
+                  }
+                  if (obj?.endMk) {
+                    if (shouldShow && !map.hasLayer(obj.endMk)) obj.endMk.addTo(map);
+                    if (!shouldShow && map.hasLayer(obj.endMk)) map.removeLayer(obj.endMk);
+                  }
+                } catch (e) {}
+              });
+
+              map.fitBounds(layerObj.poly.getBounds(), { padding: [30,30], maxZoom: 15 });
+              layerObj.poly.openPopup && layerObj.poly.openPopup();
+
+              if (window.matchMedia('(max-width: 768px)').matches) {
+                setRoutesSheetCollapsed(true);
+              }
+            }
+          };
+
+          item.addEventListener('click', function() {
+            focusRoute();
+          });
+
+          item.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              focusRoute();
+            }
+          });
+
+          const loveBtn = item.querySelector('.route-love-btn');
+          if (loveBtn) {
+            setLoveButtonState(loveBtn, isLoved);
+          }
+
+          li.appendChild(item);
+          routesListEl.appendChild(li);
+        });
+
+        // Exponer routeLayers globalmente para que el buscador pueda sincronizar capas
+        window.routeLayersGlobal = routeLayers;
+      }
+
+      // Ordenar rutas por proximidad usando userLocation cuando esté disponible
+      function sortRoutesByProximity(rutas) {
+        if (!userLocation) return rutas;
+        // calcular distancia mínima entre userLocation y cada poly/coords
+        return rutas.slice().sort((a,b) => {
+          const ida = String(a.id_ruta || a.id || a.nom_ruta);
+          const idb = String(b.id_ruta || b.id || b.nom_ruta);
+          const la = (routeLayers[ida] && routeLayers[ida].poly) ? getMinDistanceToPoly(routeLayers[ida].poly, userLocation) : (a.inicio_lat ? haversineDistance(userLocation.lat, userLocation.lng, parseFloat(a.inicio_lat), parseFloat(a.inicio_lng)) : 1e9);
+          const lb = (routeLayers[idb] && routeLayers[idb].poly) ? getMinDistanceToPoly(routeLayers[idb].poly, userLocation) : (b.inicio_lat ? haversineDistance(userLocation.lat, userLocation.lng, parseFloat(b.inicio_lat), parseFloat(b.inicio_lng)) : 1e9);
+          return la - lb;
+        });
+      }
+
+      function getMinDistanceToPoly(poly, point) {
+        try {
+          const latlngs = poly.getLatLngs && poly.getLatLngs() || [];
+          // flatten in case of nested arrays
+          const flat = Array.isArray(latlngs[0]) ? latlngs.flat(Infinity) : latlngs;
+          let minD = Infinity;
+          flat.forEach(ll => {
+            const d = haversineDistance(point.lat, point.lng, ll.lat, ll.lng);
+            if (d < minD) minD = d;
+          });
+          return minD === Infinity ? 1e9 : minD;
+        } catch (e) { return 1e9; }
+      }
+
+      function updateNoResults() {
+        const anyVisible = Array.from(document.querySelectorAll('#routes-list .route-item')).some(el => !el.classList.contains('hidden'));
+        const noResultsEl = document.getElementById('no-results');
+        if (!anyVisible) {
+          if (activeRoutesView === 'favs') {
+            noResultsEl.innerHTML = 'No tienes rutas favoritas todavía. Marca una ruta con el corazon para verla aqui.';
+            noResultsEl.classList.remove('hidden');
+            return;
+          }
+
+          // sugerencias: rutas cercanas si hay ubicación
+          if (userLocation && Object.keys(routeLayers).length > 0) {
+            const suggestions = Object.entries(routeLayers).map(([id,obj]) => ({ id, name: (obj.name||''), dist: getMinDistanceToPoly(obj.poly, userLocation) })).sort((x,y)=>x.dist-y.dist).slice(0,3);
+            noResultsEl.innerHTML = 'No hay resultados. ¿Quizás te interesen estas rutas cercanas?:<br>' + suggestions.map(s=>`<strong>${s.name}</strong>`).join(', ');
+          } else {
+            // fallback: mostrar primeros 3 rutas por nombre
+            const sample = Array.from(document.querySelectorAll('#routes-list .route-item')).slice(0,3).map(el => el.textContent.trim());
+            noResultsEl.innerHTML = 'No hay resultados. Prueba: ' + (sample.length ? sample.join(', ') : 'Intenta otra búsqueda');
+          }
+          noResultsEl.classList.remove('hidden');
+        } else {
+          noResultsEl.classList.add('hidden');
+        }
+      }
+
+      let isDrawingRoutes = false;
+
+      function normalizeRoutesPayload(payload) {
+        if (Array.isArray(payload)) return payload;
+        if (payload && Array.isArray(payload.rutas)) return payload.rutas;
+        if (payload && Array.isArray(payload.data)) return payload.data;
+        if (payload && payload.data && Array.isArray(payload.data.rutas)) return payload.data.rutas;
+        if (payload && payload.result && Array.isArray(payload.result.rutas)) return payload.result.rutas;
+        return [];
+      }
+
+      function getDirectRouteCoords(route) {
+        const startLat = parseFloat(route.inicio_lat);
+        const startLng = parseFloat(route.inicio_lng);
+        const endLat = parseFloat(route.fin_lat);
+        const endLng = parseFloat(route.fin_lng);
+
+        if (!isFinite(startLat) || !isFinite(startLng) || !isFinite(endLat) || !isFinite(endLng)) {
+          return null;
+        }
+
+        return [[startLat, startLng], [endLat, endLng]];
+      }
+
+      async function drawRoutes() {
+        if (isDrawingRoutes) return;
+        isDrawingRoutes = true;
+        try {
+          const prevActiveRouteId = activeRouteId;
+          let response;
+          try {
+            response = await securityHelper.get('/buslinnes/src/rutas/api_listar_rutas.php');
+          } catch (helperError) {
+            console.warn('securityHelper.get fallo para rutas, intentando fetch directo:', helperError);
+            response = await fetch('/buslinnes/src/rutas/api_listar_rutas.php', {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            });
+          }
+
+          let apiPayload = null;
+          if (response instanceof Response) {
+            try {
+              apiPayload = await response.json();
+            } catch (jsonError) {
+              console.warn('No se pudo parsear JSON de rutas:', jsonError);
+              apiPayload = [];
+            }
+
+            if (!response.ok) {
+              console.warn('API rutas respondió con estado no OK:', response.status, apiPayload);
+            }
+          } else {
+            apiPayload = response;
+          }
+
+          const rutas = normalizeRoutesPayload(apiPayload);
+          console.log('API rutas (passenger):', apiPayload);
+
+          if (!Array.isArray(rutas) || rutas.length === 0) {
+            console.warn('No se recibieron rutas válidas para pintar en pasajero:', apiPayload);
+            latestSortedRoutes = [];
+            renderRoutesList([]);
+            updateNoResults();
+            return;
+          }
+
+          // No "resetear" todo el mapa: actualizamos capas existentes en sitio
+          // para evitar que el usuario pierda la ruta/popup que estaba viendo.
+          const seenRouteIds = new Set();
+
+          for (const r of rutas) {
+            try {
+              const routeId = String(r.id_ruta);
+              if (!routeId || routeId === 'undefined' || routeId === 'null') {
+                continue;
+              }
+              seenRouteIds.add(routeId);
+
+              // limpiar capas anteriores para esta ruta si existían
+              const existing = routeLayers[routeId] || null;
+
+              // Construir lista de coordenadas para OSRM: inicio; waypoint...; fin
+              const coordParts = [];
+              function pushLngLat(lng, lat) {
+                const nlat = parseFloat(lat);
+                const nlng = parseFloat(lng);
+                if (!isFinite(nlat) || !isFinite(nlng)) return false;
+                coordParts.push(`${nlng},${nlat}`);
+                return true;
+              }
+
+              const okStart = pushLngLat(r.inicio_lng, r.inicio_lat);
+              // waypoints expected as array [{orden, lat, lng, nombre}, ...]
+              if (Array.isArray(r.waypoints) && r.waypoints.length > 0) {
+                // ordenar por 'orden' si existe
+                r.waypoints.sort((a,b)=> (a.orden||0)-(b.orden||0));
+                for (const w of r.waypoints) {
+                  pushLngLat(w.lng, w.lat);
+                }
+              }
+              const okEnd = pushLngLat(r.fin_lng, r.fin_lat);
+
+              // Si faltan coords válidas, saltar a dibujo directo
+              let coordsToDraw = null;
+              const directCoords = getDirectRouteCoords(r);
+              const osrmUrl = coordParts.length >= 2 ? `https://router.project-osrm.org/route/v1/driving/${coordParts.join(';')}?overview=full&geometries=geojson` : null;
+              if (!osrmUrl) {
+                console.warn('RUTA: coordenadas insuficientes para OSRM, usando puntos directos', r.id_ruta, r);
+                coordsToDraw = directCoords;
+              } else {
+                console.log('OSRM URL:', osrmUrl);
+                try {
+                  const respOsrm = await fetch(osrmUrl);
+                  const data = await respOsrm.json();
+                  if (data && data.code === 'Ok' && data.routes && data.routes[0] && data.routes[0].geometry) {
+                    coordsToDraw = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                  } else {
+                    console.warn('OSRM devolvió sin ruta válida, fallback directo', r.id_ruta, data && data.code);
+                    coordsToDraw = directCoords;
+                  }
+                } catch (e) {
+                  console.warn('OSRM falla, usando puntos directos', e);
+                  coordsToDraw = directCoords;
+                }
+              }
+
+              if (!Array.isArray(coordsToDraw) || coordsToDraw.length < 2) {
+                console.warn('Ruta omitida por coordenadas inválidas:', r.id_ruta, r.nom_ruta);
+                continue;
+              }
+
+              const colorIdxCurrent = existing?.colorIdx ?? (colorIdx % colores.length);
+              const color = colores[colorIdxCurrent];
+              if (!existing) {
+                colorIdx++;
+              }
+
+            // Polyline: crear o actualizar
+            let poly = existing?.poly || null;
+            if (!poly) {
+              poly = L.polyline(coordsToDraw, { color, weight:5, opacity:0.85 }).addTo(map);
+              poly.bindPopup(`<strong>${r.nom_ruta}</strong><br>${r.inicio_ruta} → ${r.fin_ruta}`);
+            } else {
+              poly.setStyle({ color, weight:5, opacity:0.85 });
+              poly.setLatLngs(coordsToDraw);
+              poly.setPopupContent(`<strong>${r.nom_ruta}</strong><br>${r.inicio_ruta} → ${r.fin_ruta}`);
+            }
+
+            // dibujar marcadores de waypoints (si los hay)
+            let wpgGroup = existing?.wpg || null;
+            if (Array.isArray(r.waypoints) && r.waypoints.length > 0) {
+              if (!wpgGroup) {
+                wpgGroup = L.layerGroup().addTo(map);
+              } else {
+                wpgGroup.clearLayers();
+              }
+              for (const w of r.waypoints) {
+                const latN = parseFloat(w.lat);
+                const lngN = parseFloat(w.lng);
+                if (!isFinite(latN) || !isFinite(lngN)) continue;
+                const mk = L.circleMarker([latN, lngN], { radius:6, fillColor:'#fff', color:'#333', weight:1.2, fillOpacity:1 }).bindTooltip(w.nombre || 'Waypoint');
+                wpgGroup.addLayer(mk);
+              }
+            } else if (wpgGroup && map.hasLayer(wpgGroup)) {
+              // Si ya no hay waypoints, limpiar para no dejar puntos viejos.
+              wpgGroup.clearLayers();
+            }
+
+            // Marcadores inicio/fin (para que se vean los puntos aunque el OSRM dibuje la ruta)
+            const startLat = parseFloat(r.inicio_lat);
+            const startLng = parseFloat(r.inicio_lng);
+            const endLat = parseFloat(r.fin_lat);
+            const endLng = parseFloat(r.fin_lng);
+
+            let startMk = existing?.startMk || null;
+            let endMk = existing?.endMk || null;
+
+            if (isFinite(startLat) && isFinite(startLng)) {
+              if (!startMk) {
+                startMk = L.circleMarker([startLat, startLng], { radius:7, color:'#16a34a', weight:2, fillColor:'#16a34a', fillOpacity:0.85 })
+                  .addTo(map)
+                  .bindTooltip(`Inicio: ${r.inicio_ruta || ''}`);
+              } else {
+                startMk.setLatLng([startLat, startLng]);
+              }
+            }
+
+            if (isFinite(endLat) && isFinite(endLng)) {
+              if (!endMk) {
+                endMk = L.circleMarker([endLat, endLng], { radius:7, color:'#dc2626', weight:2, fillColor:'#dc2626', fillOpacity:0.85 })
+                  .addTo(map)
+                  .bindTooltip(`Fin: ${r.fin_ruta || ''}`);
+              } else {
+                endMk.setLatLng([endLat, endLng]);
+              }
+            }
+
+              routeLayers[routeId] = {
+                poly,
+                wpg: wpgGroup,
+                startMk,
+                endMk,
+                name: r.nom_ruta,
+                colorIdx: colorIdxCurrent,
+                colorClass: `route-color-${colorIdxCurrent}`
+              };
+            } catch (routeError) {
+              console.warn('No se pudo procesar una ruta en drawRoutes:', routeError, r);
+            }
+          }
+
+          // Remover rutas que ya no vienen en API
+          Object.keys(routeLayers).forEach(existingId => {
+            if (seenRouteIds.has(existingId)) return;
+            const obj = routeLayers[existingId];
+            try {
+              if (obj?.poly && map.hasLayer(obj.poly)) map.removeLayer(obj.poly);
+              if (obj?.wpg && map.hasLayer(obj.wpg)) map.removeLayer(obj.wpg);
+              if (obj?.startMk && map.hasLayer(obj.startMk)) map.removeLayer(obj.startMk);
+              if (obj?.endMk && map.hasLayer(obj.endMk)) map.removeLayer(obj.endMk);
+            } catch (e) {}
+            delete routeLayers[existingId];
+          });
+
+          // Si todavía no hemos aplicado el encuadre inicial hacemos un fitBounds.
+          // Después de la primera vez dejamos que el usuario mueva/escale libremente
+          if (!map._boundsAdjusted) {
+            boundsCoords.length = 0;
+            Object.values(routeLayers).forEach(obj => {
+              try {
+                if (obj?.poly) {
+                  const latlngs = obj.poly.getLatLngs() || [];
+                  const flat = Array.isArray(latlngs[0]) ? latlngs.flat(Infinity) : latlngs;
+                  flat.forEach(ll => boundsCoords.push([ll.lat, ll.lng]));
+                }
+              } catch (e) {}
+            });
+            if (userLocation) {
+              // incluir ubicación del usuario para que quede visible al inicio
+              boundsCoords.push([userLocation.lat, userLocation.lng]);
+            }
+            if (boundsCoords.length > 0) {
+              map.fitBounds(boundsCoords, { padding: [30,30], maxZoom: 15 });
+              maybeShowUserMarker();
+            }
+            map._boundsAdjusted = true; // marca que ya hicimos el ajuste inicial
+          }
+
+          // Si el usuario estaba viendo una ruta, mantener el popup abierto tras el refresh.
+          if (prevActiveRouteId && routeLayers[prevActiveRouteId]?.poly) {
+            routeLayers[prevActiveRouteId].poly.openPopup && routeLayers[prevActiveRouteId].poly.openPopup();
+          }
+
+          // ordenar por proximidad si es posible antes de renderizar
+          const sorted = sortRoutesByProximity(rutas);
+          latestSortedRoutes = sorted;
+          renderRoutesList(getRoutesForActiveView(sorted));
+          // Re-aplicar filtro del buscador si el usuario tiene texto escrito
+          const searchInput = document.getElementById('searchInput');
+          const currentTerm = (searchInput && typeof searchInput.value === 'string')
+            ? searchInput.value.toLowerCase()
+            : (window.__buslinnesRouteSearchTerm || '');
+          if (currentTerm) {
+            // Disparar el mismo comportamiento de filtrado/map-sync del input
+            if (searchInput) {
+              searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }
+          updateNoResults();
+        } catch (err) {
+          console.error('Error cargando rutas:', err);
+        } finally {
+          isDrawingRoutes = false;
+        }
+      }
+
+      const routesTabs = document.querySelectorAll('.routes-tab');
+      routesTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          if (window.matchMedia('(max-width: 768px)').matches) {
+            setRoutesSheetCollapsed(false);
+          }
+
+          const selectedView = tab.dataset.routesView === 'favs' ? 'favs' : 'all';
+          if (selectedView === activeRoutesView) return;
+          activeRoutesView = selectedView;
+          updateRoutesTabsUI();
+          renderRoutesList(getRoutesForActiveView(latestSortedRoutes));
+          updateNoResults();
+        });
+      });
+      updateRoutesTabsUI();
+
+      // Carga inicial y refresco periódico para mostrar rutas nuevas automáticamente
+      (async function bootstrapRoutesAndFavorites() {
+        await loadFavoritesFromDb();
+        await drawRoutes();
+        setInterval(drawRoutes, 20000); // cada 20s
+      })();
+    });
+  </script>
+
+  <!-- Logout seguro con desconexión de OneSignal -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Interceptar todos los enlaces de logout
+      const logoutLinks = document.querySelectorAll('a[href="/buslinnes/public/logout.php"]');
+      
+      logoutLinks.forEach(link => {
+        link.addEventListener('click', async function(event) {
+          event.preventDefault();
+          
+          // Desconectar de OneSignal ANTES de ir a logout.php
+          if (window.OneSignalInstance) {
+            try {
+              await window.OneSignalInstance.logout();
+              console.log('✅ Desconectado de OneSignal desde interfaz');
+            } catch (e) {
+              console.warn('⚠️ Error al desconectar:', e);
+            }
+          }
+          
+          // Limpiar datos locales
+          localStorage.removeItem('jwt_token');
+          
+          // Ir a logout.php (que también desconectará por seguridad)
+          window.location.href = '/buslinnes/public/logout.php';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

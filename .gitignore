@@ -1,0 +1,49 @@
+# Explicación:
+# Este archivo .gitignore está diseñado para proteger tu repositorio excluyendo
+# archivos sensibles, dependencias y archivos innecesarios.
+
+# 1. Archivos de configuración y sensibles
+# Ignora archivos que contienen credenciales de base de datos, claves de API,
+# tokens y otros secretos. Es una mala práctica subir estos archivos a un
+# repositorio. En su lugar, utiliza un archivo de ejemplo (p. ej., .env.example)
+# para que otros desarrolladores sepan qué variables de entorno se necesitan.
+/config/database.php
+.env
+*.key
+*.pem
+/mkcert/
+mkcert/
+
+# 2. Dependencias de Composer y Node.js
+# Las dependencias deben instalarse localmente en cada entorno de desarrollo
+# y producción usando los archivos `composer.lock` y `package-lock.json`.
+# Ignorar estas carpetas mantiene el repositorio ligero y evita conflictos.
+/vendor/
+/node_modules/
+
+# 3. Archivos de logs y temporales
+# Los logs y archivos temporales se generan durante la ejecución y depuración.
+# No deben ser parte del historial de versiones del proyecto.
+*.log
+/tmp/
+*.tmp
+*.temp
+
+# 4. Archivos del sistema operativo y del IDE
+# Archivos específicos del entorno de desarrollo de cada colaborador que no
+# son relevantes para el proyecto en sí.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 5. Archivos de Composer
+# El archivo `composer.phar` es el instalador de Composer y no necesita
+# estar en el repositorio.
+composer.phar
+
+# 6. Archivos de respaldo
+# Ignora la carpeta de respaldo creada anteriormente.
+/backup_before_security_20260227_133236/

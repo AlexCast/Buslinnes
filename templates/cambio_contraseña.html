@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperación de Contraseña - Buslinnes</title>
+    <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/login.css">
+    <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+    <script src="/buslinnes/assets/js/security.js"></script>
+    <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <a href="/buslinnes/templates/index.html">
+                    <img class="logo-light" src="/buslinnes/assets/img/logo.svg" alt="Buslinnes Logo">
+                    <img class="logo-dark" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo (dark)">
+                </a>
+            </h1>
+            <p>Recuperación de Contraseña</p>
+        </div>
+
+        <div class="login-body">
+            <div style="text-align: center; margin: 15px 0; color: #666; font-size: 14px;">
+                Ingresa tu correo electrónico para recibir un enlace de recuperación
+            </div>
+
+            <div class="error-message" id="request-error"></div>
+
+            <form id="requestForm">
+                <div class="form-group">
+                    <label for="email" class="form-label">Correo Electrónico</label>
+                    <div class="input-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" name="email" class="form-input" placeholder="tu@correo.com" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" name="requestSubmit">
+                    <i class="fas fa-paper-plane"></i> Enviar Enlace de Recuperación
+                </button>
+            </form>
+
+            <!-- Mensaje de confirmación que se muestra después de enviar -->
+            <div id="confirmation" class="confirmation-message" style="display:none; text-align:center; margin-top:20px;">
+                <h3>Hemos enviado un mensaje de verificación</h3>
+                <p id="confirmation-text" style="color:#555;"></p>
+                <p style="margin-top:12px; color: #8059d4ff;"><a href="/buslinnes/public/login.php">Volver al inicio de sesión</a></p>
+            </div>
+        </div>
+
+        <div class="login-footer">
+            <p>¿Ya recuerdas tu contraseña? <a href="/buslinnes/public/login.php">Iniciar Sesión</a></p>
+            <p>¿No tienes una cuenta? <a href="/buslinnes/public/login.php">Registrarse</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Lógica para solicitud de recuperación por correo
+        document.getElementById('requestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const emailInput = document.getElementById('email');
+            const email = emailInput.value.trim();
+            const errorDiv = document.getElementById('request-error');
+
+            if (!email || !validateEmail(email)) {
+                showError('Por favor ingresa un correo electrónico válido', errorDiv);
+                return;
+            }
+
+            // Enviar petición al servidor
+            try {
+                const response = await securityHelper.post('/buslinnes/public/request_reset.php', {
+                    email: email
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (_) {
+                    // Server returned non-JSON (e.g. 503 HTML error page)
+                    showError('Error del servidor. Intenta de nuevo más tarde.', errorDiv);
+                    return;
+                }
+
+                if (data.success) {
+                    document.getElementById('requestForm').style.display = 'none';
+                    const confirmation = document.getElementById('confirmation');
+                    document.getElementById('confirmation-text').textContent = data.message || `Hemos enviado un correo a ${email}.`;
+                    confirmation.style.display = 'block';
+                } else {
+                    showError(data.error || 'Error enviando el correo', errorDiv);
+                }
+            } catch (err) {
+                console.error('Error en fetch:', err);
+                showError('Error de conexión. Intenta de nuevo más tarde.', errorDiv);
+            }
+        });
+
+        // Helper functions
+        function validateEmail(email) {
+            const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            return re.test(email);
+        }
+
+        function showError(message, element) {
+            element.textContent = message;
+            element.classList.add('show');
+
+            // Hide error after 5 seconds
+            setTimeout(() => {
+                element.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

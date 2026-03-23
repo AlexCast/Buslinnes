@@ -1,0 +1,136 @@
+.cookie-banner {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  background-color: #151518;
+  color: #f9fafb;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cookie-banner__backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+}
+
+.cookie-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.cookie-banner__content {
+  flex: 1 1 260px;
+}
+
+.cookie-banner__title {
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+}
+
+.cookie-banner__description {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.cookie-banner__consent {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.cookie-banner__checkbox {
+  margin-top: 0.1rem;
+}
+
+.cookie-banner__checkbox-label {
+  font-size: 0.8rem;
+}
+
+.cookie-banner__warning {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.cookie-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cookie-banner__button {
+  cursor: pointer;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: none;
+}
+
+.cookie-banner__button:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+.cookie-banner__button--primary {
+  background-color: #8059d4;
+  color: #ffffff;
+  border-color: #472f7c;
+}
+
+.cookie-banner__button--primary:hover {
+  background-color: #472f7c;
+}
+
+.cookie-banner__button--secondary {
+  background-color: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+.cookie-banner__button--secondary:hover {
+  background-color: #4b5563;
+}
+
+.cookie-banner__button--link {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.cookie-banner__link {
+  color: #ac90e9;
+  text-decoration: underline;
+}
+
+.cookie-banner__link:hover {
+  color: #ffffff;
+}
+.cookie-banner--hidden {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .cookie-banner__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cookie-banner__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
