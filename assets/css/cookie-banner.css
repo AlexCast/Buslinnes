@@ -87,13 +87,13 @@
 }
 
 .cookie-banner__button--primary {
-  background-color: #8059d4;
+  background-color: var(--primary-color);
   color: #ffffff;
-  border-color: #472f7c;
+  border-color: var(--primary-color);
 }
 
 .cookie-banner__button--primary:hover {
-  background-color: #472f7c;
+  background-color: var(--primary-color);
 }
 
 .cookie-banner__button--secondary {
@@ -112,7 +112,7 @@
 }
 
 .cookie-banner__link {
-  color: #ac90e9;
+  color: var(--primary-color);
   text-decoration: underline;
 }
 

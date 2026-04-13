@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // === SEGURIDAD: Proteccion anti-scraping y CSRF ===
 require_once __DIR__ . '/../../app/SecurityMiddleware.php';
 
@@ -27,13 +27,13 @@ validarTokenJWT(['admin', 'conductor']); // Admin y conductor pueden ver inciden
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->query('
-    SELECT i.id_incidente, i.titulo_incidente, i.desc_incidente, i.tipo_incidente, i.fec_insert,
-           b.id_bus, b.matricula,
-           c.id_conductor, c.nom_conductor, c.ape_conductor,
+        SELECT i.id_incidente, \'Incidente #\' || i.id_incidente AS titulo_incidente, i.desc_incidente, i.tipo_incidente, i.fec_insert,
+           b.id_bus,
+           c.id_usuario, c.nom_conductor, c.ape_conductor,
            i.usr_delete, i.fec_delete
     FROM tab_incidentes i
     JOIN tab_buses b ON i.id_bus = b.id_bus
-    JOIN tab_conductores c ON i.id_conductor = c.id_conductor
+       JOIN tab_conductores c ON b.id_usuario = c.id_usuario
     ORDER BY i.id_incidente DESC
 ');
 $incidentes = $sentencia->fetchAll(PDO::FETCH_OBJ);
@@ -88,7 +88,7 @@ $incidentes = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                     ?>
                                 </td>
                                 <td>
-                                    <span class="badge bg-secondary"><?php echo $incidente->matricula; ?></span>
+                                    <span class="badge bg-secondary"><?php echo $incidente->id_bus; ?></span>
                                 </td>
                                 <td><?php echo htmlspecialchars($incidente->nom_conductor . ' ' . $incidente->ape_conductor); ?></td>
                                 <td><?php echo date('d/m/Y H:i', strtotime($incidente->fec_insert)); ?></td>
@@ -125,7 +125,7 @@ $incidentes = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Bus: </strong>
-                                        <span class="badge bg-secondary"><?php echo $incidente->matricula; ?></span>
+                                        <span class="badge bg-secondary"><?php echo $incidente->id_bus; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Conductor: </strong>
@@ -168,3 +168,6 @@ $incidentes = $sentencia->fetchAll(PDO::FETCH_OBJ);
 </main>
 <?php include_once "../pie.php"; ?>
 <!-- Bootstrap JS (asegúrate de que esté presente) -->
+
+
+

@@ -1,0 +1,48 @@
+/* =========================================================================
+   Modal Legal (Privacidad, Términos, Cookies)
+   ========================================================================= */
+.legal-modal-backdrop {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 9999; display: none;
+}
+.legal-modal {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; color: #333; z-index: 10000;
+    width: 90%; max-width: 800px; height: 90vh; max-height: 90vh;
+    border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: none; flex-direction: column; overflow: hidden;
+}
+.dark .legal-modal { background: #1e1e1e; color: #eee; }
+.legal-modal__header {
+    display: flex; justify-content: space-between; align-items: stretch;
+    border-bottom: 2px solid #eee; padding: 0; background: #f8f9fa;
+}
+.dark .legal-modal__header { background: #2d2d2d; border-bottom-color: #444; }
+.legal-modal__tabs { display: flex; overflow-x: auto; flex-grow: 1; }
+.legal-tab-btn {
+    background: none; border: none; padding: 15px 20px; font-size: 16px;
+    cursor: pointer; color: #666; font-weight: bold; border-bottom: 3px solid transparent;
+    transition: all 0.3s; white-space: nowrap; outline: none;
+}
+.dark .legal-tab-btn { color: #aaa; }
+.legal-tab-btn:hover { color: #333; background: rgba(0,0,0,0.05); }
+.dark .legal-tab-btn:hover { color: #eee; background: rgba(255,255,255,0.05); }
+.legal-tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+.legal-modal__close {
+    background: transparent; border: none; font-size: 28px; padding: 0 20px;
+    cursor: pointer; color: inherit; line-height: 1; outline: none;
+}
+.legal-modal__body { padding: 30px; overflow-y: auto; flex-grow: 1; }
+.legal-tab-content { display: none; }
+.legal-tab-content.active { display: block; }
+.legal-tab-content > p { margin-bottom: 25px; }
+.legal-tab-content details { margin-top: 12px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.dark .legal-tab-content details { border-bottom-color: #444; }
+.legal-tab-content summary { cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center; }
+.dark .legal-tab-content summary { color: #eee; }
+.legal-tab-content details div { padding-top: 10px; }
+.legal-tab-content a { color: #8059d4ff; text-decoration: none; }
+.legal-tab-content a:hover { text-decoration: underline; }
+.dark .legal-tab-content a { color: #a078deff; }
+.legal-modal.active, .legal-modal-backdrop.active { display: flex; }
+.legal-modal-backdrop.active { display: block; }

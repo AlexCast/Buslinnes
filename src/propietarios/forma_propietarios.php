@@ -14,7 +14,7 @@ include_once "encabezado_propietarios.php"; ?>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="id_propietario" class="form-label">ID Propietario</label>
-<input required name="id_propietario" type="number" pattern="\d{10}" title="Debe contener 10 dígitos" id="id_propietario" class="form-control" placeholder="ID del propietario" min="1000000000" max="9999999999" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+<input required name="id_propietario" type="text" inputmode="numeric" pattern="[0-9]{6,10}" minlength="6" maxlength="10" title="Debe contener entre 6 y 10 dígitos" id="id_propietario" class="form-control" placeholder="ID del propietario" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                 </div>
                                 <div class="form-group mb-3">
                                     <label for="nom_propietario" class="form-label">Nombre</label>
@@ -36,19 +36,20 @@ include_once "encabezado_propietarios.php"; ?>
                                 </div>
                                 <?php
                                 include_once "../base_de_datos.php";
-                                $buses = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
+                                $buses = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
                                     <label for="id_bus" class="form-label">ID Bus</label>
                                     <select name="id_bus" id="id_bus" class="form-select" required>
                                         <option value="" disabled selected hidden>Seleccione un bus</option>
                                         <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo (int)$bus->id_bus; ?>">
-                                                <?php echo $bus->id_bus . ' - ' . htmlspecialchars($bus->matricula); ?>
+                                            <option value="<?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+                            </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-4">
                             <a href="./listar_propietarios.php" class="btn btn-warning">
@@ -65,6 +66,8 @@ include_once "encabezado_propietarios.php"; ?>
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 
 

@@ -5,22 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Establecer Nueva Contraseña - Buslinnes</title>
     <!--Favicon-->
-    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
     <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/buslinnes/assets/css/login.css">
     <script src="/buslinnes/assets/js/darkmode.js" defer></script>
     <script src="/buslinnes/assets/js/security.js"></script>
     <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+    <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
             <h1>
                 <a href="/buslinnes/templates/index.html">
-                    <img class="logo-light" src="/buslinnes/assets/img/logo.svg" alt="Buslinnes Logo">
-                    <img class="logo-dark" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo (dark)">
+                    <img class="logo-light logo-img" src="/buslinnes/assets/img/logo.svg" alt="Buslinnes Logo">
+                    <img class="logo-dark logo-img" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo (dark)">
                 </a>
             </h1>
             <p>Establecer Nueva Contraseña</p>
@@ -36,10 +38,13 @@
 
             <form id="resetPasswordForm">
                 <div class="form-group">
-                    <label for="password" class="form-label">Nueva Contraseña</label>
+                    <label for="new_password_input" class="form-label">Nueva Contraseña</label>
                     <div class="input-icon">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" class="form-input" placeholder="Ingresa tu nueva contraseña" required minlength="6">
+                        <input type="password" id="new_password_input" name="new_password_input" class="form-input" placeholder="Ingresa tu nueva contraseña" required minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');">
+                        <button type="button" class="toggle-password" data-target="new_password_input" title="Mostrar/Ocultar contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                     <div class="password-strength">
                         <div class="strength-meter"></div>
@@ -47,10 +52,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                    <label for="confirm_password_input" class="form-label">Confirmar Contraseña</label>
                     <div class="input-icon">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Confirma tu nueva contraseña" required minlength="6">
+                        <input type="password" id="confirm_password_input" name="confirm_password_input" class="form-input" placeholder="Confirma tu nueva contraseña" required minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');">
+                        <button type="button" class="toggle-password" data-target="confirm_password_input" title="Mostrar/Ocultar contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -70,11 +78,36 @@
     </div>
 
     <script>
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = button.getAttribute('data-target');
+                const inputField = document.getElementById(targetId);
+                const icon = button.querySelector('i');
+
+                if (!inputField) return;
+
+                if (inputField.type === 'password') {
+                    inputField.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    inputField.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+
         // Obtener el token de la URL
         function getTokenFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('token');
         }
+
+        let passwordEditedByUser = false;
+        let confirmEditedByUser = false;
 
         // Validar token al cargar la página
         window.addEventListener('DOMContentLoaded', async function() {
@@ -83,6 +116,26 @@
             const form = document.getElementById('resetPasswordForm');
             const errorDiv = document.getElementById('password-error');
             const successDiv = document.getElementById('password-success');
+            const newPasswordInput = document.getElementById('new_password_input');
+            const confirmPasswordInput = document.getElementById('confirm_password_input');
+
+            // Evitar que el navegador/gestor de contraseñas reinyecte una clave antigua.
+            if (form) form.reset();
+            if (newPasswordInput) newPasswordInput.value = '';
+            if (confirmPasswordInput) confirmPasswordInput.value = '';
+            passwordEditedByUser = false;
+            confirmEditedByUser = false;
+
+            if (newPasswordInput) {
+                newPasswordInput.addEventListener('input', () => {
+                    passwordEditedByUser = true;
+                });
+            }
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', () => {
+                    confirmEditedByUser = true;
+                });
+            }
 
             if (!token) {
                 errorDiv.textContent = 'No se encontró un token válido en la URL. Por favor, solicita un nuevo enlace de recuperación.';
@@ -117,8 +170,8 @@
         document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
+            const password = document.getElementById('new_password_input').value;
+            const confirmPassword = document.getElementById('confirm_password_input').value;
             const token = document.getElementById('token').value;
             const errorDiv = document.getElementById('password-error');
             const successDiv = document.getElementById('password-success');
@@ -131,6 +184,12 @@
             // Validaciones del lado del cliente
             if (!password || !confirmPassword) {
                 errorDiv.textContent = 'Por favor completa todos los campos';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!passwordEditedByUser || !confirmEditedByUser) {
+                errorDiv.textContent = 'Por seguridad, escribe manualmente la nueva contraseña en ambos campos (no autocompletado).';
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -154,14 +213,32 @@
             try {
                 console.log('Enviando petición a nueva_contrasena.php...');
                 
-                const rawResp = await securityHelper.post('/buslinnes/public/nueva_contrasena.php', {
-                    token: token,
-                    password: password,
-                    confirm_password: confirmPassword,
-                    resetSubmit: 'Cambiar'
+                // Para este endpoint público (reset de contraseña), no necesitamos CSRF token
+                // Usar fetch directo en lugar de securityHelper
+                const response = await fetch('/buslinnes/public/nueva_contrasena.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        password: password,
+                        confirm_password: confirmPassword
+                    })
                 });
 
-                const data = await rawResp.json();
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (_) {
+                    data = null;
+                }
+
+                if (!response.ok) {
+                    const backendMessage = data && (data.message || data.error);
+                    throw new Error(backendMessage || `HTTP ${response.status}: ${response.statusText}`);
+                }
                 console.log('Datos recibidos:', data);
 
                 if (data.success) {
@@ -169,11 +246,30 @@
                     successDiv.style.display = 'block';
                     errorDiv.style.display = 'none';
                     this.style.display = 'none';
-                    
-                    // Redirigir al login después de 3 segundos
-                    setTimeout(() => {
-                        window.location.href = '/buslinnes/public/login.php';
-                    }, 3000);
+
+                    // Si el backend entrega token, iniciar sesión automáticamente
+                    if (data.token) {
+                        localStorage.setItem('jwt_token', data.token);
+                        document.cookie = `jwt_token=${data.token}; path=/`;
+
+                        setTimeout(() => {
+                            const role = (data.rol || '').toLowerCase();
+                            if (role === 'admin') {
+                                window.location.href = '/buslinnes/templates/buslinnes_interface.html';
+                            } else if (role === 'conductor') {
+                                window.location.href = '/buslinnes/templates/driver_interface.html';
+                            } else if (role === 'pasajero') {
+                                window.location.href = '/buslinnes/templates/passenger_interface.html';
+                            } else {
+                                window.location.href = '/buslinnes/public/login.php';
+                            }
+                        }, 1200);
+                    } else {
+                        // Fallback: redirigir al login
+                        setTimeout(() => {
+                            window.location.href = '/buslinnes/public/login.php';
+                        }, 3000);
+                    }
                 } else {
                     errorDiv.textContent = data.message || 'Error al cambiar la contraseña. Por favor intenta nuevamente.';
                     errorDiv.style.display = 'block';

@@ -11,7 +11,7 @@ if (empty($token)) {
 
 // Verificar token
 $userClass = new userClass();
-$stmt = $userClass->db->prepare("SELECT email FROM password_reset_tokens WHERE token = ? AND expires_at > NOW() LIMIT 1");
+$stmt = $userClass->db->prepare("SELECT email_usuario FROM password_reset_tokens WHERE token = ? AND expires_at > NOW() LIMIT 1");
 $stmt->execute([$token]);
 $row = $stmt->fetch();
 
@@ -19,7 +19,7 @@ if (!$row) {
     die('Token inválido o expirado');
 }
 
-$email = $row['email'];
+$email = $row['email_usuario'];
 
 $message = '';
 
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Actualizar contraseña
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        $stmt = $userClass->db->prepare("UPDATE tab_usuarios SET contrasena = ? WHERE correo = ?");
+        $stmt = $userClass->db->prepare("UPDATE tab_usuarios SET contrasena = ? WHERE email_usuario = ?");
         $stmt->execute([$hashedPassword, $email]);
 
         // Eliminar token
@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restablecer Contraseña - Buslinnes</title>
+    <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
     <link rel="stylesheet" href="./assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/buslinnes/assets/css/login.css">
 </head>
@@ -59,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="login-header">
             <h1>
                 <a href="index.html">
-                    <img class="logo-light" src="/buslinnes/assets/img/logo.svg" alt="Buslinnes Logo">
-                    <img class="logo-dark" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo (dark)">
+                    <img class="logo-light logo-img" src="/buslinnes/assets/img/logo.svg" alt="Buslinnes Logo">
+                    <img class="logo-dark logo-img" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo (dark)">
                 </a>
             </h1>
             <p>Restablecer Contraseña</p>

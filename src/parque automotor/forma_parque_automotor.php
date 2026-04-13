@@ -28,19 +28,20 @@ Formulario para agregar nuevos parques automotores al sistema
                                 </div>
                                 <?php
                                 include_once "../base_de_datos.php";
-                                $buses = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
+                                $buses = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
                                     <label for="id_bus" class="form-label">ID Bus</label>
                                     <select name="id_bus" id="id_bus" class="form-select" required>
                                         <option value="" disabled selected>Seleccione un bus</option>
                                         <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus; ?>">
-                                                <?php echo $bus->id_bus . ' - ' . htmlspecialchars($bus->matricula); ?>
+                                            <option value="<?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+                            </div>
                             <!-- Columna 2 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -65,5 +66,7 @@ Formulario para agregar nuevos parques automotores al sistema
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 

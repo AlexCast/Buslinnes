@@ -25,10 +25,20 @@ validarTokenJWT(['admin', 'conductor']);
 
 include_once "../base_de_datos.php";
 
+function obtener_destino_notificacion(object $notificacion): string {
+    if (!empty($notificacion->id_usuario)) {
+        return 'Usuario: ' . ($notificacion->nom_usuario ?? '#' . $notificacion->id_usuario);
+    }
+    if (!empty($notificacion->id_rol)) {
+        return 'Rol: ' . ($notificacion->nombre_rol ?? '#' . $notificacion->id_rol);
+    }
+    return 'Todos los suscritos';
+}
+
 $sentencia = $base_de_datos->query("
     SELECT n.id_notificacion, n.id_usuario, n.id_rol, n.titulo_notificacion, n.descr_notificacion,
            n.usr_delete, n.fec_delete,
-           u.nombre AS nom_usuario,
+        u.nom_usuario,
            r.nombre_rol
     FROM tab_notificaciones n
     LEFT JOIN tab_usuarios u ON n.id_usuario = u.id_usuario
@@ -51,59 +61,6 @@ $notificacionesActivas = array_filter($notificaciones, function($n) {
     <div class="col-12">
         <h1>Notificaciones de Usuarios</h1>
 
-        <?php if (isset($_GET['restaurado']) && (int)$_GET['restaurado'] === 1): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                Notificación restaurada correctamente.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (isset($_GET['insertado']) && (int)$_GET['insertado'] === 1): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                ✅ Notificación registrada correctamente en la base de datos.
-                <?php if (isset($_GET['push_enviado']) && (int)$_GET['push_enviado'] === 1): ?>
-                    <br>📱 <strong>Notificación push enviada exitosamente.</strong>
-                <?php elseif (isset($_GET['sin_push'])): ?>
-                    <br>ℹ️ <small>No se envió notificación push (checkbox desactivado).</small>
-                <?php endif; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (isset($_GET['push_error'])): ?>
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                ⚠️ Notificación guardada, pero <strong>no se pudo enviar push</strong>: <?php echo htmlspecialchars($_GET['push_error']); ?>
-                <br><small>La notificación fue registrada en la base de datos exitosamente.</small>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (isset($_GET['error_restore']) && (int)$_GET['error_restore'] === 1): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                No se pudo restaurar la notificación.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        <?php if (isset($_GET['actualizado']) && (int)$_GET['actualizado'] === 1): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                Notificación actualizada correctamente.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        <?php if (isset($_GET['error_update']) && (int)$_GET['error_update'] === 1): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                No se pudo actualizar la notificación. <?php echo isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : ''; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($_GET['push_error'])): ?>
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <strong>Notificación guardada, pero el push falló:</strong> <?php echo htmlspecialchars($_GET['push_error']); ?>
-                <br><small>Verifica ONESIGNAL_REST_API_KEY en config/database.php y que los usuarios tengan el tag rol_id (para rol) o external_id (para usuario).</small>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        <?php endif; ?>
-        
         <div class="d-flex gap-3 mb-4">
             <span class="badge bg-primary p-2">Activas: <?php echo count($notificacionesActivas); ?></span>
             <span class="badge bg-danger p-2" id="btnEliminados" style="cursor:pointer;">Eliminadas: <?php echo count($notificacionesEliminadas); ?></span>
@@ -136,7 +93,7 @@ $notificacionesActivas = array_filter($notificaciones, function($n) {
                       </thead>
                       <tbody>
                         <?php foreach ($notificacionesEliminadas as $notificacion):
-                            $destino = !empty($notificacion->id_usuario) ? ('Usuario: ' . ($notificacion->nom_usuario ?? '#' . $notificacion->id_usuario)) : ('Rol: ' . ($notificacion->nombre_rol ?? '#' . $notificacion->id_rol));
+                            $destino = obtener_destino_notificacion($notificacion);
                         ?>
                           <tr>
                             <td><?php echo (int)$notificacion->id_notificacion; ?></td>
@@ -181,7 +138,7 @@ $notificacionesActivas = array_filter($notificaciones, function($n) {
                             <tr><td colspan="5" class="text-center">No hay notificaciones registradas</td></tr>
                         <?php else: ?>
                             <?php foreach($notificacionesActivas as $notificacion):
-                                $destino = !empty($notificacion->id_usuario) ? ('Usuario: ' . ($notificacion->nom_usuario ?? '#' . $notificacion->id_usuario)) : ('Rol: ' . ($notificacion->nombre_rol ?? '#' . $notificacion->id_rol));
+                                $destino = obtener_destino_notificacion($notificacion);
                             ?>
                             <tr>
                                 <td><?php echo (int)$notificacion->id_notificacion; ?></td>
@@ -235,13 +192,7 @@ $notificacionesActivas = array_filter($notificaciones, function($n) {
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Destino:</strong>
-                                        <span><?php
-                                            if (!empty($notificacion->id_usuario)) {
-                                                echo 'Usuario: ' . htmlspecialchars($notificacion->nom_usuario ?? '#' . $notificacion->id_usuario);
-                                            } else {
-                                                echo 'Rol: ' . htmlspecialchars($notificacion->nombre_rol ?? '#' . $notificacion->id_rol);
-                                            }
-                                        ?></span>
+                                        <span><?php echo htmlspecialchars(obtener_destino_notificacion($notificacion)); ?></span>
                                     </li>
                                     <li class="list-group-item">
                                         <strong>Descripción:</strong><br>
@@ -263,3 +214,5 @@ $notificacionesActivas = array_filter($notificaciones, function($n) {
 <script src="../../assets/js/bootstrap.bundle.min.js"></script>
 <!-- Script único para el modal de eliminados -->
 <script src="../../assets/js/modalEliminados.js"></script>
+<!-- Script para los Toasts de notificaciones -->
+<script src="../../assets/js/notificaciones_toast.js"></script>

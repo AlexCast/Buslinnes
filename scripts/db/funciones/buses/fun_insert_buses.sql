@@ -1,8 +1,6 @@
 CREATE OR REPLACE FUNCTION fun_insert_buses(
     wid_bus tab_buses.id_bus%TYPE,
-    wid_conductor tab_buses.id_conductor%TYPE,
-    wnum_chasis tab_buses.num_chasis%TYPE,
-    wmatricula tab_buses.matricula%TYPE,
+    wid_usuario tab_buses.id_usuario%TYPE,
     wanio_fab tab_buses.anio_fab%TYPE,
     wcapacidad_pasajeros tab_buses.capacidad_pasajeros%TYPE,
     wtipo_bus tab_buses.tipo_bus%TYPE DEFAULT 'U',
@@ -11,8 +9,13 @@ CREATE OR REPLACE FUNCTION fun_insert_buses(
 ) RETURNS BOOLEAN AS
 $$
     BEGIN
+        IF wid_bus IS NULL OR btrim(wid_bus::text) = '' THEN
+            RAISE NOTICE 'El ID del bus no puede ser nulo o vacio';
+            RETURN FALSE;
+        END IF;
+
         -- Validar que no haya nulos importantes        
-        IF wid_conductor IS NULL OR wid_conductor <= 0 THEN
+        IF wid_usuario IS NULL OR wid_usuario <= 0 THEN
             RAISE NOTICE 'El ID del conductor no puede ser nulo o menor a 1';
             RETURN FALSE;
         END IF;
@@ -30,8 +33,8 @@ $$
         END IF;
         
         -- Insertar el nuevo registro
-        INSERT INTO tab_buses (id_bus, id_conductor, num_chasis, matricula, anio_fab, capacidad_pasajeros, tipo_bus, gps, ind_estado_buses)
-        VALUES (wid_bus, wid_conductor, wnum_chasis, wmatricula, wanio_fab, wcapacidad_pasajeros, wtipo_bus, wgps, wind_estado_buses);
+        INSERT INTO tab_buses (id_bus, id_usuario, anio_fab, capacidad_pasajeros, tipo_bus, gps, ind_estado_buses)
+        VALUES (wid_bus, wid_usuario, wanio_fab, wcapacidad_pasajeros, wtipo_bus, wgps, wind_estado_buses);
         
         RAISE NOTICE 'Bus insertado correctamente';
         RETURN TRUE;

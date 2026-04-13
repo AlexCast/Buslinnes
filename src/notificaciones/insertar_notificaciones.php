@@ -27,10 +27,45 @@ if (!isset($_POST["id_notificacion"]) || !isset($_POST["tipo_destino"]) ||
     exit();
 }
 
-$id_notificacion     = (int) $_POST["id_notificacion"];
-$tipo_destino        = $_POST["tipo_destino"];
+$id_notificacion_txt = trim((string) $_POST["id_notificacion"]);
+if (!preg_match('/^[0-9]+$/', $id_notificacion_txt) || (int) $id_notificacion_txt <= 0) {
+    header("Location: forma_notificaciones.php?error=" . urlencode("id_notificacion invalido"));
+    exit();
+}
+$id_notificacion = (int) $id_notificacion_txt;
+
+$tipo_destino = trim((string) $_POST["tipo_destino"]);
+if (!in_array($tipo_destino, ['usuario', 'rol', 'todos'], true)) {
+    header("Location: forma_notificaciones.php?error=" . urlencode("tipo_destino invalido"));
+    exit();
+}
+
 $titulo_notificacion = trim((string) $_POST["titulo_notificacion"]);
-$descr_notificacion  = trim((string) $_POST["descr_notificacion"]);
+$descr_notificacion = trim((string) $_POST["descr_notificacion"]);
+if (function_exists('mb_strlen')) {
+    $lenTitulo = mb_strlen($titulo_notificacion);
+    $lenDescr = mb_strlen($descr_notificacion);
+} elseif (function_exists('iconv_strlen')) {
+    $lenTitulo = iconv_strlen($titulo_notificacion, 'UTF-8');
+    $lenDescr = iconv_strlen($descr_notificacion, 'UTF-8');
+    if ($lenTitulo === false) {
+        $lenTitulo = strlen($titulo_notificacion);
+    }
+    if ($lenDescr === false) {
+        $lenDescr = strlen($descr_notificacion);
+    }
+} else {
+    $lenTitulo = strlen($titulo_notificacion);
+    $lenDescr = strlen($descr_notificacion);
+}
+if ($lenTitulo < 3 || $lenTitulo > 120) {
+    header("Location: forma_notificaciones.php?error=" . urlencode("El titulo debe tener entre 3 y 120 caracteres"));
+    exit();
+}
+if ($lenDescr < 5 || $lenDescr > 2000) {
+    header("Location: forma_notificaciones.php?error=" . urlencode("La descripcion debe tener entre 5 y 2000 caracteres"));
+    exit();
+}
 
 $id_usuario = null;
 $id_rol     = null;
@@ -42,14 +77,24 @@ if ($tipo_destino === 'usuario') {
         header("Location: forma_notificaciones.php?error=" . urlencode("Seleccione un usuario"));
         exit();
     }
-    $id_usuario = (int) $_POST["id_usuario"];
+    $id_usuario_txt = trim((string) $_POST["id_usuario"]);
+    if (!preg_match('/^[0-9]+$/', $id_usuario_txt) || (int) $id_usuario_txt <= 0) {
+        header("Location: forma_notificaciones.php?error=" . urlencode("id_usuario invalido"));
+        exit();
+    }
+    $id_usuario = (int) $id_usuario_txt;
     $onesignal_id_usuario = $id_usuario;
 } elseif ($tipo_destino === 'rol') {
     if (!isset($_POST["id_rol"]) || $_POST["id_rol"] === '') {
         header("Location: forma_notificaciones.php?error=" . urlencode("Seleccione un rol"));
         exit();
     }
-    $id_rol = (int) $_POST["id_rol"];
+    $id_rol_txt = trim((string) $_POST["id_rol"]);
+    if (!preg_match('/^[0-9]+$/', $id_rol_txt) || (int) $id_rol_txt <= 0) {
+        header("Location: forma_notificaciones.php?error=" . urlencode("id_rol invalido"));
+        exit();
+    }
+    $id_rol = (int) $id_rol_txt;
     $onesignal_id_rol = $id_rol;
 } elseif ($tipo_destino === 'todos') {
     $onesignal_id_usuario = null;
@@ -60,11 +105,6 @@ if ($tipo_destino === 'usuario') {
 }
 
 include_once "../base_de_datos.php";
-
-if ($tipo_destino === 'todos') {
-    $primero = $base_de_datos->query("SELECT id_usuario FROM tab_usuarios WHERE fec_delete IS NULL ORDER BY id_usuario LIMIT 1")->fetch(PDO::FETCH_OBJ);
-    $id_usuario = $primero ? (int) $primero->id_usuario : 1;
-}
 
 try {
     $sentencia = $base_de_datos->prepare("SELECT fun_insert_notificaciones(?, ?, ?, ?, ?);");

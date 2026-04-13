@@ -17,19 +17,24 @@ if (!isset($_GET["id_mantenimiento"])) {
     exit();
 }
 
-$id_mantenimiento = $_GET["id_mantenimiento"];
+$id_mantenimiento = trim((string) $_GET["id_mantenimiento"]);
+if (!preg_match('/^[0-9]+$/', $id_mantenimiento)) {
+    echo "ID de mantenimiento invalido";
+    exit();
+}
 
 $sentencia = $base_de_datos->prepare("
     SELECT id_mantenimiento, id_bus, descripcion, fecha_mantenimiento, 
            costo_mantenimiento 
     FROM tab_mantenimiento 
     WHERE id_mantenimiento = ?
+      AND fec_delete IS NULL
 ");
 $sentencia->execute([$id_mantenimiento]);
 $mantenimiento = $sentencia->fetchObject();
 
 // Obtener los buses existentes para el select
-$buses = $base_de_datos->query('SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus')->fetchAll(PDO::FETCH_OBJ);
+$buses = $base_de_datos->query('SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus')->fetchAll(PDO::FETCH_OBJ);
 
 if (!$mantenimiento) {
     echo "¡No existe el mantenimiento con ese ID!";
@@ -47,7 +52,7 @@ if (!$mantenimiento) {
                 </div>
                 <div class="card-body">
                     <form action="update_mantenimiento.php" method="POST">
-                        <input type="hidden" name="id_mantenimiento" value="<?php echo $mantenimiento->id_mantenimiento; ?>">
+                        <input type="hidden" name="id_mantenimiento" value="<?php echo htmlspecialchars((string) $mantenimiento->id_mantenimiento, ENT_QUOTES, 'UTF-8'); ?>">
 
                         <div class="row">
                             <!-- Columna 1 -->
@@ -57,8 +62,8 @@ if (!$mantenimiento) {
                                     <select name="id_bus" id="id_bus" class="form-control" required>
                                         <option value="" disabled>Seleccione un bus</option>
                                         <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus; ?>" <?php if($bus->id_bus == $mantenimiento->id_bus) echo 'selected'; ?>>
-                                                <?php echo $bus->id_bus . ' - ' . htmlspecialchars($bus->matricula); ?>
+                                            <option value="<?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>" <?php if((string) $bus->id_bus === (string) $mantenimiento->id_bus) echo 'selected'; ?>>
+                                                <?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -67,14 +72,15 @@ if (!$mantenimiento) {
                                 <div class="form-group mb-3">
                                     <label for="descripcion" class="form-label">Descripción del Mantenimiento</label>
                                     <input value="<?php echo htmlspecialchars($mantenimiento->descripcion); ?>" 
-                                           required name="descripcion" type="text" id="descripcion" 
+                                           required name="descripcion" type="text" id="descripcion" minlength="10" maxlength="500"
                                            placeholder="Descripción del mantenimiento" class="form-control">
                                 </div>
 
                                 <div class="form-group mb-3">
                                     <label for="fecha_mantenimiento" class="form-label">Fecha del Mantenimiento</label>
-                                    <input value="<?php echo htmlspecialchars(substr($mantenimiento->fecha_mantenimiento,0,10)); ?>" 
-                                           required name="fecha_mantenimiento" type="date" id="fecha_mantenimiento" 
+                                    <input value="<?php echo htmlspecialchars(date('Y-m-d\\TH:i', strtotime($mantenimiento->fecha_mantenimiento))); ?>" 
+                                           required name="fecha_mantenimiento" type="datetime-local" id="fecha_mantenimiento" 
+                                           max="<?php echo date('Y-m-d\\TH:i'); ?>"
                                            class="form-control">
                                 </div>
 
@@ -82,6 +88,7 @@ if (!$mantenimiento) {
                                     <label for="costo_mantenimiento" class="form-label">Costo del Mantenimiento</label>
                                     <input value="<?php echo htmlspecialchars($mantenimiento->costo_mantenimiento); ?>" 
                                            required name="costo_mantenimiento" type="number" id="costo_mantenimiento" 
+                                           step="1" min="0" max="9999999999"
                                            placeholder="Costo del mantenimiento" class="form-control">
                                 </div>
                             </div>
@@ -100,5 +107,7 @@ if (!$mantenimiento) {
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 

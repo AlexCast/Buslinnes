@@ -52,11 +52,22 @@ $validarEntero = static function ($valor, string $campo, int $min = 1, int $max 
 
 $validarTexto = static function ($valor, string $campo, int $min, int $max) use ($redirigirConError): string {
     $texto = trim((string) $valor);
-    $longitud = mb_strlen($texto);
+    $longitud = function_exists('mb_strlen')
+        ? mb_strlen($texto)
+        : (function_exists('iconv_strlen') ? iconv_strlen($texto, 'UTF-8') : strlen($texto));
     if ($longitud < $min || $longitud > $max) {
         $redirigirConError("El campo {$campo} debe tener entre {$min} y {$max} caracteres.");
     }
     return $texto;
+};
+
+$normalizarPlacaBus = static function ($valor, string $campo) use ($redirigirConError): string {
+    $texto = strtoupper(trim((string) $valor));
+    $compacto = preg_replace('/\s+/', '', $texto);
+    if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $compacto)) {
+        $redirigirConError("El campo {$campo} debe tener formato AAA123.");
+    }
+    return $compacto;
 };
 
 #Si todo va bien, se ejecuta esta parte del código...
@@ -65,22 +76,29 @@ include_once "../base_de_datos.php";
 
 
 $id_parque_automotor = $validarEntero($_POST["id_parque_automotor"], "id_parque_automotor");
-$id_bus             = $validarEntero($_POST["id_bus"], "id_bus");
+$id_bus             = $normalizarPlacaBus($_POST["id_bus"], "id_bus");
 $dir_parque_automotor = $validarTexto($_POST["dir_parque_automotor"], "dir_parque_automotor", 5, 255);
 
 
 
-$sentencia = $base_de_datos->prepare("SELECT fun_update_parque_automotor(CAST(? AS INTEGER), CAST(? AS INTEGER), CAST(? AS VARCHAR));");
-$resultado = $sentencia->execute([
-    $id_parque_automotor,
-    $id_bus,
-    $dir_parque_automotor
-]);
+try {
+    $sentencia = $base_de_datos->prepare("SELECT fun_update_parque_automotor(?, ?, ?);");
+    $sentencia->execute([
+        $id_parque_automotor,
+        $id_bus,
+        $dir_parque_automotor
+    ]);
+    $resultado = $sentencia->fetchColumn();
+    $ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
 
-if ($resultado === true) {
-    header("Location: listar_parque_automotor.php");
-} else {
-    echo "Algo salió mal. Por favor verifica que la tabla exista, así como el ID del parque automotor";
+    if ($ok) {
+        header("Location: listar_parque_automotor.php");
+        exit();
+    }
+
+    $redirigirConError("No fue posible actualizar el parque automotor. Verifique datos e ID.");
+} catch (PDOException $e) {
+    $redirigirConError("Error de base de datos al actualizar parque automotor.");
 }
 
 

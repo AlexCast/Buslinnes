@@ -27,7 +27,7 @@ include_once "encab_roles.php";
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="nombre_rol" class="form-label">Nombre del Rol</label>
-                                    <input required name="nombre_rol" type="text" id="nombre_rol" class="form-control" placeholder="Nombre del rol">
+                                    <input required name="nombre_rol" type="text" id="nombre_rol" class="form-control" minlength="3" maxlength="40" pattern="[A-Za-z0-9_\-\s]+" placeholder="Nombre del rol">
                                 </div>
                             </div>
                         </div>

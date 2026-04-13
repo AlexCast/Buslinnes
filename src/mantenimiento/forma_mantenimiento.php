@@ -28,22 +28,22 @@ Formulario para agregar nuevos mantenimientos al sistema
                                 <div class="form-group mb-3">
                                     <label for="id_mantenimiento" class="form-label">ID Mantenimiento</label>
                                     <input type="number" name="id_mantenimiento" id="id_mantenimiento" class="form-control" 
-                                           required min="1" max="9999999999" step="1" title="Solo números, mínimo 1 dígito"
+                                           required min="1" max="2147483647" step="1" title="Solo números, mínimo 1 dígito"
                                            placeholder="Ingrese el ID" onkeydown="return event.key !== 'e' && event.key !== 'E'">
                                 </div>
 
                                 <?php
                                 // Obtener los buses existentes
                                 include_once '../base_de_datos.php';
-                                $buses = $base_de_datos->query('SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus')->fetchAll(PDO::FETCH_OBJ);
+                                $buses = $base_de_datos->query('SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus')->fetchAll(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
                                     <label for="id_bus" class="form-label">ID Bus</label>
                                     <select name="id_bus" id="id_bus" class="form-control" required>
                                         <option value="" disabled selected>Seleccione un bus</option>
                                         <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus; ?>">
-                                                <?php echo $bus->id_bus . ' - ' . htmlspecialchars($bus->matricula); ?>
+                                            <option value="<?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -52,7 +52,7 @@ Formulario para agregar nuevos mantenimientos al sistema
                                 <div class="form-group mb-3">
                                     <label for="descripcion" class="form-label">Descripción</label>
                                     <input type="text" name="descripcion" id="descripcion" class="form-control"
-                                           required minlength="3" 
+                                           required minlength="10" maxlength="500"
                                            placeholder="Descripción del mantenimiento">
                                 </div>
 
@@ -64,8 +64,8 @@ Formulario para agregar nuevos mantenimientos al sistema
 
                                 <div class="form-group mb-3">
                                     <label for="costo" class="form-label">Costo del Mantenimiento</label>
-                                    <input type="number" name="costo" id="costo" class="form-control"
-                                           required step="0.01" min="0"
+                                     <input type="number" name="costo_mantenimiento" id="costo" class="form-control"
+                                         required step="1" min="0" max="9999999999"
                                            placeholder="Costo del mantenimiento">
                                 </div>
                             </div>
@@ -86,5 +86,7 @@ Formulario para agregar nuevos mantenimientos al sistema
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 

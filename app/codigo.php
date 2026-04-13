@@ -1,9 +1,9 @@
 <?php
 
 $host='localhost';
-$bd='db_buslinnes';
+$bd='postgres';
 $user='postgres';
-$pass='0149';
+$pass='123456789';
 
 $conexion=pg_connect("host=$host dbname=$bd user=$user password=$pass");
 

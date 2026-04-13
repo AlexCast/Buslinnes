@@ -128,10 +128,8 @@ $csrfToken = SecurityMiddleware::generateCSRFToken();
     </div>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/buslinnes/assets/js/security.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded fired');
 
     const map = L.map('map-picker').setView([7.1193, -73.1227], 12);
     const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -176,6 +174,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let modo = 'inicio';
     let waypoints = []; // Array para guardar waypoints
     let waypointMarkers = {}; // Diccionario de marcadores de waypoints
+    let ultimoCalculoKey = '';
+    let recalculoTimer = null;
     
     const btnInicio = document.getElementById('btnPuntoInicio');
     const btnFin = document.getElementById('btnPuntoFin');
@@ -190,8 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const suggestionsInicio = document.getElementById('suggestions-inicio');
     const suggestionsFin = document.getElementById('suggestions-fin');
     const suggestionsWaypoint = document.getElementById('suggestions-waypoint');
-
-    console.log('inicioRutaInput:', inicioRutaInput);
 
     function actualizarEstado() {
         const ilat = document.getElementById('inicio_lat').value;
@@ -215,6 +213,43 @@ document.addEventListener('DOMContentLoaded', function() {
             coordsStatus.classList.remove('text-success');
             coordsStatus.classList.add('text-muted-rutas');
         }
+    }
+
+    function obtenerClaveCalculoActual() {
+        const ilat = document.getElementById('inicio_lat').value || '';
+        const ilng = document.getElementById('inicio_lng').value || '';
+        const flat = document.getElementById('fin_lat').value || '';
+        const flng = document.getElementById('fin_lng').value || '';
+        const wpKey = waypoints.map(wp => `${wp.lat},${wp.lng}`).join('|');
+        return `${ilat};${ilng};${flat};${flng};${wpKey}`;
+    }
+
+    function programarRecalculoRuta(forzar = false) {
+        const ilat = document.getElementById('inicio_lat').value;
+        const ilng = document.getElementById('inicio_lng').value;
+        const flat = document.getElementById('fin_lat').value;
+        const flng = document.getElementById('fin_lng').value;
+
+        if (!ilat || !ilng || !flat || !flng) {
+            return;
+        }
+
+        const clave = obtenerClaveCalculoActual();
+        if (!forzar && clave === ultimoCalculoKey) {
+            return;
+        }
+
+        if (recalculoTimer) {
+            clearTimeout(recalculoTimer);
+        }
+
+        recalculoTimer = setTimeout(() => {
+            coordsStatus.textContent = 'Calculando ruta y distancia...';
+            coordsStatus.classList.remove('text-muted-rutas', 'text-warning');
+            coordsStatus.classList.add('text-info');
+            ultimoCalculoKey = clave;
+            calcularDistancia();
+        }, 120);
     }
 
     function mostrarWaypoints() {
@@ -253,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })));
 
         // Recalcular distancia con OSRM considerando waypoints
-        calcularDistanciaConWaypoints();
+        programarRecalculoRuta(true);
     }
 
     window.eliminarWaypoint = function(index) {
@@ -342,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             coordsStatus.textContent = 'Inicio y fin marcados. Ahora puedes agregar waypoints o guardar la ruta.';
             
             // Calcular distancia y dibujar ruta
-            calcularDistancia();
+            programarRecalculoRuta(true);
         } else if (modo === 'waypoint') {
             const waypointIndex = waypoints.length;
             waypoints.push({ lat, lng, nombre: null });
@@ -369,11 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function getAddressFromCoords(lat, lng) {
         try {
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'BuslinnesApp/1.0 (route-finder)'
-                }
-            });
+            const response = await fetch(url);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -424,11 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=20&viewbox=${viewbox}&dedupe=1`;
             
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'BuslinnesApp/1.0 (route-finder)'
-                }
-            });
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -510,6 +537,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function geocodificarTextoDireccion(query) {
+        const texto = (query || '').trim();
+        if (texto.length < 3) return null;
+
+        try {
+            const viewbox = '-73.4,6.65,-72.85,7.3';
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(texto)}&format=json&limit=1&viewbox=${viewbox}&dedupe=1`;
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (!Array.isArray(data) || !data[0]) return null;
+            return data[0];
+        } catch (error) {
+            console.warn('Geocodificación por texto falló:', error);
+            return null;
+        }
+    }
+
+    async function resolverCampoDireccionATexto(tipoRuta) {
+        const inputEl = tipoRuta === 'inicio' ? inicioRutaInput : finRutaInput;
+        const latEl = document.getElementById(tipoRuta === 'inicio' ? 'inicio_lat' : 'fin_lat');
+        const lngEl = document.getElementById(tipoRuta === 'inicio' ? 'inicio_lng' : 'fin_lng');
+
+        if (!inputEl || !latEl || !lngEl) return;
+        if (latEl.value && lngEl.value) return;
+
+        const place = await geocodificarTextoDireccion(inputEl.value);
+        if (!place) return;
+        selectPlace(place, tipoRuta);
+    }
+
     // Función para seleccionar un lugar de la lista
     function selectPlace(place, tipoRuta) {
         const lat = parseFloat(place.lat);
@@ -556,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
         actualizarEstado();
 
         // Calcular distancia si ambos puntos están listos
-        calcularDistancia();
+        programarRecalculoRuta(true);
     }
 
     // Función para obtener sugerencias de Nominatim para waypoints
@@ -573,11 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const viewbox = '-73.4,6.65,-72.85,7.3';
             const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=20&viewbox=${viewbox}&dedupe=1`;
             
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'BuslinnesApp/1.0 (route-finder)'
-                }
-            });
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -684,6 +738,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Función para calcular la distancia con waypoints usando OSRM
+    function calcularDistanciaHaversineKm(lat1, lon1, lat2, lon2) {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    function dibujarRutaEnMapa(latlngs) {
+        if (!Array.isArray(latlngs) || latlngs.length < 2) {
+            return;
+        }
+
+        if (window.rutaPolyline) {
+            map.removeLayer(window.rutaPolyline);
+        }
+
+        window.rutaPolyline = L.polyline(latlngs, {
+            color: '#0066ff',
+            weight: 3,
+            opacity: 0.7,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(map);
+
+        map.fitBounds(window.rutaPolyline.getBounds(), { padding: [50, 50] });
+    }
+
+    function aplicarFallbackDistanciaYTrazo(ilat, ilng, flat, flng) {
+        const puntos = [[Number(ilat), Number(ilng)]];
+        waypoints.forEach((wp) => puntos.push([Number(wp.lat), Number(wp.lng)]));
+        puntos.push([Number(flat), Number(flng)]);
+
+        let totalKm = 0;
+        for (let i = 0; i < puntos.length - 1; i++) {
+            const [lat1, lon1] = puntos[i];
+            const [lat2, lon2] = puntos[i + 1];
+            totalKm += calcularDistanciaHaversineKm(lat1, lon1, lat2, lon2);
+        }
+
+        document.getElementById('longitud').value = totalKm.toFixed(2).replace('.', ',');
+        dibujarRutaEnMapa(puntos);
+        coordsStatus.textContent = 'No se pudo trazar por calles con OSRM. Se mostró una ruta aproximada en línea recta.';
+        coordsStatus.classList.remove('text-muted-rutas');
+        coordsStatus.classList.add('text-warning');
+    }
+
     async function calcularDistanciaConWaypoints() {
         const ilat = document.getElementById('inicio_lat').value;
         const ilng = document.getElementById('inicio_lng').value;
@@ -709,6 +814,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
             const response = await fetch(osrmUrl);
+            if (!response.ok) {
+                throw new Error(`OSRM HTTP ${response.status}`);
+            }
             const data = await response.json();
 
             if (data.code === 'Ok' && data.routes && data.routes[0]) {
@@ -722,27 +830,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.routes[0].geometry && data.routes[0].geometry.coordinates) {
                     const coords = data.routes[0].geometry.coordinates;
                     const latlngs = coords.map(c => [c[1], c[0]]);
-                    
-                    // Remover línea anterior si existe
-                    if (window.rutaPolyline) {
-                        map.removeLayer(window.rutaPolyline);
-                    }
-                    
-                    // Dibujar nueva polyline
-                    window.rutaPolyline = L.polyline(latlngs, {
-                        color: '#0066ff',
-                        weight: 3,
-                        opacity: 0.7,
-                        lineCap: 'round',
-                        lineJoin: 'round'
-                    }).addTo(map);
-                    
-                    // Ajustar zoom al mapa
-                    map.fitBounds(window.rutaPolyline.getBounds(), { padding: [50, 50] });
+                    dibujarRutaEnMapa(latlngs);
                 }
+            } else {
+                aplicarFallbackDistanciaYTrazo(ilat, ilng, flat, flng);
             }
         } catch (error) {
             console.error('Error calculando distancia con waypoints:', error);
+            aplicarFallbackDistanciaYTrazo(ilat, ilng, flat, flng);
         }
     }
 
@@ -767,6 +862,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${ilng},${ilat};${flng},${flat}?overview=full&geometries=geojson`;
             const response = await fetch(osrmUrl);
+            if (!response.ok) {
+                throw new Error(`OSRM HTTP ${response.status}`);
+            }
             const data = await response.json();
 
             if (data.code === 'Ok' && data.routes && data.routes[0]) {
@@ -780,27 +878,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.routes[0].geometry && data.routes[0].geometry.coordinates) {
                     const coords = data.routes[0].geometry.coordinates;
                     const latlngs = coords.map(c => [c[1], c[0]]);
-                    
-                    // Remover línea anterior si existe
-                    if (window.rutaPolyline) {
-                        map.removeLayer(window.rutaPolyline);
-                    }
-                    
-                    // Dibujar nueva polyline
-                    window.rutaPolyline = L.polyline(latlngs, {
-                        color: '#0066ff',
-                        weight: 3,
-                        opacity: 0.7,
-                        lineCap: 'round',
-                        lineJoin: 'round'
-                    }).addTo(map);
-                    
-                    // Ajustar zoom al mapa
-                    map.fitBounds(window.rutaPolyline.getBounds(), { padding: [50, 50] });
+                    dibujarRutaEnMapa(latlngs);
                 }
+            } else {
+                aplicarFallbackDistanciaYTrazo(ilat, ilng, flat, flng);
             }
         } catch (error) {
             console.error('Error calculando distancia:', error);
+            aplicarFallbackDistanciaYTrazo(ilat, ilng, flat, flng);
         }
     }
 
@@ -808,6 +893,8 @@ document.addEventListener('DOMContentLoaded', function() {
     inicioRutaInput.addEventListener('input', function() {
         clearTimeout(debounceTimer.inicio);
         const value = this.value.trim();
+        document.getElementById('inicio_lat').value = '';
+        document.getElementById('inicio_lng').value = '';
 
         debounceTimer.inicio = setTimeout(() => {
             getSuggestions(value, 'inicio');
@@ -818,10 +905,20 @@ document.addEventListener('DOMContentLoaded', function() {
     finRutaInput.addEventListener('input', function() {
         clearTimeout(debounceTimer.fin);
         const value = this.value.trim();
+        document.getElementById('fin_lat').value = '';
+        document.getElementById('fin_lng').value = '';
 
         debounceTimer.fin = setTimeout(() => {
             getSuggestions(value, 'fin');
         }, 300);
+    });
+
+    // Si escribe manual y no selecciona sugerencia, resolver al salir del campo
+    inicioRutaInput.addEventListener('blur', () => {
+        setTimeout(() => resolverCampoDireccionATexto('inicio'), 120);
+    });
+    finRutaInput.addEventListener('blur', () => {
+        setTimeout(() => resolverCampoDireccionATexto('fin'), 120);
     });
 
     // Event listener para búsqueda de Waypoint
@@ -943,6 +1040,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
+
+    // Red de seguridad: si por algún motivo no se disparó el evento correcto,
+    // detectar coordenadas completas y recalcular automáticamente.
+    setInterval(() => {
+        const ilat = document.getElementById('inicio_lat').value;
+        const ilng = document.getElementById('inicio_lng').value;
+        const flat = document.getElementById('fin_lat').value;
+        const flng = document.getElementById('fin_lng').value;
+        const longitudActual = document.getElementById('longitud').value.trim();
+        if (ilat && ilng && flat && flng && !longitudActual) {
+            programarRecalculoRuta();
+        }
+    }, 1500);
 });
 </script>
 <?php include_once "../pie.php"; ?>

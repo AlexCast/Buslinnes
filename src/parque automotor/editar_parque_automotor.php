@@ -14,6 +14,13 @@ if (isset($_GET["id_parque_automotor"])) {
     echo "No se especificó el parque automotor a editar";
     exit();
 }
+
+$id_parque_txt = trim((string) $id_parque);
+if (!preg_match('/^[0-9]+$/', $id_parque_txt) || (int) $id_parque_txt <= 0) {
+    echo "ID de parque automotor invalido";
+    exit();
+}
+$id_parque = (int) $id_parque_txt;
 include_once "../base_de_datos.php";
 
 
@@ -22,12 +29,13 @@ $sentencia = $base_de_datos->prepare("
     SELECT pa.*
     FROM tab_parque_automotor pa
     WHERE pa.id_parque_automotor = ?
+      AND pa.fec_delete IS NULL
 ");
 $sentencia->execute([$id_parque]);
 $parque = $sentencia->fetchObject();
 
 // Obtener lista de buses para el select
-$buses = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
+$buses = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
 
 if (!$parque) {
     echo "¡No existe ningún parque automotor con ese ID!";
@@ -45,9 +53,7 @@ if (!$parque) {
                 </div>
                 <div class="card-body">
                     <form action="update_parque_automotor.php" method="POST">
-                        <input type="hidden" name="id_parque_automotor" value="<?php echo $parque->id_parque_automotor; ?>">
-                        <input type="hidden" name="usr_insert" value="<?php echo $parque->usr_insert; ?>">
-                        <input type="hidden" name="fec_insert" value="<?php echo date('Y-m-d H:i:s', strtotime($parque->fec_insert)); ?>">
+                        <input type="hidden" name="id_parque_automotor" value="<?php echo htmlspecialchars((string) $parque->id_parque_automotor, ENT_QUOTES, 'UTF-8'); ?>">
 
                         <div class="row">
                             <!-- Columna 1 -->
@@ -57,8 +63,8 @@ if (!$parque) {
                                     <select name="id_bus" id="id_bus" class="form-select" required>
                                         <option value="" disabled>Seleccione un bus</option>
                                         <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus; ?>" <?php if($bus->id_bus == $parque->id_bus) echo 'selected'; ?>>
-                                                <?php echo $bus->id_bus . ' - ' . htmlspecialchars($bus->matricula); ?>
+                                            <option value="<?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>" <?php if((string) $bus->id_bus === (string) $parque->id_bus) echo 'selected'; ?>>
+                                                <?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -71,6 +77,7 @@ if (!$parque) {
                                     <label for="dir_parque_automotor" class="form-label">Dirección del Parque</label>
                                     <input value="<?php echo htmlspecialchars($parque->dir_parque_automotor); ?>" 
                                         required name="dir_parque_automotor" type="text" id="dir_parque_automotor" 
+                                        minlength="5" maxlength="255"
                                         class="form-control" placeholder="Dirección completa">
                                 </div>
                             </div>
@@ -91,5 +98,7 @@ if (!$parque) {
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 

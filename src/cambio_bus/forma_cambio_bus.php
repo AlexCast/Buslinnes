@@ -34,35 +34,37 @@ include_once "encab_cambio_bus.php";
                             <!-- Columna 1 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="id_cambio" class="form-label">ID Cambio</label>
-                                    <input required name="id_cambio" type="number" id="id_cambio" class="form-control"
-                                           placeholder="Identificador único del cambio" min="1" max="999999" step="1">
+                                    <label for="id_cambio_bus" class="form-label">ID Cambio</label>
+                                    <input required name="id_cambio_bus" type="number" id="id_cambio_bus" class="form-control"
+                                         placeholder="Identificador único del cambio" min="1" max="999999" step="1" onkeydown="return event.key !== 'e' && event.key !== 'E'">
                                 </div>
 
                                 <?php
                                 // Buses disponibles
-                                $sentencia = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses WHERE fec_delete IS NULL ORDER BY matricula");
+                                $sentencia = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus");
                                 $buses = $sentencia->fetchAll(PDO::FETCH_OBJ);
+                                $sentencia = $base_de_datos->query("SELECT id_incidente, desc_incidente FROM tab_incidentes WHERE fec_delete IS NULL ORDER BY id_incidente");
+                                $incidentes = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
-                                    <label for="id_bus_salida" class="form-label">Bus que sale</label>
-                                    <select name="id_bus_salida" id="id_bus_salida" class="form-select" required>
-                                        <option value="" disabled selected>Seleccione bus de salida</option>
-                                        <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus ?>">
-                                                <?php echo $bus->id_bus . ' - ' . $bus->matricula ?>
+                                    <label for="id_incidente" class="form-label">Incidente</label>
+                                    <select name="id_incidente" id="id_incidente" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione incidente</option>
+                                        <?php foreach($incidentes as $incidente): ?>
+                                            <option value="<?php echo $incidente->id_incidente ?>">
+                                                <?php echo '#' . $incidente->id_incidente . ' - ' . htmlspecialchars($incidente->desc_incidente) ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
 
                                 <div class="form-group mb-3">
-                                    <label for="id_bus_entrada" class="form-label">Bus que entra</label>
-                                    <select name="id_bus_entrada" id="id_bus_entrada" class="form-select" required>
-                                        <option value="" disabled selected>Seleccione bus de reemplazo</option>
+                                    <label for="id_bus" class="form-label">Bus</label>
+                                    <select name="id_bus" id="id_bus" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione bus</option>
                                         <?php foreach($buses as $bus): ?>
                                             <option value="<?php echo $bus->id_bus ?>">
-                                                <?php echo $bus->id_bus . ' - ' . $bus->matricula ?>
+                                                <?php echo 'Bus #' . $bus->id_bus ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -72,20 +74,9 @@ include_once "encab_cambio_bus.php";
                             <!-- Columna 2 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="fecha_cambio" class="form-label">Fecha del Cambio</label>
-                                    <input required name="fecha_cambio" type="date" id="fecha_cambio" class="form-control">
-                                </div>
-
-                                <div class="form-group mb-3">
-                                    <label for="motivo" class="form-label">Motivo</label>
-                                    <textarea required name="motivo" id="motivo" class="form-control" rows="3"
-                                              placeholder="Describa el motivo del cambio"></textarea>
-                                </div>
-
-                                <div class="form-group mb-3">
-                                    <label for="usuario" class="form-label">Usuario que registra</label>
-                                    <input required name="usuario" type="text" id="usuario" class="form-control"
-                                           placeholder="Usuario que realiza el registro" maxlength="50">
+                                    <label for="ubicacion_cambio" class="form-label">Ubicación del Cambio</label>
+                                    <input required name="ubicacion_cambio" type="text" id="ubicacion_cambio" class="form-control"
+                                         placeholder="Ubicación donde se hará el cambio" minlength="3" maxlength="255">
                                 </div>
                             </div>
                         </div>

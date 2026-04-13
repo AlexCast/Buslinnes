@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buslinnes - Ficha Profesional del Conductor</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
+  <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
+  <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="/buslinnes/assets/css/driver.css?v=20260317">
+  <link rel="stylesheet" href="/buslinnes/assets/css/driver_profile.css?v=20260326">
+  <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+  <script src="/buslinnes/assets/js/security.js" defer></script>
+  <script src="/buslinnes/assets/js/app_lockdown.js" defer></script>
+  <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-container">
+        <div class="header-left">
+          <div class="logo">
+            <div class="logo-icon">
+              <img class="logo-img" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo">
+            </div>
+          </div>
+          <div class="separator"></div>
+          <h1 class="profile-page-title">Ficha Profesional</h1>
+          <button id="darkToggle" class="dark-toggle" type="button" aria-label="Cambiar modo oscuro" aria-pressed="false">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+        <div class="header-right">
+          <div class="user-profile">
+            <div class="user-avatar" id="userAvatar">CD</div>
+            <div class="user-info">
+              <div class="user-name" id="userName">Cargando...</div>
+              <div class="user-role"><strong id="userRole">CONDUCTOR</strong></div>
+            </div>
+          </div>
+          <a href="/buslinnes/templates/driver_interface.html" class="btn btn-light profile-back-btn">
+            <i class="fas fa-arrow-left"></i>
+            <span>Volver al mapa</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content profile-main">
+      <section class="profile-shell">
+        <article class="profile-hero-card">
+          <div class="profile-hero-top">
+            <div class="profile-hero-avatar" id="profileHeroAvatar">CD</div>
+            <div>
+              <p class="profile-kicker">Conductor asignado</p>
+              <h2 id="profileFullName">Cargando ficha...</h2>
+              <p id="profileEmail" class="profile-muted">--</p>
+            </div>
+          </div>
+          <div class="profile-status-row">
+            <span class="status-pill" id="statusPill">Estado: --</span>
+            <span class="profile-muted" id="licenseSummary">Licencia --</span>
+          </div>
+        </article>
+
+        <article class="profile-details-card">
+          <div class="profile-details-header">
+            <h3>Datos profesionales</h3>
+            <p class="profile-muted">Completa o actualiza tu información profesional desde esta ficha.</p>
+          </div>
+
+          <div id="profileLoading" class="profile-state">Cargando datos del conductor...</div>
+          <div id="profileError" class="profile-state profile-error hidden"></div>
+
+          <form id="driverProfileForm" class="profile-form hidden" autocomplete="off" novalidate>
+            <input type="hidden" id="profileMode" value="update">
+
+            <div class="profile-grid">
+              <div class="profile-item">
+                <span class="profile-label">ID Usuario</span>
+                <span class="profile-value profile-readonly" id="field-id_usuario">--</span>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="nom_conductor">Nombre</label>
+                <input id="nom_conductor" name="nom_conductor" type="text" class="profile-input" minlength="3" maxlength="60" required>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="ape_conductor">Apellido</label>
+                <input id="ape_conductor" name="ape_conductor" type="text" class="profile-input" minlength="3" maxlength="60" required>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="genero_conductor">Género</label>
+                <select id="genero_conductor" name="genero_conductor" class="profile-input" required>
+                  <option value="">Seleccione...</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="O">Otro</option>
+                </select>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="email_conductor">Correo</label>
+                <input id="email_conductor" name="email_conductor" type="email" class="profile-input" maxlength="120" required>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="licencia_conductor">Licencia</label>
+                <input id="licencia_conductor" name="licencia_conductor" type="text" class="profile-input" minlength="7" maxlength="10" pattern="[0-9]{7,10}" inputmode="numeric" required>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="tipo_licencia">Tipo de licencia</label>
+                <select id="tipo_licencia" name="tipo_licencia" class="profile-input" required>
+                  <option value="">Seleccione...</option>
+                  <option value="C2">C2</option>
+                  <option value="C3">C3</option>
+                </select>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="fec_venc_licencia">Vencimiento licencia</label>
+                <input id="fec_venc_licencia" name="fec_venc_licencia" type="date" class="profile-input" required>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="estado_conductor">Estado conductor</label>
+                <select id="estado_conductor" name="estado_conductor" class="profile-input" required>
+                  <option value="">Seleccione...</option>
+                  <option value="A">Activo</option>
+                  <option value="S">Suspendido</option>
+                  <option value="R">Retirado</option>
+                  <option value="P">Pendiente</option>
+                </select>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="edad">Edad</label>
+                <input id="edad" name="edad" type="number" class="profile-input" min="18" max="99" required>
+              </div>
+              <div class="profile-item">
+                <label class="profile-label" for="tipo_sangre">Tipo sangre</label>
+                <select id="tipo_sangre" name="tipo_sangre" class="profile-input" required>
+                  <option value="">Seleccione...</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="PENDIENTE">PENDIENTE</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="profile-actions">
+              <button type="submit" class="profile-submit-btn" id="profileSaveBtn">Guardar perfil</button>
+            </div>
+          </form>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function requireDriverPayload() {
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        window.location.href = '/buslinnes/public/login.php';
+        return null;
+      }
+
+      const payload = parseJwt(token);
+      const rol = (payload && (payload.nombre_rol || payload.rol) || '').toLowerCase();
+      if (rol !== 'conductor' && rol !== 'admin') {
+        if (rol === 'pasajero') {
+          window.location.href = '/buslinnes/templates/passenger_interface.html';
+          return null;
+        }
+        window.location.href = '/buslinnes/public/login.php';
+        return null;
+      }
+      return payload;
+    }
+
+    function normalizeText(value, fallback = 'No registrado') {
+      if (value === null || value === undefined || value === '') {
+        return fallback;
+      }
+      return String(value);
+    }
+
+    function initialsFromName(name) {
+      const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return 'CD';
+      if (parts.length === 1) return parts[0][0].toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function formatDate(value) {
+      if (!value) return 'No registrado';
+      const date = new Date(value + 'T00:00:00');
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: '2-digit' });
+    }
+
+    function formatGenero(value) {
+      const val = String(value || '').toUpperCase();
+      if (val === 'M') return 'Masculino';
+      if (val === 'F') return 'Femenino';
+      if (val === 'O' || val === 'OTRO') return 'Otro';
+      return normalizeText(value);
+    }
+
+    function formatEstado(value) {
+      const val = String(value || '').toUpperCase();
+      if (val === 'A') return 'Activo';
+      if (val === 'S') return 'Suspendido';
+      if (val === 'R') return 'Retirado';
+      if (val === 'P' || val === 'PENDIENTE') return 'Pendiente';
+      return normalizeText(value);
+    }
+
+    function getBadgeClass(estado) {
+      const val = String(estado || '').toUpperCase();
+      if (val === 'A') return 'status-active';
+      if (val === 'S') return 'status-warning';
+      if (val === 'R') return 'status-danger';
+      return 'status-neutral';
+    }
+
+    function setField(fieldId, value) {
+      const el = document.getElementById(fieldId);
+      if (el) el.textContent = value;
+    }
+
+    function setInputValue(fieldId, value) {
+      const el = document.getElementById(fieldId);
+      if (el) el.value = value ?? '';
+    }
+
+    function setLicenseMinDate() {
+      const dateInput = document.getElementById('fec_venc_licencia');
+      if (dateInput) {
+        dateInput.min = new Date().toISOString().slice(0, 10);
+      }
+    }
+
+    function ageFromBirthDate(value) {
+      if (!value) return '';
+      const birthDate = new Date(String(value) + 'T00:00:00');
+      if (Number.isNaN(birthDate.getTime())) return '';
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age -= 1;
+      }
+      return String(Math.max(age, 0));
+    }
+
+    function birthDateFromAge(age) {
+      const numericAge = Number(age);
+      if (!Number.isFinite(numericAge) || numericAge <= 0) return '';
+      const date = new Date();
+      date.setFullYear(date.getFullYear() - numericAge);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function showProfileMessage(message, isError = false) {
+      const errorEl = document.getElementById('profileError');
+      if (!errorEl) return;
+      errorEl.textContent = message;
+      errorEl.classList.toggle('hidden', !message);
+      errorEl.classList.toggle('profile-error', isError);
+
+      if (message) {
+        errorEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function setFormMode(mode) {
+      const modeEl = document.getElementById('profileMode');
+      const saveBtn = document.getElementById('profileSaveBtn');
+      if (modeEl) modeEl.value = mode;
+      if (saveBtn) saveBtn.textContent = mode === 'insert' ? 'Crear perfil' : 'Guardar cambios';
+    }
+
+    function fillProfileForm(data, payload) {
+      const fullName = [data.nom_conductor, data.ape_conductor].filter(Boolean).join(' ').trim();
+      const displayName = fullName || normalizeText(payload && payload.nombre, 'Conductor');
+      const displayRole = (payload && (payload.nombre_rol || payload.rol) || 'conductor').toUpperCase();
+      const initials = initialsFromName(displayName);
+
+      setField('field-id_usuario', normalizeText(data.id_usuario || payload.id_usuario || payload.id_conductor || payload.sub || '--'));
+      setInputValue('nom_conductor', data.nom_conductor || '');
+      setInputValue('ape_conductor', data.ape_conductor || '');
+      setInputValue('genero_conductor', data.genero_conductor || '');
+      setInputValue('email_conductor', data.email_conductor || payload.email || payload.correo || '');
+      setInputValue('licencia_conductor', data.licencia_conductor || '');
+      setInputValue('tipo_licencia', data.tipo_licencia || '');
+      setInputValue('fec_venc_licencia', data.fec_venc_licencia || '');
+      setInputValue('estado_conductor', data.estado_conductor || 'P');
+      setInputValue('edad', ageFromBirthDate(data.fec_nacimiento));
+      setInputValue('tipo_sangre', data.tipo_sangre || 'PENDIENTE');
+
+      document.getElementById('userName').textContent = displayName;
+      document.getElementById('userRole').textContent = displayRole;
+      document.getElementById('userAvatar').textContent = initials;
+      document.getElementById('profileHeroAvatar').textContent = initials;
+      document.getElementById('profileFullName').textContent = displayName;
+      document.getElementById('profileEmail').textContent = normalizeText(data.email_conductor || payload.email || payload.correo);
+
+      const licenseText = normalizeText(data.licencia_conductor, '--') + ' · ' + normalizeText(data.tipo_licencia, '--');
+      document.getElementById('licenseSummary').textContent = 'Licencia: ' + licenseText;
+
+      const statusPill = document.getElementById('statusPill');
+      statusPill.textContent = 'Estado: ' + formatEstado(data.estado_conductor || 'P');
+      statusPill.className = 'status-pill ' + getBadgeClass(data.estado_conductor || 'P');
+    }
+
+    async function fetchDriverProfile(payload) {
+      const loadingEl = document.getElementById('profileLoading');
+      const errorEl = document.getElementById('profileError');
+      const formEl = document.getElementById('driverProfileForm');
+      const modeEl = document.getElementById('profileMode');
+
+      const idUsuario = payload && (payload.id_usuario || payload.id_conductor || '');
+      const email = payload && (payload.email || payload.correo || '');
+
+      let query = '';
+      if (idUsuario) {
+        query = '?id_usuario=' + encodeURIComponent(idUsuario);
+      } else if (email) {
+        query = '?email_conductor=' + encodeURIComponent(email);
+      }
+
+      if (!query) {
+        loadingEl.classList.add('hidden');
+        errorEl.textContent = 'No fue posible identificar al conductor autenticado.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const response = await securityHelper.get('/buslinnes/src/conductores/api_perfil_conductor.php' + query);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data && data.error ? data.error : 'No fue posible cargar la ficha profesional.');
+        }
+
+        fillProfileForm(data, payload);
+        setFormMode(data && data.existe_perfil === false ? 'insert' : 'update');
+
+        loadingEl.classList.add('hidden');
+        errorEl.classList.add('hidden');
+        formEl.classList.remove('hidden');
+      } catch (error) {
+        loadingEl.classList.add('hidden');
+        errorEl.textContent = error.message || 'Error inesperado al cargar la ficha.';
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    async function saveDriverProfile(event) {
+      event.preventDefault();
+
+      const form = event.currentTarget;
+      const mode = document.getElementById('profileMode').value;
+      const endpoint = mode === 'insert'
+        ? '/buslinnes/src/conductores/insertar_conductores.php'
+        : '/buslinnes/src/conductores/update_conductores.php';
+      const saveBtn = document.getElementById('profileSaveBtn');
+      const errorEl = document.getElementById('profileError');
+
+      const formData = new FormData(form);
+      const idUsuario = document.getElementById('field-id_usuario').textContent.trim();
+      if (idUsuario && idUsuario !== '--') {
+        formData.set('id_usuario', idUsuario);
+      }
+
+      const edad = document.getElementById('edad').value.trim();
+      if (!edad) {
+        showProfileMessage('Debes ingresar la edad del conductor.', true);
+        return;
+      }
+
+      const edadNumerica = Number(edad);
+      if (!Number.isFinite(edadNumerica) || edadNumerica < 18 || edadNumerica > 99) {
+        showProfileMessage('Tienes que ser mayor de edad.', true);
+        return;
+      }
+
+      const fechaVencimiento = document.getElementById('fec_venc_licencia').value.trim();
+      if (!fechaVencimiento) {
+        showProfileMessage('Debes ingresar la fecha de vencimiento de la licencia.', true);
+        return;
+      }
+
+      const hoy = new Date();
+      const hoyIso = hoy.toISOString().slice(0, 10);
+      if (fechaVencimiento < hoyIso) {
+        showProfileMessage('La fecha de vencimiento de la licencia no puede ser anterior a hoy.', true);
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+      showProfileMessage('', false);
+
+      try {
+        const response = await securityHelper.post(endpoint, formData);
+        const responseText = await response.text();
+        const normalizedText = responseText.trim().toLowerCase();
+
+        if (!response.ok) {
+          throw new Error(responseText || 'No fue posible guardar la información.');
+        }
+
+        if (normalizedText.includes('error') || normalizedText.includes('faltan campos')) {
+          throw new Error(responseText || 'No fue posible guardar la información.');
+        }
+
+        showProfileMessage('Perfil guardado correctamente. Redirigiendo...', false);
+        setTimeout(() => {
+          window.location.href = '/buslinnes/templates/driver_interface.html';
+        }, 900);
+      } catch (error) {
+        showProfileMessage(error.message || 'Error al guardar la información.', true);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = mode === 'insert' ? 'Crear perfil' : 'Guardar cambios';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const payload = requireDriverPayload();
+      if (!payload) return;
+      setLicenseMinDate();
+      const form = document.getElementById('driverProfileForm');
+      if (form) {
+        form.addEventListener('submit', saveDriverProfile);
+      }
+      fetchDriverProfile(payload);
+    });
+  </script>
+</body>
+</html>

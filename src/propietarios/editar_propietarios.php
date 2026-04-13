@@ -18,15 +18,19 @@ if (!isset($_GET["id_propietario"])) {
     exit();
 }
 
-$id_propietario = $_GET["id_propietario"];
+$id_propietario = trim((string) $_GET["id_propietario"]);
+if (!preg_match('/^[0-9]{6,10}$/', $id_propietario)) {
+    echo "ID de propietario invalido";
+    exit();
+}
 
 // Seleccionar el cliente por ID
 // Obtener datos del propietario
-$sentencia = $base_de_datos->prepare("SELECT id_propietario, nom_propietario, ape_propietario, tel_propietario, email_propietario, id_bus FROM tab_propietarios WHERE id_propietario = ?;");
+$sentencia = $base_de_datos->prepare("SELECT id_propietario, nom_propietario, ape_propietario, tel_propietario, email_propietario, id_bus FROM tab_propietarios WHERE id_propietario = ? AND fec_delete IS NULL;");
 $sentencia->execute([$id_propietario]);
 $cli = $sentencia->fetchObject();
 // Obtener lista de buses para el select
-$buses = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
+$buses = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus")->fetchAll(PDO::FETCH_OBJ);
 if (!$cli) {
     echo "¡No existe el propietario con ese ID!";
     exit();
@@ -43,7 +47,7 @@ if (!$cli) {
                 </div>
                 <div class="card-body">
                     <form id="editForm" action="update_propietarios.php" method="POST">
-                        <input type="hidden" name="id_propietario" value="<?php echo $cli->id_propietario; ?>">
+                        <input type="hidden" name="id_propietario" value="<?php echo htmlspecialchars((string) $cli->id_propietario, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -69,8 +73,8 @@ if (!$cli) {
                                     <select name="id_bus" id="id_bus" class="form-select" required>
                                         <option value="" disabled>Seleccione un bus</option>
                                         <?php foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus; ?>" <?php if($bus->id_bus == $cli->id_bus) echo 'selected'; ?>>
-                                                <?php echo $bus->id_bus . ' - ' . htmlspecialchars($bus->matricula); ?>
+                                            <option value="<?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>" <?php if((string) $bus->id_bus === (string) $cli->id_bus) echo 'selected'; ?>>
+                                                <?php echo htmlspecialchars($bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -92,7 +96,8 @@ if (!$cli) {
     </div>
 </main>
 <?php include_once "../pie.php" ?>
-<?php include_once "../pie.php" ?>
+
+
 
 
 

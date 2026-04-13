@@ -21,7 +21,7 @@ use Firebase\JWT\Key;
 if (!defined('JWT_SECRET')) { define('JWT_SECRET', 'TU_CLAVE_SECRETA_AQUI'); }
 if (!defined('JWT_ISSUER')) { define('JWT_ISSUER', 'buslinnes'); }
 if (!defined('JWT_AUDIENCE')) { define('JWT_AUDIENCE', 'buslinnes_users'); }
-if (!defined('JWT_LIFETIME')) { define('JWT_LIFETIME', 1200); }
+if (!defined('JWT_LIFETIME')) { define('JWT_LIFETIME', 0); }
 
 $jwt_secret = JWT_SECRET;
 $jwt_issuer = JWT_ISSUER;
@@ -55,13 +55,13 @@ try {
         throw new Exception('Token inválido');
     }
     
-    // Crear nuevo token con los mismos datos pero nueva expiración (15 minutos)
+    // Crear nuevo token con expiración de 1 año (aunque no se usa realmente)
     $now = time();
     $payload = [
         'iss' => $jwt_issuer,
         'aud' => $jwt_audience,
         'iat' => $now,
-        'exp' => $now + 1200, // 20 minutos
+        'exp' => $now + (365 * 24 * 60 * 60), // 1 año
         'sub' => $decoded->sub,
         'email' => $decoded->email,
         'rol' => $decoded->rol,
@@ -73,12 +73,12 @@ try {
     $newToken = JWT::encode($payload, $jwt_secret, 'HS256');
     
     // Actualizar la cookie
-    setcookie('jwt_token', $newToken, $now + 1200, '/', '', false, true);
+    setcookie('jwt_token', $newToken, 0, '/', '', false, true); // Cookie de sesión
     
     echo json_encode([
         'success' => true,
         'token' => $newToken,
-        'expires_in' => 900
+        'message' => 'Token válido - renovado para 1 año'
     ]);
     
 } catch (Exception $e) {

@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$fechaMinimaLicencia = date('Y-m-d', strtotime('+1 day'));
 
 /*
 CRUD con PostgreSQL y PHP
@@ -25,24 +26,24 @@ Formulario para agregar nuevos conductores al sistema
                             <!-- Columna 1 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="id_conductor" class="form-label">cedula Conductor</label>
-                                    <input type="number" name="id_conductor" id="id_conductor" class="form-control" 
-                                           required pattern="\d{10}" " title="10 dígitos numéricos"
-                                           placeholder="Ingrese la cedula de 10 dígitos"
+                                    <label for="id_usuario" class="form-label">Cédula Conductor</label>
+                                    <input type="number" name="id_usuario" id="id_usuario" class="form-control" 
+                                         required pattern="\d{10}" title="10 dígitos numéricos"
+                                           placeholder="Ingrese la cédula de 10 dígitos"
                                            min="1000000000" max="9999999999" onkeydown="return event.key !== 'e' && event.key !== 'E'">
                                 </div>
 
                                 <div class="form-group mb-3">
                                     <label for="nom_conductor" class="form-label">Nombre</label>
                                     <input type="text" name="nom_conductor" id="nom_conductor" class="form-control"
-                                           required minlength="3" 
+                                         required minlength="3" maxlength="60"
                                            placeholder="Nombre completo del conductor">
                                 </div>
 
                                 <div class="form-group mb-3">
                                     <label for="ape_conductor" class="form-label">Apellido</label>
                                     <input type="text" name="ape_conductor" id="ape_conductor" class="form-control"
-                                           required minlength="3"
+                                         required minlength="3" maxlength="60"
                                            placeholder="Apellido del conductor">
                                 </div>
                             </div>
@@ -53,15 +54,67 @@ Formulario para agregar nuevos conductores al sistema
                                     <label for="tel_conductor" class="form-label">Teléfono</label>
                                     <input type="number" name="tel_conductor" id="tel_conductor" class="form-control"
                                            required pattern="\d{10}" title="10 dígitos numéricos"
-                                           placeholder="Número de teléfono"
-                                           min="3000000000" max="3999999999">
+                                         placeholder="Número de teléfono" minlength="10" maxlength="10"
+                                         min="3000000000" max="3999999999" onkeydown="return event.key !== 'e' && event.key !== 'E'">
                                 </div>
 
                                 <div class="form-group mb-3">
                                     <label for="licencia_conductor" class="form-label">Licencia</label>
                                     <input type="text" name="licencia_conductor" id="licencia_conductor" 
-                                           class="form-control" required maxlength="6"
+                                           class="form-control" required minlength="7" maxlength="10" pattern="[0-9]{7,10}" inputmode="numeric"
                                            placeholder="Número de licencia">
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="email_conductor" class="form-label">Email</label>
+                                    <input type="email" name="email_conductor" id="email_conductor" class="form-control" 
+                                         required maxlength="120" placeholder="correo@ejemplo.com">
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="tipo_licencia" class="form-label">Tipo de licencia</label>
+                                    <select name="tipo_licencia" id="tipo_licencia" class="form-control" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="C2">C2 (camiones/buses)</option>
+                                        <option value="C3">C3 (pesados/articulados)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="fec_venc_licencia" class="form-label">Vencimiento licencia</label>
+                                    <input type="date" name="fec_venc_licencia" id="fec_venc_licencia" class="form-control" 
+                                           min="<?php echo $fechaMinimaLicencia; ?>" required>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="estado_conductor" class="form-label">Estado</label>
+                                    <select name="estado_conductor" id="estado_conductor" class="form-control" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="A">A (Activo)</option>
+                                        <option value="S">S (Suspendido)</option>
+                                        <option value="R">R (Retirado)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="edad" class="form-label">Edad</label>
+                                    <input type="number" name="edad" id="edad" class="form-control" required min="18" max="100"
+                                           placeholder="Edad">
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="tipo_sangre" class="form-label">Tipo de sangre</label>
+                                    <select name="tipo_sangre" id="tipo_sangre" class="form-control" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="A+">A+</option>
+                                        <option value="A-">A-</option>
+                                        <option value="B+">B+</option>
+                                        <option value="B-">B-</option>
+                                        <option value="AB+">AB+</option>
+                                        <option value="AB-">AB-</option>
+                                        <option value="O+">O+</option>
+                                        <option value="O-">O-</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -81,5 +134,6 @@ Formulario para agregar nuevos conductores al sistema
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
 
 

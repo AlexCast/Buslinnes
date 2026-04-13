@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION fun_insert_tab_usuarios_roles(
-    wid_usuario   INT,
+    wid_usuario   DECIMAL(10,0),
     wid_rol       INT,
     wusr_insert   VARCHAR
 )

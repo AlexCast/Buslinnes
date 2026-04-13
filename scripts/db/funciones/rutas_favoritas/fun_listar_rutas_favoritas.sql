@@ -10,7 +10,7 @@ BEGIN
     END IF;
     
     -- Obtener la ruta favorita
-    SELECT id_ruta_favorita, id_pasajero, id_ruta
+    SELECT id_ruta_favorita, id_usuario, id_ruta
     INTO wreg_ruta_favorita
     FROM tab_rutas_favoritas
     WHERE id_ruta_favorita = wid_ruta_favorita;
@@ -21,9 +21,9 @@ BEGIN
         RETURN FALSE;
     END IF;
     
-    RAISE NOTICE 'ID Ruta Favorita: %, ID Pasajero: %, ID Ruta: %', 
+    RAISE NOTICE 'ID Ruta Favorita: %, ID Usuario: %, ID Ruta: %', 
                   wreg_ruta_favorita.id_ruta_favorita,
-                  wreg_ruta_favorita.id_pasajero,
+                  wreg_ruta_favorita.id_usuario,
                   wreg_ruta_favorita.id_ruta;
     RETURN TRUE;
 EXCEPTION

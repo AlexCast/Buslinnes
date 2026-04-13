@@ -28,7 +28,7 @@ Formulario para agregar nuevos pasajeros al sistema
                                     <label for="id_pasajero" class="form-label">ID Pasajero</label>
 <input type="number" name="id_pasajero" id="id_pasajero" class="form-control" 
        required pattern="\d{10}" title="10 dígitos numéricos"
-       placeholder="Ingrese el ID de 10 dígitos" min="1000000000" max="9999999999" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+    placeholder="Ingrese el ID de 10 dígitos" min="1000000000" max="9999999999" onkeydown="return event.key !== 'e' && event.key !== 'E'">
                                 </div>
 
                                 <div class="form-group mb-3">
@@ -42,17 +42,16 @@ Formulario para agregar nuevos pasajeros al sistema
                             <!-- Columna 2 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="ape_pasajero" class="form-label">Apellido</label>
+                                    <label for="ape_pasajero" class="form-label">Apellido (informativo)</label>
 <input type="text" name="ape_pasajero" id="ape_pasajero" class="form-control"
-       required minlength="3" maxlength="50"
+       minlength="3" maxlength="50"
        placeholder="Apellido del pasajero" >
                                 </div>
 
                                 <div class="form-group mb-3">
-                                    <label for="tel_pasajero" class="form-label">Teléfono</label>
-<input type="number" name="tel_pasajero" id="tel_pasajero" class="form-control"
-       required pattern="\d{10}" title="10 dígitos numéricos"
-       placeholder="Número de teléfono" min="3000000000" ma="3999999999">
+                                    <label for="email_pasajero" class="form-label">Correo</label>
+<input type="email" name="email_pasajero" id="email_pasajero" class="form-control"
+       required maxlength="120" placeholder="correo@ejemplo.com">
                                 </div>
                             </div>
                         </div>

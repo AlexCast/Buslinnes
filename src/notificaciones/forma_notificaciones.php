@@ -1,6 +1,18 @@
     <?php
 header('Content-Type: text/html; charset=utf-8');
 
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => false,  // GET no requiere CSRF
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+// === FIN SEGURIDAD ===
+
 /*
 Formulario para registrar notificación.
 Opción: enviar a un usuario O a un rol específico.
@@ -13,10 +25,10 @@ validarTokenJWT(['admin', 'conductor']);
 include_once "../base_de_datos.php";
 
 $sentencia_usuarios = $base_de_datos->query("
-    SELECT id_usuario, nombre
+    SELECT id_usuario, nom_usuario
     FROM tab_usuarios
     WHERE fec_delete IS NULL
-    ORDER BY nombre
+    ORDER BY nom_usuario
 ");
 $usuarios = $sentencia_usuarios->fetchAll(PDO::FETCH_OBJ);
 
@@ -54,10 +66,10 @@ $next_id = (int) $seq->fetch(PDO::FETCH_OBJ)->next_id;
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">Destino de la notificación</label>
-                            <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex flex-wrap" style="column-gap: 2rem; row-gap: 0.75rem;">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="tipo_destino" id="destino_todos" value="todos" checked>
-                                    <label class="form-check-label" for="destino_todos"><strong>Todos los suscritos</strong> (Push a todos)</label>
+                                    <label class="form-check-label" for="destino_todos"><strong>Todos los suscritos</strong></label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="tipo_destino" id="destino_usuario" value="usuario">
@@ -75,7 +87,7 @@ $next_id = (int) $seq->fetch(PDO::FETCH_OBJ)->next_id;
                             <select name="id_usuario" id="id_usuario" class="form-select">
                                 <option value="">-- Seleccione usuario --</option>
                                 <?php foreach ($usuarios as $u): ?>
-                                    <option value="<?php echo (int) $u->id_usuario; ?>"><?php echo htmlspecialchars($u->nombre); ?></option>
+                                    <option value="<?php echo (int) $u->id_usuario; ?>"><?php echo htmlspecialchars($u->nom_usuario); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -92,12 +104,12 @@ $next_id = (int) $seq->fetch(PDO::FETCH_OBJ)->next_id;
 
                         <div class="mb-3">
                             <label for="titulo_notificacion" class="form-label">Título</label>
-                            <input type="text" name="titulo_notificacion" id="titulo_notificacion" class="form-control" required
+                            <input type="text" name="titulo_notificacion" id="titulo_notificacion" class="form-control" required minlength="3" maxlength="120"
                                 placeholder="Título de la notificación">
                         </div>
                         <div class="mb-3">
                             <label for="descr_notificacion" class="form-label">Descripción</label>
-                            <textarea name="descr_notificacion" id="descr_notificacion" class="form-control" rows="5" required
+                            <textarea name="descr_notificacion" id="descr_notificacion" class="form-control" rows="5" required minlength="5" maxlength="2000"
                                 placeholder="Describa la notificación"></textarea>
                         </div>
 

@@ -79,8 +79,8 @@ $rolesEliminados = array_filter($roles, function($rol) {
                           <td data-label="ID"><?php echo $rol->id_rol ?></td>
                           <td data-label="Nombre Rol"><?php echo $rol->nombre_rol ?></td>
                           <td data-label="Fecha Eliminación"><?php echo $rol->fec_delete ?></td>
-                          <td data-label="Usuario Eliminó"><?php echo $rol->usr_delete ?></td>
-                          <td data-label="Acciones">
+                          <td data-label="Usuario Eliminó"><?php echo htmlspecialchars($rol->usr_delete) ?></td>
+                          <td class="actions-cell" data-label="Acciones">
                             <a class="btn btn-warning btn-sm" href="<?php echo "restore_roles.php?id_rol=" . $rol->id_rol?>" aria-label="Restaurar rol <?php echo $rol->id_rol; ?>">
                               <i class="fa fa-undo" aria-hidden="true"></i> Restaurar
                             </a>
@@ -96,42 +96,97 @@ $rolesEliminados = array_filter($roles, function($rol) {
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-bordered table-striped" aria-describedby="tablaRolesCaption">
-            <caption id="tablaRolesCaption" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Listado de roles registrados</caption>
-                <thead class="thead-dark">
-                    <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Nombre Rol</th>
-                <th scope="col">Fecha Inserción</th>
-                <th scope="col">Usuario Insertó</th>
-                <th scope="col">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($roles as $rol): ?>
-                        <?php if(empty($rol->fec_delete)): ?>
-                        <tr>
-                          <td data-label="ID"><?php echo $rol->id_rol ?></td>
-                          <td data-label="Nombre Rol"><?php echo $rol->nombre_rol ?></td>
-                          <td data-label="Fecha Inserción"><?php echo $rol->fec_insert ?></td>
-                          <td data-label="Usuario Insertó"><?php echo $rol->usr_insert ?></td>
-                          <td class="actions-cell" data-label="Acciones">
-                            <a class="btn btn-warning btn-sm" href="editar_roles.php?id_rol=<?php echo $rol->id_rol; ?>" aria-label="Editar rol <?php echo $rol->id_rol; ?>">
-                              <i class="fas fa-edit" aria-hidden="true"></i>
-                                </a>
-                                <form method="POST" action="eliminar_roles.php" onsubmit="return confirm('¿Seguro que deseas eliminar este rol?');" style="display:inline-block;">
-                                    <input type="hidden" name="id_rol" value="<?php echo $rol->id_rol; ?>">
-                              <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar rol <?php echo $rol->id_rol; ?>">
-                                <i class="fas fa-trash" aria-hidden="true"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        <?php endif; ?>
+        <div class="desktop-view">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped" aria-describedby="tablaRolesCaption">
+              <caption id="tablaRolesCaption" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;">Listado de roles registrados</caption>
+                  <thead class="thead-dark">
+                      <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre Rol</th>
+                  <th scope="col">Fecha Inserción</th>
+                  <th scope="col">Usuario Insertó</th>
+                  <th scope="col">Acciones</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <?php if (count($roles) === 0 || count($roles) === count($rolesEliminados)): ?>
+                          <tr><td colspan="5" class="text-center">No hay roles registrados</td></tr>
+                      <?php else: ?>
+                          <?php foreach($roles as $rol): ?>
+                              <?php if(empty($rol->fec_delete)): ?>
+                              <tr>
+                                <td data-label="ID"><?php echo $rol->id_rol ?></td>
+                                <td data-label="Nombre Rol"><?php echo htmlspecialchars($rol->nombre_rol) ?></td>
+                                <td data-label="Fecha Inserción"><?php echo $rol->fec_insert ?></td>
+                                <td data-label="Usuario Insertó"><?php echo htmlspecialchars($rol->usr_insert) ?></td>
+                                <td class="actions-cell" data-label="Acciones">
+                                  <a class="btn btn-warning btn-sm" href="editar_roles.php?id_rol=<?php echo $rol->id_rol; ?>" aria-label="Editar rol <?php echo $rol->id_rol; ?>">
+                                    <i class="fas fa-edit" aria-hidden="true"></i>
+                                      </a>
+                                      <form method="POST" action="eliminar_roles.php" onsubmit="return confirm('¿Seguro que deseas eliminar este rol?');" style="display:inline-block;">
+                                          <input type="hidden" name="id_rol" value="<?php echo $rol->id_rol; ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar rol <?php echo $rol->id_rol; ?>">
+                                      <i class="fas fa-trash" aria-hidden="true"></i>
+                                          </button>
+                                      </form>
+                                  </td>
+                              </tr>
+                              <?php endif; ?>
+                          <?php endforeach; ?>
+                      <?php endif; ?>
+                  </tbody>
+              </table>
+          </div>
+        </div>
+
+        <div class="mobile-view">
+            <div class="row">
+                <?php if (count($roles) === 0 || count($roles) === count($rolesEliminados)): ?>
+                    <div class="col-12">
+                        <div class="alert alert-info">No hay roles registrados</div>
+                    </div>
+                <?php else: ?>
+                    <?php foreach($roles as $rol): 
+                        if (!empty($rol->fec_delete)) continue;
+                    ?>
+                    <div class="col-12 mb-3">
+                        <div class="rol-card card">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h3 class="mb-0 h5"><?php echo htmlspecialchars($rol->nombre_rol); ?></h3>
+                                <div class="d-flex gap-2">
+                                    <a class="btn btn-warning btn-sm" href="editar_roles.php?id_rol=<?php echo $rol->id_rol; ?>" aria-label="Editar rol <?php echo $rol->id_rol; ?>">
+                                        <i class="fas fa-edit" aria-hidden="true"></i>
+                                    </a>
+                                    <form method="POST" action="eliminar_roles.php" onsubmit="return confirm('¿Seguro que deseas eliminar este rol?');" style="display:inline-block;">
+                                        <input type="hidden" name="id_rol" value="<?php echo $rol->id_rol; ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar rol <?php echo $rol->id_rol; ?>">
+                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <strong>ID:</strong>
+                                        <span><?php echo $rol->id_rol; ?></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <strong>Fecha Inserción:</strong>
+                                        <span><?php echo $rol->fec_insert; ?></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <strong>Usuario Insertó:</strong>
+                                        <span><?php echo htmlspecialchars($rol->usr_insert); ?></span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>

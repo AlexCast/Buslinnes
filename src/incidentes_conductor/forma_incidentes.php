@@ -46,23 +46,23 @@ Formulario para agregar nuevos incidentes al sistema
                                         <option value="" disabled selected>Seleccione un bus</option>
                                         <?php
                                         include_once "../base_de_datos.php";
-                                        $sentencia = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses WHERE fec_delete IS NULL ORDER BY matricula");
+                                        $sentencia = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus");
                                         $buses = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                         foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus ?>"><?php echo $bus->matricula ?></option>
+                                            <option value="<?php echo $bus->id_bus ?>"><?php echo $bus->id_bus ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
 
                                 <div class="form-group mb-3">
-                                    <label for="id_conductor" class="form-label">Conductor</label>
-                                    <select name="id_conductor" id="id_conductor" class="form-select" required>
+                                    <label for="id_usuario" class="form-label">Conductor</label>
+                                    <select name="id_usuario" id="id_usuario" class="form-select" required>
                                         <option value="" disabled selected>Seleccione un conductor</option>
                                         <?php
-                                        $sentencia = $base_de_datos->query("SELECT id_conductor, nom_conductor, ape_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor, ape_conductor");
+                                        $sentencia = $base_de_datos->query("SELECT id_usuario, nom_conductor, ape_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor, ape_conductor");
                                         $conductores = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                         foreach($conductores as $conductor): ?>
-                                            <option value="<?php echo $conductor->id_conductor ?>"><?php echo $conductor->nom_conductor . ' ' . $conductor->ape_conductor . ' (#' . $conductor->id_conductor . ')' ?></option>
+                                            <option value="<?php echo $conductor->id_usuario ?>"><?php echo $conductor->nom_conductor . ' ' . $conductor->ape_conductor . ' (#' . $conductor->id_usuario . ')' ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -101,5 +101,8 @@ Formulario para agregar nuevos incidentes al sistema
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
+
 
 

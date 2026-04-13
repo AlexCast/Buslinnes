@@ -1,4 +1,4 @@
-* {
+﻿* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -9,14 +9,18 @@ body {
     color: #1f2937;
     line-height: 1.6;
     min-height: 100vh;
-    background-color: #f4f5fb; /* Light, accessible background */
-    background-image: url("/buslinnes/assets/img/pattern.svg");
-    background-repeat: repeat;
-    background-size: 150px;
+    background-color: #d1d1d1ff;
+    /* Fondo patrón de puntos (Modo Claro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 .dark body,
 body.dark {
-    background-color: #0b1220; /* Solid accessible background (dark mode) */
+    background-color: #25212cff;
+    /* Hereda el patrón de puntos del body normal */
 }
 .container {
     display: flex;
@@ -85,20 +89,20 @@ body.dark {
     display: flex;
     align-items: center;
     padding: 15px 20px;
-    color: #362163ff;
+    color: var(--primary-color, #8059d4ff);
     text-decoration: none;
     transition: all 0.3s ease;
     font-weight: 500;
 }
 
 .nav-link:hover {
-    background: #8059d4ff;
+    background: var(--primary-color, #8059d4ff);
     color: #ffffff;
     transform: translateX(5px);
 }
 
 .nav-link.active {
-    background: #8059d4ff;
+    background: var(--primary-color, #8059d4ff);
     color: white;
 }
 
@@ -125,7 +129,7 @@ body.dark {
 
 
 .header {
-    background: #362163ff;
+    background: #d1d1d1ff;
     backdrop-filter: blur(10px);
     padding: 11.5px 30px;
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
@@ -146,12 +150,29 @@ body.dark {
     gap: 20px;
 }
 
+.admin-brand-logo {
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    background: #ffffff00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-brand-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
 .toggle-btn {
     background: none;
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: #8059d4ff;
+    color: var(--primary-color);
     padding: 10px;
     border-radius: 8px;
     transition: all 0.3s ease;
@@ -177,7 +198,7 @@ body.dark {
 
 .search-box input:focus {
     outline: none;
-    border-color: #8059d4ff;
+    border-color: var(--primary-color, #8059d4ff);
     transform: scale(1.02);
 }
 
@@ -186,7 +207,7 @@ body.dark {
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
 }
 
 .header-right {
@@ -201,7 +222,7 @@ body.dark {
     align-items: center;
     gap: 8px;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid #8059d4ff;
+    border: 1px solid var(--primary-color, #8059d4ff);
     color: #ffffff;
     padding: 8px 14px;
     border-radius: 999px;
@@ -211,6 +232,7 @@ body.dark {
 }
 
 .dark-toggle i {
+    color: var(--primary-color);
     font-size: 16px;
 }
 
@@ -225,7 +247,7 @@ body.dark {
     background: none;
     border: none;
     font-size: 20px;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     cursor: pointer;
     padding: 10px;
     border-radius: 50%;
@@ -270,7 +292,7 @@ body.dark {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background:  #8059d4ff;
+    background:  var(--primary-color, #8059d4ff);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -286,7 +308,7 @@ body.dark {
 
 .user-name {
     font-weight: 600;
-    color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
 }
 
 body.dark .user-name {
@@ -306,12 +328,12 @@ body.dark .user-name-mobile {
 
 .user-role {
     font-size: 12px;
-    color: #ffffff;
+    color: var(--primary-color);
 }
 
 body.dark .user-role {
     font-size: 12px;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
 }
 
 .user-role-mobile {
@@ -321,17 +343,17 @@ body.dark .user-role {
 
 body.dark .user-role-mobile {
     font-size: 12px;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
 }
-/* El botón de logout en el sidebar móvil YA existe con la clase .btn.btn-primary */
-/* Solo necesitamos ajustar sus estilos específicos */
+/* El botÃ³n de logout en el sidebar mÃ³vil YA existe con la clase .btn.btn-primary */
+/* Solo necesitamos ajustar sus estilos especÃ­ficos */
 .mobile-profile .btn {
     margin-left: auto;
     padding: 8px 12px;
     text-decoration: none;
 }
 
-/* ---------- ESTILOS MÓVILES PARA PERFIL DE USUARIO ---------- */
+/* ---------- ESTILOS MÃ“VILES PARA PERFIL DE USUARIO ---------- */
 @media (max-width: 1023px) {
     .mobile-profile {
         display: flex;
@@ -402,8 +424,8 @@ body.dark .user-role-mobile {
     }
 }
 
-/* El botón de logout en desktop YA existe con la clase .btn.btn-primary */
-/* Solo necesitamos ajustar sus estilos específicos */
+/* El botÃ³n de logout en desktop YA existe con la clase .btn.btn-primary */
+/* Solo necesitamos ajustar sus estilos especÃ­ficos */
 .logout-desktop {
     margin-left: 20px;
     padding: 10px 18px;
@@ -434,8 +456,8 @@ body.dark .user-role-mobile {
 .content-title-box {
     display: inline-block;
     padding: 1px 16px;
-    background: #8059d4;
-    border: 1px solid #6c45c0;
+    background: var(--primary-color);
+    border: 1px solid #2c2a31;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 }
@@ -448,7 +470,7 @@ body.dark .user-role-mobile {
 .content-title {
     font-size: 28px;
     font-weight: 700;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     margin-bottom: 10px;
 }
 
@@ -465,8 +487,8 @@ body.dark .content-title {
 }
 
 body.dark .content-title-box {
-    background: #362163ff;
-    border: 1px solid #442a82;
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
@@ -520,10 +542,10 @@ body.dark .content-subtitle {
     color: white;
 }
 
-.stat-icon.buses { background:  #8059d4ff; }
-.stat-icon.conductores { background:  #8059d4ff; }
-.stat-icon.pasajeros { background:  #8059d4ff; }
-.stat-icon.rutas { background:  #8059d4ff; }
+.stat-icon.buses { background:  var(--primary-color, #8059d4ff); }
+.stat-icon.conductores { background:  var(--primary-color, #8059d4ff); }
+.stat-icon.pasajeros { background:  var(--primary-color, #8059d4ff); }
+.stat-icon.rutas { background:  var(--primary-color, #8059d4ff); }
 
 .stat-value {
     font-size: 32px;
@@ -535,6 +557,111 @@ body.dark .content-subtitle {
 .stat-label {
     color: #666;
     font-size: 14px;
+}
+
+.branding-panel {
+    background: #ffffffb8;
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+    padding: 22px;
+    margin-bottom: 30px;
+}
+
+.branding-panel-header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 22px;
+}
+
+.branding-panel-header p {
+    margin-top: 6px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.branding-form {
+    margin-top: 18px;
+    display: grid;
+    gap: 14px;
+}
+
+.branding-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.branding-label {
+    font-weight: 600;
+    color: #111827;
+    font-size: 14px;
+}
+
+.branding-color-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.branding-color-group input[type="color"] {
+    width: 56px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.branding-text-input,
+#brandingLogoFile {
+    min-height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 8px 12px;
+    background: #ffffff;
+}
+
+.branding-text-input {
+    width: min(100%, 220px);
+}
+
+.branding-logo-preview-wrap {
+    width: min(100%, 260px);
+    min-height: 90px;
+    border-radius: 12px;
+    border: 1px dashed rgba(0, 0, 0, 0.25);
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.branding-logo-preview {
+    max-width: 100%;
+    max-height: 72px;
+    object-fit: contain;
+}
+
+.branding-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.branding-feedback {
+    color: #065f46;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.branding-feedback.is-error {
+    color: #b91c1c;
 }
 
 /* Table Section */
@@ -575,8 +702,9 @@ body.dark .content-subtitle {
 }
 
 .btn-primary {
-    background: #8059d4ff;
+    background: var(--primary-color);
     color: white;
+    border: 1px solid #000000;
 }
 
 .btn-primary:hover {
@@ -642,9 +770,9 @@ tr:hover {
     transform: scale(1.1);
 }
 
-.action-btn.edit { color: #8059d4ff; }
-.action-btn.delete { color: #8059d4ff; }
-.action-btn.view { color: #8059d4ff; }
+.action-btn.edit { color: var(--primary-color, #8059d4ff); }
+.action-btn.delete { color: var(--primary-color, #8059d4ff); }
+.action-btn.view { color: var(--primary-color, #8059d4ff); }
 
 /* Modal Styles */
 .modal {
@@ -749,9 +877,9 @@ tr:hover {
     background: #e9ecef;
 }
 
-/* ---------- MOBILE / TABLET ONLY: reemplazar la sección "Responsive" existente ---------- */
+/* ---------- MOBILE / TABLET ONLY: reemplazar la secciÃ³n "Responsive" existente ---------- */
 
-/* Comportamiento general para <=1023px (tablet y móvil) */
+/* Comportamiento general para <=1023px (tablet y mÃ³vil) */
 @media (max-width: 1023px) {
     /* Layout: columna para evitar solapados y mejorar flujo */
     .container {
@@ -776,7 +904,7 @@ tr:hover {
         left: 0;
     }
 
-    /* En móvil no aplicar la versión "collapsed" para evitar conflictos visuales */
+    /* En mÃ³vil no aplicar la versiÃ³n "collapsed" para evitar conflictos visuales */
     .sidebar.collapsed {
         width: 280px;
     }
@@ -812,13 +940,13 @@ tr:hover {
 
     .user-avatar { width: 36px; height: 36px; }
 
-    /* Contenido: reducir paddings para móviles, mantener espacio para header */
+    /* Contenido: reducir paddings para mÃ³viles, mantener espacio para header */
     .content {
         padding: 16px;
         padding-top: calc(64px + 16px);
     }
 
-    /* Cards: una columna en pantallas pequeñas */
+    /* Cards: una columna en pantallas pequeÃ±as */
     .stats-grid {
         grid-template-columns: 1fr;
         gap: 14px;
@@ -848,7 +976,7 @@ tr:hover {
 
     .btn { padding: 10px 14px; }
 
-    /* Modales: ancho menor en móvil */
+    /* Modales: ancho menor en mÃ³vil */
     .modal-content {
         width: 96%;
         max-width: 520px;
@@ -857,7 +985,7 @@ tr:hover {
     }
 }
 
-/* Ajustes extra para pantallas muy pequeñas */
+/* Ajustes extra para pantallas muy pequeÃ±as */
 @media (max-width: 480px) {
     .search-box input {
         width: min(36vw, 140px);
@@ -873,7 +1001,7 @@ tr:hover {
     .header-right .btn > i + span { display: none; }
 }
 
-/* pequeña mejora: si sidebar está activo, asegurar que el contenido no quede por debajo */
+/* pequeÃ±a mejora: si sidebar estÃ¡ activo, asegurar que el contenido no quede por debajo */
 @media (max-width: 1023px) {
     .sidebar.active ~ .main-content {
         /* no mover contenido; sidebar es overlay */
@@ -932,15 +1060,19 @@ tr:hover {
     }
 }
 
-                /* 🌙 Dark Mode */
+                /* ðŸŒ™ Dark Mode */
 body.dark {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: white;
     line-height: 1.6;
     min-height: 100vh;
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
-    background-repeat: repeat;
-    background-size: 150px;
+    background-color: #25212cff;
+    /* Fondo patrón de puntos (Modo Oscuro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 body.dark .sidebar {
@@ -986,7 +1118,7 @@ body.dark .nav-link {
     display: flex;
     align-items: center;
     padding: 15px 20px;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     text-shadow: #e9ecef;
     text-decoration: none;
     transition: all 0.3s ease;
@@ -994,13 +1126,13 @@ body.dark .nav-link {
 }
 
 body.dark .nav-link:hover {
-    background: #362163ff;
+    background: var(--primary-color, #8059d4ff);
     color: #ffffff;
     transform: translateX(5px);
 }
 
 body.dark .nav-link.active {
-    background: #8059d4ff;
+    background: var(--primary-color, #8059d4ff);
     color: white;
 }
 
@@ -1025,7 +1157,7 @@ body.dark .toggle-btn {
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: #8059d4ff;
+    color: var(--primary-color);
     padding: 10px;
     border-radius: 8px;
     transition: all 0.3s ease;
@@ -1038,7 +1170,7 @@ body.dark .toggle-btn:hover {
 
 body.dark .dark-toggle {
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid #a98dff;
+    border: 1px solid var(--primary-color);
     color: #ffffff;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
@@ -1058,7 +1190,7 @@ body.dark .search-box input {
 
 body.dark .search-box input:focus {
     outline: none;
-    border-color: #8059d4ff;
+    border-color: var(--primary-color, #8059d4ff);
     transform: scale(1.02);
 }
 
@@ -1067,7 +1199,7 @@ body.dark .search-box i {
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
 }
 
 body.dark .notification-btn {
@@ -1075,7 +1207,7 @@ body.dark .notification-btn {
     background: none;
     border: none;
     font-size: 20px;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     cursor: pointer;
     padding: 10px;
     border-radius: 50%;
@@ -1110,7 +1242,7 @@ body.dark .user-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background:  #362163ff;
+    background:  var(--primary-color, #8059d4ff);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1135,7 +1267,7 @@ body.dark .content-subtitle {
 /* Stats Cards */
 
 body.dark .stat-card {
-    background: #362163d3;
+    background: var(--primary-color, #8059d4ff);
     backdrop-filter: blur(10px);
     padding: 25px;
     border-radius: 16px;
@@ -1157,7 +1289,7 @@ body.dark .stat-icon {
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
 }
 
 body.dark .stat-icon.buses { background:  #25212cff; }
@@ -1177,9 +1309,47 @@ body.dark .stat-label {
     font-size: 14px;
 }
 
+body.dark .branding-panel {
+    background: rgba(37, 33, 44, 0.92);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark .branding-panel-header h2 {
+    color: #ffffff;
+}
+
+body.dark .branding-panel-header p,
+body.dark .branding-label {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+body.dark .branding-text-input,
+body.dark #brandingLogoFile,
+body.dark .branding-logo-preview-wrap {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 768px) {
+    .admin-brand-logo {
+        width: 38px;
+        height: 38px;
+    }
+
+    .branding-panel {
+        padding: 16px;
+    }
+
+    .branding-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* Table Section */
 body.dark .table-section {
-    background: #362163d3;
+    background: var(--primary-color, #8059d4ff);
     backdrop-filter: blur(10px);
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -1202,13 +1372,13 @@ body.dark .table-title {
 }
 
 body.dark .btn-primary {
-    background: #362163ff;
+    background: var(--primary-color);
     color: #ffffff;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
 }
 
 body.dark .btn-primary:hover {
-    background: #8059f0;
+    background: var(--primary-color);
     color: #ffffff;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
@@ -1259,7 +1429,7 @@ textarea:focus-visible {
     height: auto;
     margin: 8px;
     padding: 10px 14px;
-    background: #8059d4;
+    background: var(--primary-color, #8059d4ff);
     color: #ffffff;
     border-radius: 8px;
     clip: auto;
@@ -1299,13 +1469,13 @@ body.dark .action-btn:hover {
     transform: scale(1.1);
 }
 
-body.dark .action-btn.edit { color: #8059d4ff; }
-body.dark .action-btn.delete { color: #8059d4ff; }
-body.dark .action-btn.view { color: #8059d4ff; }
+body.dark .action-btn.edit { color: var(--primary-color, #8059d4ff); }
+body.dark .action-btn.delete { color: var(--primary-color, #8059d4ff); }
+body.dark .action-btn.view { color: var(--primary-color, #8059d4ff); }
 
 /* ---------- MOBILE: mostrar perfil en sidebar y reducir search para que quepa Logout ---------- */
 
-/* Perfil móvil dentro del sidebar (oculto en desktop) */
+/* Perfil mÃ³vil dentro del sidebar (oculto en desktop) */
 .sidebar .mobile-profile {
     display: none; /* por defecto oculto en desktop */
     align-items: center;
@@ -1315,7 +1485,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
     background: transparent;
 }
 
-/* Info interna del perfil móvil */
+/* Info interna del perfil mÃ³vil */
 .sidebar .mobile-profile .mobile-profile-info {
     display: flex;
     flex-direction: column;
@@ -1328,20 +1498,20 @@ body.dark .action-btn.view { color: #8059d4ff; }
     font-weight: 600;
 }
 
-/* Ajustes sólo para tablet y móvil */
+/* Ajustes sÃ³lo para tablet y mÃ³vil */
 @media (max-width: 1023px) {
     /* Mostrar el perfil dentro del sidebar */
     .sidebar .mobile-profile { display: flex; }
 
-    /* Ocultar el bloque de perfil del header (lo movemos al sidebar en móviles) */
+    /* Ocultar el bloque de perfil del header (lo movemos al sidebar en mÃ³viles) */
     .header .user-profile { display: none; }
 
-    /* Reducir el ancho del search para dejar sitio al botón de cerrar sesión */
+    /* Reducir el ancho del search para dejar sitio al botÃ³n de cerrar sesiÃ³n */
     .search-box input {
         width: min(40vw, 160px);
     }
 
-    /* Hacer el botón de logout más compacto en header */
+    /* Hacer el botÃ³n de logout mÃ¡s compacto en header */
     .header-right a.btn {
         margin-left: 8px !important;
         padding: 8px 10px !important;
@@ -1358,7 +1528,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
     }
 
     .header-left .toggle-btn {
-        display: none; /* si quieres mantener toggle en móviles, cambia a display:inline-flex */
+        display: none; /* si quieres mantener toggle en mÃ³viles, cambia a display:inline-flex */
     }
 
     /* search ocupa la mayor parte disponible (pero limitada) */
@@ -1375,7 +1545,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
         padding: 10px 38px 10px 12px;
     }
 
-    /* header-right: sólo mostrar la campana en móviles; ocultar perfil y botones */
+    /* header-right: sÃ³lo mostrar la campana en mÃ³viles; ocultar perfil y botones */
     .header-right {
         display: flex;
         align-items: center;
@@ -1388,7 +1558,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
 
     .header-right .user-profile,
     .header-right .btn {
-        display: none; /* perfil y botones desaparecen del header en móvil */
+        display: none; /* perfil y botones desaparecen del header en mÃ³vil */
     }
 
     /* asegurarse que el sidebar mobile tenga el perfil visible */
@@ -1397,7 +1567,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
     }
 }
 
-/* ajustes muy pequeños */
+/* ajustes muy pequeÃ±os */
 @media (max-width: 480px) {
     .search-box input {
         width: min(62vw, 200px);
@@ -1435,7 +1605,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
     .logout-desktop { display: inline-flex; }
 }
 
-/* Ajustes finos de header para móviles pequeños (no afecta desktop) */
+/* Ajustes finos de header para mÃ³viles pequeÃ±os (no afecta desktop) */
 @media (max-width: 420px) {
     /* quitar padding general del header para que todo encaje */
     .header {
@@ -1443,7 +1613,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
         height: 64px; /* mantener la altura fija */
     }
 
-    /* mantener visible la hamburguesa y ajustar separación */
+    /* mantener visible la hamburguesa y ajustar separaciÃ³n */
     .header-left {
         justify-content: flex-start;
         gap: 8px;
@@ -1470,9 +1640,9 @@ body.dark .action-btn.view { color: #8059d4ff; }
     .content { padding-top: calc(64px + 12px); }
 }
 
-/* ---------- FORZAR OVERRIDES MÓVIL (colocar al final del archivo) ---------- */
+/* ---------- FORZAR OVERRIDES MÃ“VIL (colocar al final del archivo) ---------- */
 @media (max-width: 480px) {
-    /* Asegura que tanto modo claro como oscuro respeten el padding móvil */
+    /* Asegura que tanto modo claro como oscuro respeten el padding mÃ³vil */
     .header,
     body.dark .header {
         padding: 0 !important;
@@ -1511,7 +1681,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
     }
 }
 
-/* Variante ultra-pequeña */
+/* Variante ultra-pequeÃ±a */
 @media (max-width: 360px) {
     .search-box input,
     body.dark .search-box input {
@@ -1523,7 +1693,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
 }
 /* ---------- end mobile overrides ---------- */
 
-/* Estilos extraídos de buslinnes_interface.html */
+/* Estilos extraÃ­dos de buslinnes_interface.html */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -1549,7 +1719,7 @@ body.dark .action-btn.view { color: #8059d4ff; }
 
 .modal-title-logout {
     margin-bottom: 15px;
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
 }
 
 .modal-text-logout {
@@ -1566,20 +1736,20 @@ body.dark .action-btn.view { color: #8059d4ff; }
 }
 
 .btn-modal-yes {
-    background: #8059d4;
+    background: var(--primary-color, #8059d4ff);
     color: #fff;
     margin-right: 10px;
 }
 
 .btn-modal-no {
     background: #eee;
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
 }
 
 /* Dark mode para el modal de logout */
 body.dark .modal-content-logout {
     background: #25212cff;
-    border: 1px solid #362163ff;
+    border: 1px solid var(--primary-color, #8059d4ff);
 }
 
 body.dark .modal-title-logout {
@@ -1598,3 +1768,4 @@ body.dark .btn-modal-no {
     background: #332d3b;
     color: #b39ddb;
 }
+

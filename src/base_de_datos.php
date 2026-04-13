@@ -4,7 +4,7 @@
 Este archivo se encarga de conectar a la base de datos y traer un objeto PDO
 ==============================================================================
  */
-$contraseña = "12345678";
+$contraseña = "0149";
 $usuario = "postgres";
 $nombre_base_datos = "db_buslinnes";
 $server = "localhost";

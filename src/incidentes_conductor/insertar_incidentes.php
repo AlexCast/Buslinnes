@@ -23,7 +23,7 @@ Este archivo inserta los datos enviados a trav�s de forma_buses.php
 if (!isset($_POST["titulo_incidente"]) ||
     !isset($_POST["desc_incidente"]) ||
     !isset($_POST["id_bus"])         ||
-    !isset($_POST["id_conductor"])    ||
+    !isset($_POST["id_usuario"])    ||
     !isset($_POST["tipo_incidente"])) 
 {
     echo "Faltan campos obligatorios en el formulario";
@@ -45,6 +45,15 @@ $validarEntero = static function ($valor, string $campo, int $min = 1, int $max 
         $redirigirConError("El campo {$campo} debe estar entre {$min} y {$max}.");
     }
     return $numero;
+};
+
+$normalizarPlacaBus = static function ($valor) use ($redirigirConError): string {
+    $texto = strtoupper(trim((string) $valor));
+    $compacto = preg_replace('/\s+/', '', $texto);
+    if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $compacto)) {
+        $redirigirConError('El campo id_bus debe tener formato de placa valido (AAA123 o AAA 123).');
+    }
+    return $compacto;
 };
 
 $validarTexto = static function ($valor, string $campo, int $min, int $max) use ($redirigirConError): string {
@@ -75,8 +84,8 @@ $id_incidente = (int) $sentenciaId->fetch(PDO::FETCH_OBJ)->siguiente_id;
 // Recoger todos los valores del formulario
 $titulo_incidente     = $validarTexto($_POST["titulo_incidente"], "titulo_incidente", 3, 120);
 $desc_incidente       = $validarTexto($_POST["desc_incidente"], "desc_incidente", 5, 2000);
-$id_bus               = $validarEntero($_POST["id_bus"], "id_bus");
-$id_conductor         = $validarEntero($_POST["id_conductor"], "id_conductor");
+$id_bus               = $normalizarPlacaBus($_POST["id_bus"]);
+$id_usuario         = $validarEntero($_POST["id_usuario"], "id_usuario");
 $tipo_incidente       = strtoupper(trim((string) $_POST["tipo_incidente"]));
 if (!in_array($tipo_incidente, ['C', 'E', 'D', 'A', 'O'], true)) {
     $redirigirConError("El tipo de incidente no es valido.");
@@ -91,7 +100,7 @@ try {
         $titulo_incidente,
         $desc_incidente,
         $id_bus,
-        $id_conductor,
+        $id_usuario,
         $tipo_incidente
     ]);
     
@@ -160,6 +169,7 @@ try {
     header("Location: forma_incidentes.php?error=" . urlencode($mensajeError));
     exit();
 }
+
 
 
 

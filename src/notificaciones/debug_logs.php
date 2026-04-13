@@ -2,6 +2,16 @@
 /**
  * Debug OneSignal - Ver logs
  */
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => $_SERVER['REQUEST_METHOD'] === 'POST',
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+
 if (!defined('VALIDAR_JWT_MANUAL')) define('VALIDAR_JWT_MANUAL', true);
 require_once __DIR__ . '/../validar_jwt.php';
 validarTokenJWT(['admin']);
@@ -187,7 +197,10 @@ header('Content-Type: text/html; charset=utf-8');
         <a href="forma_notificaciones.php" class="btn">📝 Enviar Notificación</a>
         <a href="listar_notificaciones.php" class="btn">📋 Ver Notificaciones</a>
         <a href="javascript:location.reload()" class="btn btn-secondary">🔄 Recargar</a>
-        <a href="?clear=1" class="btn btn-secondary">🗑️ Limpiar (borrar log)</a>
+        <form method="POST" action="" style="display:inline-block; margin: 5px 5px 5px 0;">
+            <input type="hidden" name="clear" value="1">
+            <button type="submit" class="btn btn-secondary">🗑️ Limpiar (borrar log)</button>
+        </form>
     </div>
 
 </body>
@@ -195,7 +208,7 @@ header('Content-Type: text/html; charset=utf-8');
 
 <?php
 // Opcional: Limpiar el log si se solicita
-if (isset($_GET['clear']) && $_GET['clear'] == '1' && $log_exists) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear']) && $_POST['clear'] == '1' && $log_exists) {
     file_put_contents($error_log_file, "");
     header("Location: debug_logs.php");
     exit;

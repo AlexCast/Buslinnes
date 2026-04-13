@@ -1,81 +1,122 @@
 <?php
-/*
-CRUD con PostgreSQL y PHP
-@Carlos Eduardo Perez Rueda
-@Marzo de 2023
-=================================================================
-Este archivo guarda los datos del formulario en donde se editan
-=================================================================
-*/
-?>
+header('Content-Type: text/html; charset=utf-8');
 
-<?php
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
 
-# Salir si alguno de los datos no está presente
-if (
-    !isset($_POST["id_propietario"]) ||
-    !isset($_POST["nom_propietario"]) ||
-    !isset($_POST["ape_propietario"]) ||
-    !isset($_POST["tel_propietario"]) ||
-    !isset($_POST["email_propietario"]) ||
-    !isset($_POST["id_bus"]) 
-) {
-    echo "Faltan campos obligatorios en el formulario";
-    exit();
-}
-
-# Validación mínima de datos
-
-$id_propietario  = $_POST["id_propietario"];
-$nom_propietario = $_POST["nom_propietario"];
-$ape_propietario = $_POST["ape_propietario"];
-$tel_propietario = $_POST["tel_propietario"];
-$email_propietario = $_POST["email_propietario"];
-$id_bus = $_POST["id_bus"];
-
-if (!preg_match('/^\d{10}$/', $id_propietario)) {
-    echo "El ID del propietario debe contener exactamente 10 dígitos.";
-    exit();
-}
-if (strlen($nom_propietario) < 3 || strlen($nom_propietario) > 50) {
-    echo "El nombre debe tener entre 3 y 50 caracteres.";
-    exit();
-}
-if (strlen($ape_propietario) < 3 || strlen($ape_propietario) > 50) {
-    echo "El apellido debe tener entre 3 y 50 caracteres.";
-    exit();
-}
-if (!preg_match('/^\d{10}$/', $tel_propietario)) {
-    echo "El teléfono debe contener exactamente 10 dígitos.";
-    exit();
-}
-if (!filter_var($email_propietario, FILTER_VALIDATE_EMAIL)) {
-    echo "El email no es válido.";
-    exit();
-}
-
-include_once "../base_de_datos.php";
-$id_propietario  = $_POST["id_propietario"];
-$nom_propietario = $_POST["nom_propietario"];
-$ape_propietario = $_POST["ape_propietario"];
-$tel_propietario = $_POST["tel_propietario"];
-$email_propietario = $_POST["email_propietario"];
-
-
-$sentencia = $base_de_datos->prepare("SELECT fun_update_propietarios(?,?,?,?,?,?);");
-$resultado = $sentencia->execute([
-    $id_propietario,
-    $id_bus,
-    $nom_propietario,
-    $ape_propietario,
-    $tel_propietario,
-    $email_propietario
+SecurityMiddleware::protect([
+    'csrf' => true,
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
 ]);
+// === FIN SEGURIDAD ===
 
-if ($resultado === true) {
-    header("Location: listar_propietarios.php");
+if (
+    !isset($_POST['id_propietario']) ||
+    !isset($_POST['nom_propietario']) ||
+    !isset($_POST['ape_propietario']) ||
+    !isset($_POST['tel_propietario']) ||
+    !isset($_POST['email_propietario']) ||
+    !isset($_POST['id_bus'])
+) {
     exit();
-} else {
-    echo "Algo salió mal. Por favor verifica que la tabla exista, así como el ID del propietario.";
+}
+
+$redirigirConError = static function (string $mensaje): void {
+    header('Location: listar_propietarios.php?error=' . urlencode($mensaje));
+    exit();
+};
+
+$longitudTexto = static function (string $texto): int {
+    if (function_exists('mb_strlen')) {
+        return mb_strlen($texto);
+    }
+    if (function_exists('iconv_strlen')) {
+        $len = iconv_strlen($texto, 'UTF-8');
+        if ($len !== false) {
+            return $len;
+        }
+    }
+    return strlen($texto);
+};
+
+$validarDocumento = static function ($valor, string $campo) use ($redirigirConError): string {
+    $texto = trim((string) $valor);
+    if (!preg_match('/^[0-9]{6,10}$/', $texto)) {
+        $redirigirConError("El campo {$campo} debe tener entre 6 y 10 digitos.");
+    }
+    return $texto;
+};
+
+$validarNombre = static function ($valor, string $campo) use ($redirigirConError, $longitudTexto): string {
+    $texto = trim((string) $valor);
+    $len = $longitudTexto($texto);
+    if ($len < 3 || $len > 50) {
+        $redirigirConError("El campo {$campo} debe tener entre 3 y 50 caracteres.");
+    }
+    return $texto;
+};
+
+$validarTelefono = static function ($valor, string $campo) use ($redirigirConError): string {
+    $texto = trim((string) $valor);
+    if (!preg_match('/^[0-9]{10}$/', $texto)) {
+        $redirigirConError("El campo {$campo} debe tener 10 digitos.");
+    }
+    if ((int) $texto < 2999999999) {
+        $redirigirConError("El campo {$campo} es invalido.");
+    }
+    return $texto;
+};
+
+$validarEmail = static function ($valor) use ($redirigirConError): string {
+    $texto = trim((string) $valor);
+    if (!filter_var($texto, FILTER_VALIDATE_EMAIL)) {
+        $redirigirConError('El email del propietario no es valido.');
+    }
+    return $texto;
+};
+
+$normalizarPlacaBus = static function ($valor) use ($redirigirConError): string {
+    $texto = strtoupper(trim((string) $valor));
+    $compacto = preg_replace('/\s+/', '', $texto);
+    if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $compacto)) {
+        $redirigirConError('El id_bus debe tener formato AAA123.');
+    }
+    return $compacto;
+};
+
+$id_propietario = $validarDocumento($_POST['id_propietario'], 'id_propietario');
+$nom_propietario = $validarNombre($_POST['nom_propietario'], 'nom_propietario');
+$ape_propietario = $validarNombre($_POST['ape_propietario'], 'ape_propietario');
+$tel_propietario = $validarTelefono($_POST['tel_propietario'], 'tel_propietario');
+$email_propietario = $validarEmail($_POST['email_propietario']);
+$id_bus = $normalizarPlacaBus($_POST['id_bus']);
+
+include_once '../base_de_datos.php';
+
+try {
+    $sentencia = $base_de_datos->prepare('SELECT fun_update_propietarios(?,?,?,?,?,?);');
+    $sentencia->execute([
+        $id_propietario,
+        $id_bus,
+        $nom_propietario,
+        $ape_propietario,
+        $tel_propietario,
+        $email_propietario
+    ]);
+
+    $resultado = $sentencia->fetchColumn();
+    $ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
+
+    if ($ok) {
+        header('Location: listar_propietarios.php');
+        exit();
+    }
+
+    $redirigirConError('No fue posible actualizar el propietario. Verifique datos e ID.');
+} catch (PDOException $e) {
+    $redirigirConError('Error de base de datos al actualizar propietario.');
 }
 

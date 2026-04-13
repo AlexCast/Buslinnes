@@ -38,9 +38,7 @@ try {
     $query = "
         SELECT 
             b.id_bus, 
-            b.id_conductor, 
-            b.num_chasis, 
-            b.matricula, 
+            b.id_usuario, 
             b.anio_fab, 
             b.capacidad_pasajeros, 
             b.tipo_bus,
@@ -51,7 +49,7 @@ try {
             b.fec_delete,
             c.nom_conductor AS nombre_conductor
         FROM tab_buses b
-        LEFT JOIN tab_conductores c ON b.id_conductor = c.id_conductor
+        LEFT JOIN tab_conductores c ON b.id_usuario = c.id_usuario
     ";
     
     // Filtrar eliminados si es necesario
@@ -111,5 +109,6 @@ try {
         'message' => $e->getMessage()
     ]);
 }
+
 
 

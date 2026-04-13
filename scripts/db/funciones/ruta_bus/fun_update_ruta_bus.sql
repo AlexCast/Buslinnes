@@ -2,10 +2,11 @@
 CREATE OR REPLACE FUNCTION fun_update_ruta_bus(
     wid_ruta_bus INT,
     wid_ruta INT,
-    wid_bus INT
+    wid_bus tab_buses.id_bus%TYPE
 ) RETURNS BOOLEAN AS
 $$
 DECLARE 
+    v_bus tab_buses.id_bus%TYPE;
     wreg_ruta_bus RECORD;
 BEGIN
     IF wid_ruta_bus IS NULL OR wid_ruta_bus <= 0 THEN
@@ -16,8 +17,13 @@ BEGIN
         RAISE EXCEPTION USING ERRCODE = '22001';
     END IF;
     
-    IF wid_bus IS NULL OR wid_bus <= 0 THEN
+    IF wid_bus IS NULL THEN
         RAISE EXCEPTION USING ERRCODE = '22002';
+    END IF;
+
+    v_bus := UPPER(REGEXP_REPLACE(TRIM(COALESCE(wid_bus, '')), '\\s+', '', 'g'));
+    IF v_bus !~ '^[A-Z]{3}[0-9]{3}$' THEN
+        RAISE EXCEPTION USING ERRCODE = '22023';
     END IF;
 
     SELECT id_ruta_bus, id_ruta, id_bus
@@ -41,7 +47,7 @@ BEGIN
 
     UPDATE tab_ruta_bus SET
         id_ruta = wid_ruta,
-        id_bus = wid_bus
+        id_bus = v_bus
         WHERE id_ruta_bus = wid_ruta_bus
             AND fec_delete IS NULL;
 
@@ -55,7 +61,10 @@ EXCEPTION
         RAISE NOTICE 'El ID de la ruta no puede ser nulo o menor/igual a 0';
         RETURN FALSE;
     WHEN SQLSTATE '22002' THEN
-        RAISE NOTICE 'El ID del bus no puede ser nulo o menor/igual a 0';
+        RAISE NOTICE 'El ID del bus no puede ser nulo';
+        RETURN FALSE;
+    WHEN SQLSTATE '22023' THEN
+        RAISE NOTICE 'El ID de bus debe tener formato AAA123';
         RETURN FALSE;
     WHEN SQLSTATE '22005' THEN
         RAISE NOTICE 'No se puede actualizar una asignación ruta-bus que ha sido eliminada lógicamente';

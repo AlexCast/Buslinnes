@@ -82,7 +82,9 @@ function enviar_notificacion_onesignal(string $titulo, string $mensaje, ?int $id
     $recipients = is_array($decoded) && isset($decoded['recipients']) ? (int) $decoded['recipients'] : null;
     $hasId = is_array($decoded) && !empty($decoded['id']);
 
-    if ($is2xx && !$hasErrors && $hasId && ($recipients === null || $recipients > 0)) {
+    // OneSignal puede devolver "errors" no bloqueantes junto a un envio exitoso.
+    // Si hay id y recipients > 0, se considera envio correcto.
+    if ($is2xx && $hasId && ($recipients === null || $recipients > 0)) {
         return ['ok' => true, 'error' => null, 'response' => $decoded];
     }
 
@@ -96,7 +98,7 @@ function enviar_notificacion_onesignal(string $titulo, string $mensaje, ?int $id
 
     $errMsg = $decoded['errors'][0] ?? $decoded['errors'] ?? $response ?? 'Error desconocido';
     if (is_array($errMsg)) {
-        $errMsg = json_encode($errMsg);
+        $errMsg = json_encode($errMsg, JSON_UNESCAPED_UNICODE);
     }
     return ['ok' => false, 'error' => (string) $errMsg, 'response' => $decoded];
 }

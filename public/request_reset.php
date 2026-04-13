@@ -1,18 +1,26 @@
 <?php
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
 
-// Security middleware is always required
+header('Content-Type: application/json');
+
+// Este endpoint es público (para usuarios no autenticados que olvidaron contraseña)
+// Por lo tanto, NO validamos CSRF ni sesión, solo aplicamos headers de seguridad
 try {
     require_once('../app/SecurityMiddleware.php');
-    SecurityMiddleware::protect();
+    // protect(false) = solo headers de seguridad, sin CSRF/rate limit validation
+    SecurityMiddleware::protect([
+        'csrf' => false,
+        'rateLimit' => false,
+        'origin' => false,
+        'userAgent' => false,
+        'securityHeaders' => true,
+        'jwt' => false
+    ]);
 } catch (\Throwable $e) {
-    header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['error' => 'Error de seguridad']);
     exit();
 }
-
-header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -57,9 +65,9 @@ if ($dbAvailable) {
     try {
         $userClass = new userClass();
         // Delete any existing token for this email, then insert fresh one
-        $userClass->db->prepare("DELETE FROM password_reset_tokens WHERE email = ?")->execute([$email]);
+        $userClass->db->prepare("DELETE FROM password_reset_tokens WHERE email_usuario = ?")->execute([$email]);
         $stmt = $userClass->db->prepare(
-            "INSERT INTO password_reset_tokens (email, token, expires_at) VALUES (?, ?, ?)"
+            "INSERT INTO password_reset_tokens (email_usuario, token, expires_at) VALUES (?, ?, ?)"
         );
         $stmt->execute([$email, $token, $expires]);
     } catch (\Throwable $e) {

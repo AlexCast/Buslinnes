@@ -11,7 +11,12 @@ if (!isset($_GET["id_cambio_bus"])) {
     exit();
 }
 
-$id_cambio_bus = $_GET["id_cambio_bus"];
+$id_cambio_bus_txt = trim((string) $_GET["id_cambio_bus"]);
+if (!preg_match('/^[0-9]+$/', $id_cambio_bus_txt) || (int) $id_cambio_bus_txt <= 0) {
+    echo "ID de cambio de bus invalido";
+    exit();
+}
+$id_cambio_bus = (int) $id_cambio_bus_txt;
 include_once "../base_de_datos.php";
 
 // Obtener el registro del cambio de bus
@@ -25,11 +30,11 @@ if (!$cambio) {
 }
 
 // Consultar listas para combos
-$buses = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus;")->fetchAll(PDO::FETCH_OBJ);
+$buses = $base_de_datos->query("SELECT id_bus FROM tab_buses ORDER BY id_bus;")->fetchAll(PDO::FETCH_OBJ);
 $incidentes = $base_de_datos->query("SELECT id_incidente, desc_incidente FROM tab_incidentes ORDER BY id_incidente;")->fetchAll(PDO::FETCH_OBJ);
 ?>
 
-<?php include_once "encab_buses.php"; // O usa tu encabezado general ?>
+<?php include_once "encab_cambio_bus.php"; ?>
 <main class="main-container">
     <div class="row">
         <div class="col-12">
@@ -40,8 +45,8 @@ $incidentes = $base_de_datos->query("SELECT id_incidente, desc_incidente FROM ta
                 <div class="card-body">
                     <form action="update_cambio_bus.php" method="POST">
                         <!-- IDs ocultos -->
-                        <input type="hidden" name="id_cambio_bus" value="<?= $cambio->id_cambio_bus; ?>">
-                        <input type="hidden" name="usr_insert" value="<?= $cambio->usr_insert; ?>">
+                        <input type="hidden" name="id_cambio_bus" value="<?= (int) $cambio->id_cambio_bus; ?>">
+                        <input type="hidden" name="usr_insert" value="<?= htmlspecialchars($cambio->usr_insert, ENT_QUOTES, 'UTF-8'); ?>">
                         <input type="hidden" name="fec_insert" value="<?= date('Y-m-d H:i:s', strtotime($cambio->fec_insert)); ?>">
 
                         <div class="row">
@@ -54,7 +59,7 @@ $incidentes = $base_de_datos->query("SELECT id_incidente, desc_incidente FROM ta
                                         <?php foreach ($incidentes as $i): ?>
                                             <option value="<?= $i->id_incidente ?>" 
                                                 <?= $cambio->id_incidente == $i->id_incidente ? 'selected' : '' ?>>
-                                                <?= $i->desc_incidente ?> (ID: <?= $i->id_incidente ?>)
+                                                <?= htmlspecialchars($i->desc_incidente, ENT_QUOTES, 'UTF-8') ?> (ID: <?= (int) $i->id_incidente ?>)
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -68,7 +73,7 @@ $incidentes = $base_de_datos->query("SELECT id_incidente, desc_incidente FROM ta
                                         <?php foreach ($buses as $b): ?>
                                             <option value="<?= $b->id_bus ?>" 
                                                 <?= $cambio->id_bus == $b->id_bus ? 'selected' : '' ?>>
-                                                <?= $b->matricula ?> (ID: <?= $b->id_bus ?>)
+                                                Bus #<?= $b->id_bus ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -79,12 +84,13 @@ $incidentes = $base_de_datos->query("SELECT id_incidente, desc_incidente FROM ta
                                 <!-- Ubicación de cambio -->
                                 <div class="form-group mb-3">
                                     <label for="ubicacion_cambio" class="form-label">Ubicación del Cambio</label>
-                                    <input value="<?= $cambio->ubicacion_cambio; ?>" 
+                                     <input value="<?= htmlspecialchars($cambio->ubicacion_cambio, ENT_QUOTES, 'UTF-8'); ?>" 
                                            required 
                                            name="ubicacion_cambio" 
                                            type="text" 
                                            id="ubicacion_cambio" 
                                            class="form-control" 
+                                         minlength="3"
                                            maxlength="255">
                                 </div>
                             </div>

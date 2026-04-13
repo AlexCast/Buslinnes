@@ -21,11 +21,20 @@ Este archivo elimina (soft delete) un usuario
 ==================================================================
 */
 
+define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin']);
+
 if (!isset($_POST["id_usuario"])) {
     exit();
 }
 
-$id_usuario = $_POST["id_usuario"];
+$id_usuario_txt = trim((string) $_POST["id_usuario"]);
+if (!preg_match('/^[0-9]+$/', $id_usuario_txt) || (int) $id_usuario_txt <= 0) {
+    header("Location: listar_usuarios.php?error_delete=1&msg=" . urlencode("id_usuario invalido"));
+    exit();
+}
+$id_usuario = (int) $id_usuario_txt;
 include_once "../base_de_datos.php";
 
 try {

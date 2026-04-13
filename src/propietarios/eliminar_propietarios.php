@@ -11,14 +11,20 @@ if (!isset($_POST["id_propietario"])) {
     exit();
 }
 
-$id_propietario = $_POST["id_propietario"];
+$id_propietario = trim((string) $_POST["id_propietario"]);
+if (!preg_match('/^[0-9]{10}$/', $id_propietario)) {
+    echo "ID de propietario invalido";
+    exit();
+}
 include_once "../base_de_datos.php";
 
 // Si tienes soft delete, cambia la función aquí:
 $sentencia = $base_de_datos->prepare("SELECT fun_softdelete_propietarios(?);");
-$resultado = $sentencia->execute([$id_propietario]);
+$sentencia->execute([$id_propietario]);
+$resultado = $sentencia->fetchColumn();
+$ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
 
-if ($resultado === true) {
+if ($ok) {
     header("Location: listar_propietarios.php");
     exit();
 } else {

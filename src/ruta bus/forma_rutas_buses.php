@@ -13,20 +13,14 @@ include_once "../base_de_datos.php";
 // Obtener IDs y nombres de rutas
 $rutas = [];
 try {
-    $sentenciaRutas = $base_de_datos->query('SELECT id_ruta, nom_ruta FROM tab_rutas ORDER BY nom_ruta');
+    $sentenciaRutas = $base_de_datos->query('SELECT id_ruta, nom_ruta FROM tab_rutas WHERE fec_delete IS NULL ORDER BY nom_ruta');
     $rutas = $sentenciaRutas->fetchAll(PDO::FETCH_OBJ);
 } catch(Exception $e) {}
 // Obtener IDs y placas de buses
 $buses = [];
 try {
-    $sentenciaBuses = $base_de_datos->query('SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus');
+    $sentenciaBuses = $base_de_datos->query('SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus');
     $buses = $sentenciaBuses->fetchAll(PDO::FETCH_OBJ);
-} catch(Exception $e) {}
-// Obtener IDs y nombres de empresas
-$empresas = [];
-try {
-    $sentenciaEmpresas = $base_de_datos->query('SELECT id_empresa, nom_empresa FROM tab_empresas ORDER BY nom_empresa');
-    $empresas = $sentenciaEmpresas->fetchAll(PDO::FETCH_OBJ);
 } catch(Exception $e) {}
 ?>
 <?php include_once "encabezado_rutas_buses.php"; ?>
@@ -55,7 +49,7 @@ try {
                                             <option value="" disabled>No hay rutas disponibles</option>
                                         <?php else: ?>
                                             <?php foreach($rutas as $r): ?>
-                                                <option value="<?php echo $r->id_ruta; ?>"><?php echo $r->id_ruta . ' - ' . $r->nom_ruta; ?></option>
+                                                <option value="<?php echo $r->id_ruta; ?>"><?php echo $r->id_ruta . ' - ' . htmlspecialchars($r->nom_ruta, ENT_QUOTES, 'UTF-8'); ?></option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
@@ -70,7 +64,7 @@ try {
                                             <option value="" disabled>No hay buses disponibles</option>
                                         <?php else: ?>
                                             <?php foreach($buses as $b): ?>
-                                                <option value="<?php echo $b->id_bus; ?>"><?php echo $b->id_bus . ' - ' . $b->matricula; ?></option>
+                                                <option value="<?php echo htmlspecialchars($b->id_bus, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($b->id_bus, ENT_QUOTES, 'UTF-8'); ?></option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
@@ -92,6 +86,8 @@ try {
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 
 

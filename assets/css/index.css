@@ -1,4 +1,4 @@
-/* filepath: c:\Apache24\htdocs\buslinnes\assets\css\index.css */
+﻿/* filepath: c:\Apache24\htdocs\buslinnes\assets\css\index.css */
 
 /* =========================
    VARIABLES — interfaz normal
@@ -8,15 +8,15 @@
     --header-height: 72px;
     --container-max-width: 1200px;
 
-    /* branding / accents (modo normal) */
-    --accent: #8059d4ff;         /* color de links principales */
+    /* branding / accents (modo normal) - Heredados de _variables.css */
+    --accent: var(--primary-color);
     --text-color: #25212cff;     /* color de texto principal (modo normal) */
     --header-text: #ffffff;      /* color general dentro del header (por defecto blanco) */
 
-    /* botones (modo normal) */
-    --btn-border: #8059d4ff;           /* borde de btn-outline */
-    --btn-text: #8059d4ff;             /* texto en botones outline */
-    --btn-hover-bg: #8059d4ff;   /* fondo al hacer hover en btn-outline */
+    /* botones (modo normal) - Heredados de _variables.css */
+    --btn-border: var(--primary-color);
+    --btn-text: var(--primary-color);
+    --btn-hover-bg: var(--primary-color);
     --btn-hover-text: #ffffff;       /* texto en hover de btn-outline */
 
     /* primary button (modo normal) */
@@ -51,44 +51,16 @@ body {
     line-height:1.6;
     min-height:100vh;
     position:relative;
-    background-color:#0a0014;
     overflow-x:hidden;
     padding-top: var(--header-height); /* espacio para header fijo */
-}
-
-/* Fondo animado (por defecto) */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("/buslinnes/assets/img/pattern.svg");
-    background-repeat: repeat;
-    background-size: 150px;
-    animation: mover-fondo 16s ease-out 1 forwards;
-    z-index: -1;
-}
-@keyframes mover-fondo {
-    0% { background-position: 0 0; }
-    8% { background-position: 70px 0; }
-    16% { background-position: 130px 0; }
-    24% { background-position: 180px 0; }
-    32% { background-position: 220px 0; }
-    40% { background-position: 255px 0; }
-    48% { background-position: 285px 0; }
-    56% { background-position: 310px 0; }
-    64% { background-position: 330px 0; }
-    72% { background-position: 345px 0; }
-    80% { background-position: 355px 0; }
-    88% { background-position: 362px 0; }
-    94% { background-position: 367px 0; }
-    100% { background-position: 370px 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    body::before { animation: none; }
+    
+    /* Fondo patrón de puntos (Modo Claro) */
+    background-color: #d1d1d1ff;
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 /* =========================
@@ -132,21 +104,21 @@ header {
 }
 
 /* Logo */
-.logo { display:flex; align-items:center; gap:10px; font-weight:700; }
 .logo a { text-decoration: none; }
+.logo { display:flex; align-items:center; gap:10px; font-weight:700; }
 .header-back-arrow {
     font-size: 24px;
     color: var(--accent);
     transition: transform 0.2s ease;
 }
+
 .header-back-arrow:hover {
     transform: scale(1.1);
 }
-.logo-img{
+
+.logo-img {
     width: 50px;
     height: auto;
-    /* imagen por defecto (modo normal) */
-    content: url("/buslinnes/assets/img/logomorado.svg");
     display: inline-block;
 }
 
@@ -202,7 +174,7 @@ header {
 /* outline (usa variables) */
 .btn-outline {
     background:transparent;
-    border:2px solid var(--btn-border);
+    border:2px solid var(--primary-color);
     color: var(--btn-text);
 }
 .btn-outline:hover {
@@ -250,7 +222,7 @@ header {
     font-size: 4rem; 
     line-height:1.1; 
     margin-bottom:0px; 
-    background: var(--accent);
+    background: var(--primary-color);
     color: white;
     font-family: 'Segoe UI', sans-serif;
     font-weight: bold;
@@ -335,18 +307,6 @@ header {
 .hero-content #hero-subtitle2 {
     transform: rotate(-2deg);
 }
-.hero-content #hero-subtitle {
-    padding-right: 40px;
-}
-.hero-content #hero-title {
-    transform: rotate(-2deg);
-}
-.hero-content #hero-subtitle {
-    transform: rotate(2deg);
-}
-.hero-content #hero-subtitle2 {
-    transform: rotate(-2deg);
-}
 .hero p { font-size:1.05rem; margin-bottom:18px; opacity:0.92; color: var(--text-color); }
 .hero-buttons { display:flex; gap:12px; margin-top:6px; }
 
@@ -389,16 +349,6 @@ body.dark .hero-img-dark { display: block; }
     .nav-menu {
         position: absolute;
         left: 12px;
-
-    /* En pantallas pequeñas, el título de "Cómo funciona" alineado a la izquierda */
-    #how-it-works .hero-container {
-        text-align: left;
-        align-items: flex-start;
-    }
-
-    #how-it-works .hero-content {
-        text-align: left;
-    }
         right: 12px;
         top: calc(var(--header-height) + 6px);
         margin: 0;
@@ -415,6 +365,15 @@ body.dark .hero-img-dark { display: block; }
         z-index: 1100;
     }
 
+    /* En pantallas pequeñas, el título de "Cómo funciona" alineado a la izquierda */
+    #how-it-works .hero-container {
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    #how-it-works .hero-content {
+        text-align: left;
+    }
     
     .nav-menu.open {
         transform: translateY(0) scaleY(1);
@@ -437,13 +396,13 @@ body.dark .hero-img-dark { display: block; }
     .hero-image img { max-height:240px; }
     .mobile-toggle { font-size:1.2rem; padding:6px; }
     .header-auth .btn { padding:8px 10px; font-size:0.95rem; }
+}
 
 @media (max-width: 768px) {
     /* Oculta la ilustración de la sección "Cómo funciona" en pantallas pequeñas */
     #how-it-works .hero-image {
         display: none;
     }
-}
 }
 
 /* =========================
@@ -493,7 +452,7 @@ body.dark .hero-img-dark { display: block; }
     display: inline-flex;
     align-items: center;
     padding: 6px 12px;
-    background: #8059d4;
+    background: var(--primary-color);
     border-radius: 12px;
     font-weight: 700;
     color: #ffffff;
@@ -566,7 +525,7 @@ body.dark .hero-img-dark { display: block; }
     background: #111111;
 }
 .feature-card-rutas .feature-tag {
-    background: #8059d4;
+    background: var(--primary-color);
     color: #ffffff;
 }
 .feature-card-rutas h3 {
@@ -579,7 +538,7 @@ body.dark .hero-img-dark { display: block; }
 }
 
 .feature-card-analisis {
-    background: #8059d4;
+    background: var(--primary-color);
     color: #ffffff;
     border: 1px solid #111111;
 }
@@ -602,42 +561,42 @@ body.dark .hero-img-dark { display: block; }
 .feature-card-gestion {
     background: #111111;
     color: #ffffff;
-    border: 1px solid #8059d4;
+    border: 1px solid var(--primary-color);
 }
 .feature-card-gestion::after {
-    background: #8059d4;
+    background: var(--primary-color);
 }
 .feature-card-gestion .feature-tag {
     background: #ffffff;
     color: #111111;
 }
 .feature-card-gestion h3 {
-    background: #8059d4;
+    background: var(--primary-color);
     color: #ffffff;
 }
 .feature-card-gestion .feature-cta {
-    background: #8059d4;
+    background: var(--primary-color);
     color: #ffffff;
 }
 
 .feature-card-usuarios {
     background: #d1d1d1;
     color: #111111;
-    border: 1px solid #8059d4;
+    border: 1px solid var(--primary-color);
 }
 .feature-card-usuarios::after {
-    background: #8059d4;
+    background: var(--primary-color);
 }
 .feature-card-usuarios .feature-tag {
     background: #111111;
     color: #ffffff;
 }
 .feature-card-usuarios h3 {
-    background: #8059d4;
+    background: var(--primary-color);
     color: #ffffff;
 }
 .feature-card-usuarios .feature-cta {
-    background: #8059d4;
+    background: var(--primary-color);
     color: #ffffff;
 }
 
@@ -662,7 +621,7 @@ body.dark .hero-img-dark { display: block; }
     position: absolute;
     inset: 0;
     border-radius: 24px;
-    background: #8059d4;
+    background: var(--primary-color);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     transform: translate3d(14px, 14px, -1px);
     z-index: -1;
@@ -698,24 +657,24 @@ body.dark .docs-card {
 }
 
 body.dark .docs-card::after {
-    background: #8059d4;
+    background: var(--primary-color);
 }
 
 /* Specific styles for each docs card - keeping only the icon colors different */
 .docs-card-rutas i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 .docs-card-analisis i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 .docs-card-gestion i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 .docs-card-usuarios i {
-    color: #9370db;
+    color: var(--primary-color);
 }
 
 /* Support cards - separate from feature-card and docs-card */
@@ -739,7 +698,7 @@ body.dark .docs-card::after {
     position: absolute;
     inset: 0;
     border-radius: 24px;
-    background: #8059d4;
+    background: var(--primary-color);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     transform: translate3d(14px, 14px, -1px);
     z-index: -1;
@@ -775,24 +734,24 @@ body.dark .support-card {
 }
 
 body.dark .support-card::after {
-    background: #8059d4;
+    background: var(--primary-color);
 }
 
 /* Specific styles for each support card - keeping only the icon colors different */
 .support-card-rutas i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 .support-card-analisis i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 .support-card-gestion i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 .support-card-usuarios i {
-    color: #9370db;
+    color: var(--primary-color);
 }
 
 /* Sección: Casos de Éxito (Testimonios) */
@@ -806,26 +765,26 @@ body.dark .support-card::after {
 
 .cs-tag {
     background: #d1d1d1ff;
-    color: #8059d4ff;
-    border: 1px solid #8059d4ff;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
     padding: 12px 24px;
     border-radius: 30px;
     font-weight: 800;
     font-size: 1.5rem;
     white-space: nowrap;
-    box-shadow: 0 8px 20px rgba(128, 89, 212, 0.3);
+    box-shadow: 0 8px 20px var(--primary-color);
 }
 
 #features-title {
     background: #d1d1d1ff;
-    color: #8059d4ff;
-    border: 1px solid #8059d4ff;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
     padding: 12px 24px;
     border-radius: 30px;
     font-weight: 800;
     font-size: 1.5rem;
     white-space: nowrap;
-    box-shadow: 0 8px 20px rgba(128, 89, 212, 0.3);
+    box-shadow: 0 8px 20px var(--primary-color);
     display: inline-block;
 }
 
@@ -837,7 +796,7 @@ body.dark .support-card::after {
     background: #d1d1d1;
     padding: 16px 24px;
     border-radius: 16px;
-    border: 1px solid #8059d4;
+    border: 1px solid var(--primary-color);
     backdrop-filter: blur(4px);
 }
 
@@ -847,7 +806,7 @@ body.dark .support-card::after {
     padding: 48px;
     display: flex;
     gap: 32px;
-    box-shadow: 0 20px 40px rgba(128, 89, 212, 0.2);
+    box-shadow: 0 20px 40px var(--primary-color);
     border: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     margin-top: -20px;
@@ -1059,7 +1018,7 @@ body.dark .support-card::after {
 
 .footer-bottom {
     padding-top: 20px;
-    border-top: 1px solid #8059d4ff;
+    border-top: 1px solid var(--primary-color);
     text-align: center;
     font-size: 0.9rem;
     opacity: 0.7;
@@ -1138,172 +1097,6 @@ body {
   -ms-overflow-style: none; /* IE y Edge antiguos */
 }
 
-
-/* ===========================================================
-   MODO OSCURO — OVERRIDES (TODO LO RELACIONADO AL DARK MODE)
-   - Se colocan al final para no mezclar con la interfaz normal.
-   - Usamos variables para minimizar la cantidad de reglas necesarias.
-   =========================================================== */
-body.dark {
-    /* swap de variables para modo oscuro */
-    --text-color: #d1d1d1ff;
-    --text-color-h1: var(--accent);
-    --header-text: #d1d1d1ff;
-
-    /* botones en modo oscuro */
-    --btn-border: #8059d4ff;
-    --btn-text: #8059d4ff;
-    --btn-hover-bg: #8059d4ff;
-    --btn-hover-text: #111111;
-
-    --btn-primary-bg: #f5f5f5;
-    --btn-primary-text: #121212;
-
-    /* fondo alternativo para modo oscuro (sustituye el pattern por otro si se desea) */
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
-    background-repeat: repeat;
-    background-size: 150px;
-
-    /* footer en modo oscuro (diferente del fondo de la página) */
-    --footer-bg: #25212cff; /* Actualizado al color solicitado */
-    --footer-text-color: #d1d1d1ff;
-}
-
-/* si es necesario, la pseudo-capa se actualiza para usar la imagen alternativa */
-body.dark::before {
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
-}
-
-/* logo sustituida en modo oscuro */
-body.dark .logo-img {
-    content: url("/buslinnes/assets/img/logomorado.svg");
-}
-
-/* header background tenue en modo oscuro (mejor contraste con --header-text) */
-body.dark header {
-    background: #ffffff0a;
-}
-/* Si se desea un fondo más oscuro, usar esta línea en su lugar: */
-.hero-content.dark { flex:1; max-width:600px; color: var(--text-color); }
-body.dark .hero h1 { font-size: 3rem; line-height:1.1; margin-bottom:18px; color: var(--accent); text-shadow: 1px 1px 1px #0a0014;}
-.hero p { font-size:1.05rem; margin-bottom:18px; opacity:0.92; color: var(--text-color); }
-.hero-buttons { display:flex; gap:12px; margin-top:6px; }
-
-
-/* ===========================================================
-   MODO OSCURO — OVERRIDES CORREGIDOS
-   =========================================================== */
-body.dark {
-    /* Variables corregidas (agregar punto y coma) */
-    --text-color: #d1d1d1ff;
-    --text-color-h1: var(--accent); /* ← Punto y coma agregado */
-    --header-text: #d1d1d1ff;
-
-    /* ... (resto de variables) */
-}
-
-/* Reglas corregidas para contenido hero */
-body.dark .hero-content {
-    color: var(--text-color);
-}
-
-body.dark .hero-content h1 {
-    font-size: 4rem;
-    line-height: 1.1;
-    margin-bottom: 0px;
-    background: var(--accent);
-    color: #d1d1d1;
-    font-family: 'Segoe UI', sans-serif;
-    font-weight: bold;
-    padding: 4px 20px;
-    display: inline-block;
-    text-align: center;
-    white-space: nowrap;
-    clip-path: polygon(0 0, 5% 10%, 0 20%, 5% 30%, 0 40%, 5% 50%, 0 60%, 5% 70%, 0 80%, 5% 90%, 0 100%, 10% 95%, 20% 100%, 30% 95%, 40% 100%, 50% 95%, 60% 100%, 70% 95%, 80% 100%, 90% 95%, 100% 100%, 95% 90%, 100% 80%, 95% 70%, 100% 60%, 95% 50%, 100% 40%, 95% 30%, 100% 20%, 95% 10%, 100% 0);
-}
-body.dark .hero-content #hero-subtitle {
-    padding-right: 40px;
-}
-body.dark .hero-content #hero-title {
-    transform: rotate(-2deg);
-}
-body.dark .hero-content #hero-subtitle {
-    transform: rotate(2deg);
-}
-body.dark .hero-content #hero-subtitle2 {
-    transform: rotate(-2deg);
-}
-
-body.dark .step-content h3 {
-    color: white;
-}
-body.dark .step-description {
-    background: #333333;
-    border: 1px solid var(--accent);
-}
-body.dark .step-description p {
-    color: white;
-}
-
-/* Asegurar que las reglas responsive apliquen en modo oscuro */
-@media (max-width: 576px) {
-    body.dark .hero-content h1 {
-        font-size: 2.5rem; /* Mismo tamaño que en modo normal */
-    }
-}
-
-/* Sección Cómo Funciona - Modo Oscuro */
-body.dark #how-it-works {
-    background: none;
-    color: #ffffff;
-}
-
-body.dark #how-it-works::after {
-    background: linear-gradient(to bottom, transparent 0%, #25212c 20%, #25212c 80%, transparent 100%);
-}
-
-body.dark #how-it-works h2,
-body.dark #how-it-works p {
-    color: #ffffff !important;
-}
-
-/* Nav y botones adoptan las variables ya definidas en body.dark,
-   por lo que no se requieren múltiples reglas adicionales.
-   Se mantienen aquí por si hay excepciones específicas. */
-/* (reglas específicas opcionales — actualmente gestionadas por variables) */
-
-body.dark .cs-container {
-    background: #21252c;
-}
-
-body.dark .cs-description {
-    background: #21252c;
-    color: white;
-}
-
-body.dark .cs-tag {
-    background: #21252c;
-    color: white;
-    border: 1px solid #555555;
-}
-
-body.dark #features-title {
-    background: #21252c;
-    color: white;
-    border: 1px solid #555555;
-}
-
-body.dark .cs-container::after {
-    background: #333333;
-    border: 1px solid #555555;
-}
-
-/* ===========================================================
-   FIN del archivo
-   =========================================================== */
-
-/* Añade estos estilos al final del archivo para secciones sin imágenes */
-
 /* Para secciones de ancho completo (sin imagen lateral) */
 .features-full-width,
 .testimonials-full-width {
@@ -1338,8 +1131,6 @@ body.dark .cs-container::after {
         grid-template-columns: 1fr;
     }
 }
-
-/* Añade este estilo para crear más separación entre secciones */
 
 /* Espaciado adicional entre secciones */
 .section {
@@ -1427,3 +1218,132 @@ body.dark .cs-container::after {
         transition: all 180ms ease-in-out, visibility 0s linear 0s;
     }
 }
+
+
+/* ===========================================================
+   MODO OSCURO — OVERRIDES (TODO LO RELACIONADO AL DARK MODE)
+   - Se colocan al final para no mezclar con la interfaz normal.
+   - Usamos variables para minimizar la cantidad de reglas necesarias.
+   =========================================================== */
+body.dark {
+    /* swap de variables para modo oscuro */
+    --text-color: #d1d1d1ff;
+    --text-color-h1: var(--accent);
+    --header-text: #d1d1d1ff;
+
+    /* botones en modo oscuro */
+    --btn-border: var(--primary-color);
+    --btn-text: var(--primary-color);
+    --btn-hover-bg: var(--primary-color);
+    --btn-hover-text: #111111;
+
+    --btn-primary-bg: #f5f5f5;
+    --btn-primary-text: #121212;
+
+    /* footer en modo oscuro */
+    --footer-bg: #25212cff; 
+    --footer-text-color: #d1d1d1ff;
+
+    /* --- NUEVO COLOR DE FONDO (MODO OSCURO) --- */
+    /* Mantiene los puntos del color primario, solo cambia el fondo base */
+    background-color: #25212cff; 
+}
+
+/* header background tenue en modo oscuro (mejor contraste con --header-text) */
+body.dark header {
+    background: #ffffff0a;
+}
+/* Reglas corregidas para contenido hero */
+body.dark .hero-content {
+    color: var(--text-color);
+}
+
+body.dark .hero-content h1 {
+    font-size: 4rem;
+    line-height: 1.1;
+    margin-bottom: 0px;
+    background: var(--accent);
+    color: #d1d1d1;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: bold;
+    padding: 4px 20px;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+    clip-path: polygon(0 0, 5% 10%, 0 20%, 5% 30%, 0 40%, 5% 50%, 0 60%, 5% 70%, 0 80%, 5% 90%, 0 100%, 10% 95%, 20% 100%, 30% 95%, 40% 100%, 50% 95%, 60% 100%, 70% 95%, 80% 100%, 90% 95%, 100% 100%, 95% 90%, 100% 80%, 95% 70%, 100% 60%, 95% 50%, 100% 40%, 95% 30%, 100% 20%, 95% 10%, 100% 0);
+}
+body.dark .hero-content #hero-subtitle {
+    padding-right: 40px;
+}
+body.dark .hero-content #hero-title {
+    transform: rotate(-2deg);
+}
+body.dark .hero-content #hero-subtitle {
+    transform: rotate(2deg);
+}
+body.dark .hero-content #hero-subtitle2 {
+    transform: rotate(-2deg);
+}
+
+body.dark .step-content h3 {
+    color: white;
+}
+body.dark .step-description {
+    background: #333333;
+    border: 1px solid var(--accent);
+}
+body.dark .step-description p {
+    color: white;
+}
+
+/* Asegurar que las reglas responsive apliquen en modo oscuro */
+@media (max-width: 576px) {
+    body.dark .hero-content h1 {
+        font-size: 2.5rem; /* Mismo tamaño que en modo normal */
+    }
+}
+
+/* Sección Cómo Funciona - Modo Oscuro */
+body.dark #how-it-works {
+    background: none;
+    color: #ffffff;
+}
+
+body.dark #how-it-works::after {
+    background: linear-gradient(to bottom, transparent 0%, #25212c 20%, #25212c 80%, transparent 100%);
+}
+
+body.dark #how-it-works h2,
+body.dark #how-it-works p {
+    color: #ffffff !important;
+}
+
+body.dark .cs-container {
+    background: #21252c;
+}
+
+body.dark .cs-description {
+    background: #21252c;
+    color: white;
+}
+
+body.dark .cs-tag {
+    background: #21252c;
+    color: white;
+    border: 1px solid #555555;
+}
+
+body.dark #features-title {
+    background: #21252c;
+    color: white;
+    border: 1px solid #555555;
+}
+
+body.dark .cs-container::after {
+    background: #333333;
+    border: 1px solid #555555;
+}
+
+/* ===========================================================
+   FIN del archivo
+   =========================================================== */

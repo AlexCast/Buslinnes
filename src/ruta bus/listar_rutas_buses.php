@@ -72,7 +72,7 @@ $rutasEliminadas = array_filter($rutas_buses, function($r) {
                               <tr>
                                                                 <td data-label="ID Ruta Bus"><?php echo $registro->id_ruta_bus; ?></td>
                                                                 <td data-label="ID Ruta"><?php echo $registro->id_ruta; ?></td>
-                                                                <td data-label="ID Bus"><?php echo $registro->id_bus; ?></td>
+                                                                <td data-label="ID Bus"><?php echo htmlspecialchars($registro->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
                                                                 <td data-label="Eliminada por"><?php echo htmlspecialchars($registro->usr_delete); ?></td>
                                                                 <td data-label="Fecha Eliminación"><?php echo date('d/m/Y H:i', strtotime($registro->fec_delete)); ?></td>
                                                                 <td data-label="Acciones">
@@ -111,13 +111,13 @@ $rutasEliminadas = array_filter($rutas_buses, function($r) {
                         <?php 
                         $rutasNormales = array_filter($rutas_buses, function($r) { return empty($r->fec_delete); });
                         if (count($rutasNormales) === 0): ?>
-                            <tr><td colspan="5" class="text-center">No hay rutas-bus registradas.</td></tr>
+                            <tr><td colspan="4" class="text-center">No hay rutas-bus registradas.</td></tr>
                         <?php else: ?>
                             <?php foreach($rutasNormales as $ruta): ?>
                             <tr>
                                 <td data-label="ID Ruta Bus"><?php echo $ruta->id_ruta_bus; ?></td>
                                 <td data-label="ID Ruta"><?php echo $ruta->id_ruta; ?></td>
-                                <td data-label="ID Bus"><?php echo $ruta->id_bus; ?></td>
+                                <td data-label="ID Bus"><?php echo htmlspecialchars($ruta->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td class="actions-cell" data-label="Acciones">
                                     <a class="btn btn-warning btn-sm" href="editar_rutas_buses.php?id_ruta_bus=<?php echo $ruta->id_ruta_bus; ?>" aria-label="Editar ruta-bus <?php echo $ruta->id_ruta_bus; ?>">
                                         <i class="fas fa-edit" aria-hidden="true"></i>
@@ -146,6 +146,7 @@ $rutasEliminadas = array_filter($rutas_buses, function($r) {
                 <?php else: ?>
                     <?php foreach($rutas_buses as $ruta): 
                         $eliminada = !empty($ruta->fec_delete);
+                        if ($eliminada) continue; // Ocultar eliminadas de la vista móvil
                     ?>
                     <div class="col-12 mb-3">
                         <div class="tarjeta-card card <?php echo $eliminada ? 'registro-eliminado' : ''; ?>">
@@ -195,7 +196,7 @@ $rutasEliminadas = array_filter($rutas_buses, function($r) {
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>ID Bus: </strong>
-                                        <span><?php echo $ruta->id_bus; ?></span>
+                                        <span><?php echo htmlspecialchars($ruta->id_bus, ENT_QUOTES, 'UTF-8'); ?></span>
                                     </li>
                                 </ul>
                             </div>

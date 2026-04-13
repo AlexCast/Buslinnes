@@ -1,7 +1,7 @@
-/* ===== VARIABLES GLOBALES ===== */
+﻿/* ===== VARIABLES GLOBALES ===== */
 :root {
-    --primary: #362163ff;
-    --secondary: #8059d4ff;
+    --primary: var(--primary-color, #8059d4ff);
+    --secondary: var(--primary-color, #8059d4ff);
     --white: #d1d1d1ff;
     --text-dark: #25212cff;
     --text-light: #718096;
@@ -18,16 +18,18 @@
 /* Aplicar mismo background que admin.css en modo normal */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--white);
+    background-color: #d1d1d1ff;
     color: var(--text-dark);
     line-height: 1.6;
     min-height: 100vh;
     padding-top: 0px; /* Espacio para el header fijo */
 
-    /* background pattern (igual que admin.css) */
-    background-image: url("/buslinnes/assets/img/pattern.svg");
-    background-repeat: repeat;
-    background-size: 150px;
+    /* Fondo patrón de puntos (Modo Claro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 /* overlay animado igual que admin.css */
@@ -38,9 +40,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url("/buslinnes/assets/img/pattern.svg");
-    background-repeat: repeat;
-    background-size: 150px;
+    display: none;
     z-index: -1;
 }
 
@@ -125,7 +125,7 @@ body.dark .brand-text {
 
 .nav-link {
     color: var(--text-dark);
-    text-decoration: none;
+    text-decoration: none !important;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -133,6 +133,10 @@ body.dark .brand-text {
     border-radius: 8px;
     font-weight: 500;
     font-size: 0.95rem;
+}
+
+.btn, a.btn, button.btn, a[class*="btn"] {
+    text-decoration: none !important;
 }
 
 .nav-item:hover .nav-link {
@@ -189,7 +193,7 @@ body.dark .brand-text {
 
 .actions-cell {
     display: flex;
-    gap: 8px;              /* separación uniforme */
+    gap: 8px;              /* separaciÃ³n uniforme */
     justify-content: center;
 }
 
@@ -257,9 +261,9 @@ body.dark .brand-text {
 
 /* ===== BOTONES (reutilizables) ===== */
 .btn-sm {
-    padding: 0.35rem 0.85rem;   /* más grande y cómodo */
-    font-size: 0.95rem;         /* más legible */
-    min-width: 40px;            /* ancho mínimo para iconos */
+    padding: 0.35rem 0.85rem;   /* mÃ¡s grande y cÃ³modo */
+    font-size: 0.95rem;         /* mÃ¡s legible */
+    min-width: 40px;            /* ancho mÃ­nimo para iconos */
     height: auto;               /* permite crecer si hay texto */
     line-height: 1.2;
 }
@@ -272,11 +276,16 @@ body.dark .brand-text {
   border: none;
   cursor: pointer;
   color: white;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   z-index: 1;
+  display: inline-block;
+  line-height: 1.5;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  user-select: none;
 }
 
 .btn:hover {
@@ -290,8 +299,9 @@ body.dark .brand-text {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-color, #8059d4ff);
   background-size: 200% auto;
+  margin-left: 10px;
 }
 
 .btn-primary:hover {
@@ -299,7 +309,7 @@ body.dark .brand-text {
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: var(--primary-color, #8059d4ff);
   background-size: 200% auto;
 }
 
@@ -308,13 +318,15 @@ body.dark .brand-text {
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #48bb78 0%, #2f855a 100%);
+  background: linear-gradient(135deg, var(--primary-color, #8059d4ff) 0%, var(--primary-color, #8059d4ff) 100%);
   background-size: 200% auto;
+  margin-left: 10px;
 }
 
 .btn-warning {
-  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  background: var(--primary-color, #8059d4ff);
   background-size: 200% auto;
+  margin-left: 10px;
 }
 
 .btn-danger {
@@ -346,7 +358,7 @@ body.dark .brand-text {
 }
 
 .btn i {
-    margin-right: 0.3rem;       /* menos margen, mejor alineación */
+    margin-right: 0.3rem;       /* menos margen, mejor alineaciÃ³n */
     vertical-align: middle;
     transition: transform 0.3s ease;
 }
@@ -431,7 +443,7 @@ body.dark .brand-text {
         display: block;
     }
 
-    /* Hamburguesa (creada por JS si no está en HTML) */
+    /* Hamburguesa (creada por JS si no estÃ¡ en HTML) */
     .nav-toggle {
       display: none;
       background: transparent;
@@ -448,7 +460,7 @@ body.dark .brand-text {
     .nav-toggle:focus { outline: 2px solid rgba(118,75,162,0.16); outline-offset: 2px; }
 }
 
-/* ===== Header: mostrar solo iconos en móvil (sin hamburguesa) ===== */
+/* ===== Header: mostrar solo iconos en mÃ³vil (sin hamburguesa) ===== */
 @media (max-width: 992px) {
   /* Hacer que los enlaces sean compactos y centrados */
   .nav-menu {
@@ -466,7 +478,7 @@ body.dark .brand-text {
 
   /* Mantener icono visible, ocultar texto descriptivo dentro del enlace.
      Recomendado: en HTML envolver el texto en <span class="link-text">Texto</span>
-     si existe, se ocultará. También se ocultan spans por defecto para compatibilidad. */
+     si existe, se ocultarÃ¡. TambiÃ©n se ocultan spans por defecto para compatibilidad. */
   .nav-link {
     display: inline-flex;
     align-items: center;
@@ -491,7 +503,7 @@ body.dark .brand-text {
     display: none !important;
   }
 
-  /* Si hay badges, hacerlos pequeños y superpuestos para no romper el layout */
+  /* Si hay badges, hacerlos pequeÃ±os y superpuestos para no romper el layout */
   .nav-link .badge {
     transform: translateY(-6px);
     font-size: 0.65rem;
@@ -508,7 +520,7 @@ body.dark .brand-text {
   .brand-logo { margin-right: 0.5rem; }
 }
 
-/* En pantallas más grandes recuperar texto */
+/* En pantallas mÃ¡s grandes recuperar texto */
 @media (min-width: 993px) {
   .nav-link span,
   .nav-link .link-text { display: inline !important; }
@@ -524,7 +536,7 @@ body.dark .brand-text {
   .main-container { padding: 1rem; margin-top: calc(var(--header-height) + 12px); }
 }
 
-/* Tablas: mejor scroll y filas compactas en móvil */
+/* Tablas: mejor scroll y filas compactas en mÃ³vil */
 .table th, .table td { padding: 0.6rem 0.75rem; font-size: 0.95rem; }
 @media (max-width: 768px) {
   .table th, .table td { padding: 0.5rem; font-size: 0.88rem; }
@@ -541,10 +553,10 @@ body.dark .brand-text {
   .form-col-2 { flex-direction: column; gap: 1rem; }
 }
 
-/* Mejor separación entre filas del formulario */
+/* Mejor separaciÃ³n entre filas del formulario */
 .card-body form .row { row-gap: 1rem; }
 
-/* Cerrar menú al cambiar a desktop para evitar estados inconsistentes */
+/* Cerrar menÃº al cambiar a desktop para evitar estados inconsistentes */
 @media (min-width: 993px) {
   .header-container.nav-open .nav-menu { transform: none; position: static; box-shadow: none; padding: 0; border-left: none; display:flex; flex-direction:row; }
   .nav-toggle { display: none; }
@@ -558,23 +570,26 @@ body.dark {
     --text-dark: #f5f5f5;
     --text-light: rgba(255,255,255,0.8);
     /* mantener primarios para coherencia */
-    --primary: #362163ff;
-    --secondary: #8059d4ff;
+    --primary: var(--primary-color, #8059d4ff);
+    --secondary: var(--primary-color, #8059d4ff);
 
     color: var(--text-dark);
+    background-color: #25212cff;
 
-    /* aplicar mismo background que admin.css en dark */
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
-    background-repeat: repeat;
-    background-size: 150px;
+    /* Fondo patrón de puntos (Modo Oscuro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 /* overlay animado dark (override) */
 body.dark::before {
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
+    display: none;
 }
 
-/* componentes básicos adaptados (basado en colores de admin.css) */
+/* componentes bÃ¡sicos adaptados (basado en colores de admin.css) */
 body.dark .header-container {
     background: rgba(37, 33, 44, 0.95);
     box-shadow: var(--shadow);
@@ -588,7 +603,7 @@ body.dark .nav-link {
 }
 body.dark .nav-link:hover {
     color: #ffffff;
-    background: rgba(54,33,99,0.9);
+    background: var(--primary-color);
 }
 
 body.dark .main-container,
@@ -647,13 +662,13 @@ body.dark textarea.form-control {
     box-shadow: none !important;
 }
 
-/* Placeholder más tenue en dark */
+/* Placeholder mÃ¡s tenue en dark */
 body.dark .form-control::placeholder,
 body.dark textarea.form-control::placeholder {
     color: rgba(255,255,255,0.6) !important;
 }
 
-/* Inputs deshabilitados / readonly más oscuros pero visibles */
+/* Inputs deshabilitados / readonly mÃ¡s oscuros pero visibles */
 body.dark .form-control:disabled,
 body.dark .form-control[readonly],
 body.dark .form-select:disabled {
@@ -676,7 +691,7 @@ body.dark .form-select:disabled {
 
 /* Badges */
 .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-weight: 600; }
-.badge.bg-primary { background: #8059d4ff; color: #fff; }
+.badge.bg-primary { background: var(--primary-color, #8059d4ff); color: #fff; }
 .badge.bg-danger { background: linear-gradient(135deg, #f56565, #e53e3e); color: #fff; }
 .badge.bg-info { background: linear-gradient(135deg,#67c6ff,#0ea5e9); color:#042; }
 
@@ -690,14 +705,14 @@ body.dark .form-select:disabled {
 .table-primary thead { background: linear-gradient(90deg, rgba(102,126,234,0.12), rgba(118,75,162,0.08)); }
 .table-danger thead { background: linear-gradient(90deg, rgba(245,101,101,0.12), rgba(229,62,62,0.08)); }
 
-/* Buttons: uses .btn from main.css, agregar variantes de tamaño */
+/* Buttons: uses .btn from main.css, agregar variantes de tamaÃ±o */
 .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
 
 /* Cards (usadas en mobile-view) */
 .card { background: var(--white); border-radius: 0.5rem; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.06); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
 .card-header { padding: 0.75rem 1rem; background: var(--primary); color: #fff; font-weight: 600; }
-.card-body { padding: 1rem; background: #c0c0c0; }
-body.dark .card-body { background: #25212cff !important; }
+.card-body { padding: 1rem; background: #c0c0c0; border: 1px solid var(--primary-color); }
+body.dark .card-body { background: #25212cff !important; border:1px solid var(--primary-color); }
 .div.card-body { color: #ffffff !important; }
 .card-footer { padding: 0.75rem 1rem; background: transparent; }
 
@@ -706,7 +721,7 @@ body.dark .card-body { background: #25212cff !important; }
 .list-group-item {
   background: #d1d1d1d1 !important; /* sobrescribe inline */
   color: #0f172a !important;
-  border: 2px solid #362163ff !important;
+  border: 2px solid var(--primary-color, #8059d4ff) !important;
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.06);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
@@ -720,7 +735,7 @@ body.dark .card-body { background: #25212cff !important; }
 .list-group-item p { color: #1f2937 !important; }
 .list-group-item .text-secondary { color: #475569 !important; }
 
-/* Ajuste de espaciado título + contenido en notificaciones */
+/* Ajuste de espaciado tÃ­tulo + contenido en notificaciones */
 .list-group-item h4,
 .list-group-item h5 {
   margin: 0 0 2px 0 !important;
@@ -735,7 +750,8 @@ body.dark .card-body { background: #25212cff !important; }
 
 /* Small / muted */
 .small { font-size: 0.85rem; }
-.text-muted { color: rgba(0,0,0,0.5); }
+.text-muted { color: #000000; }
+body.dark .text-muted { color: #ffffff; }
 .d-block { display: block; }
 .mt-1 { margin-top: 0.25rem; }
 
@@ -743,12 +759,30 @@ body.dark .card-body { background: #25212cff !important; }
 
 /* ===== MODAL LIGERO (sin Bootstrap JS) ===== */
 /* Estructura esperada: .modal > .modal-dialog > .modal-content */
-.modal { display: none; position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center; padding: 1.25rem; }
-.modal.show { display: flex; }
+.modal { 
+  display: none !important; 
+  position: fixed !important; 
+  inset: 0 !important; 
+  z-index: 1050 !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  padding: 1.25rem !important; 
+}
+
+.modal.show { 
+  display: flex !important; 
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 .modal.fade { transition: opacity 0.18s linear; opacity: 0; }
 .modal.show.fade { opacity: 1; }
 
-.modal-dialog { max-width: 900px; width: 100%; }
+.modal-dialog { 
+  max-width: 900px !important; 
+  width: 100% !important;
+  margin: auto !important;
+}
 .modal-content { border-radius: 0.5rem; overflow: hidden; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2); background: var(--white); color: var(--text-dark); }
 .modal-header { display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-bottom: 1px solid rgba(0,0,0,0.06); }
 .modal-body { padding: 1rem; max-height: 70vh; overflow: auto; }
@@ -757,7 +791,7 @@ body.dark .card-body { background: #25212cff !important; }
 /* Close button styling (si no usas el elemento .btn-close de BS) */
 .btn-close { background: transparent; border: none; font-size: 1.25rem; cursor: pointer; color: inherit; }
 
-/* Backdrop (si tu modalEliminados.js la añade) */
+/* Backdrop (si tu modalEliminados.js la aÃ±ade) */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1040; }
 
 /* Asegura accesibilidad visual en dark mode (usa variables ya definidas) */
@@ -814,7 +848,7 @@ input.form-select {
 
 /* ===== AJUSTES DE FORMULARIOS: campos blancos y formulario centrado ===== */
 /* Asegura que los inputs / selects /textarea sean blancos en modo normal */
-/* === INPUTS: blanco SOLO cuando NO está dark mode === */
+/* === INPUTS: blanco SOLO cuando NO estÃ¡ dark mode === */
 body:not(.dark) .form-control,
 body:not(.dark) .form-select,
 body:not(.dark) input.form-control,
@@ -836,16 +870,16 @@ textarea.form-control:focus {
     box-shadow: 0 0 0 4px rgba(128,89,212,0.08);
 }
 
-/* Centrar las tarjetas/formularios en la página */
+/* Centrar las tarjetas/formularios en la pÃ¡gina */
 .main-container .card {
     max-width: 900px;
     margin: 1.5rem auto; /* centra horizontalmente y separa verticalmente */
 }
 
-/* Mejorar disposición de columnas dentro del formulario */
+/* Mejorar disposiciÃ³n de columnas dentro del formulario */
 .card-body form .row {
-    gap: 1.25rem;         /* separación horizontal entre columnas */
-    margin-bottom: 1rem;  /* separación general entre filas dentro del form */
+    gap: 1.25rem;         /* separaciÃ³n horizontal entre columnas */
+    margin-bottom: 1rem;  /* separaciÃ³n general entre filas dentro del form */
     align-items: flex-start;
 }
 
@@ -853,20 +887,20 @@ textarea.form-control:focus {
 .card-body form .row > [class*="col-"] {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;         /* separación entre label/field en cada columna */
+    gap: 0.75rem;         /* separaciÃ³n entre label/field en cada columna */
 }
 
-/* Form groups más claros y con espacio entre filas */
+/* Form groups mÃ¡s claros y con espacio entre filas */
 .card-body .form-group {
     margin-bottom: 1rem;
 }
 
-/* Ajuste específico para la "segunda fila" (si usas <div class="row"> consecutivas) */
+/* Ajuste especÃ­fico para la "segunda fila" (si usas <div class="row"> consecutivas) */
 .card-body form .row + .row {
     margin-top: 1rem; /* asegura que la segunda fila no quede pegada a la primera */
 }
 
-/* Responsive: en pantallas pequeñas las columnas ocupan todo el ancho y mantienen espacio */
+/* Responsive: en pantallas pequeÃ±as las columnas ocupan todo el ancho y mantienen espacio */
 @media (max-width: 768px) {
     .card-body form .row {
         gap: 0.75rem;
@@ -890,7 +924,7 @@ body.dark textarea.form-control {
 .modal-content { background: var(--white); color: var(--text-dark); }
 body.dark .form-control, body.dark .form-select { background: var(--white); color: var(--text-dark); border-color: rgba(255,255,255,0.04); }
 
-/* ===== FIX: header cortado en móvil ===== */
+/* ===== FIX: header cortado en mÃ³vil ===== */
 /* Asegura que el header y su contenido no sobresalgan del viewport */
 .header-container {
   box-sizing: border-box;
@@ -920,7 +954,7 @@ body.dark .form-control, body.dark .form-select { background: var(--white); colo
 .nav-menu {
   position: static !important;
   flex: 1 1 auto;
-  min-width: 0; /* crucial: permite truncar/encoger elementos hijos en móviles */
+  min-width: 0; /* crucial: permite truncar/encoger elementos hijos en mÃ³viles */
   display: flex;
   justify-content: flex-end;
   gap: 0.4rem;
@@ -951,16 +985,16 @@ body.dark .form-control, body.dark .form-select { background: var(--white); colo
   .brand-logo { margin-right: 0.35rem; }
 }
 
-/* Si persiste overflow en dispositivos pequeños: permitir truncado de textos dentro de enlaces */
+/* Si persiste overflow en dispositivos pequeÃ±os: permitir truncado de textos dentro de enlaces */
 .nav-link .link-text,
 .nav-link .nav-label {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-  max-width: 8rem; /* ajusta si quieres mostrar más/menos texto */
+  max-width: 8rem; /* ajusta si quieres mostrar mÃ¡s/menos texto */
 }
 
-/* Ocultar exclusivamente la línea "brand-subtext" en móviles */
+/* Ocultar exclusivamente la lÃ­nea "brand-subtext" en mÃ³viles */
 @media (max-width: 992px) {
   .header-container .brand-subtext {
     display: none !important;
@@ -972,7 +1006,7 @@ body.dark .form-control, body.dark .form-select { background: var(--white); colo
   }
 }
 
-/* Responsive: tablas apiladas en móviles (stacked table) */
+/* Responsive: tablas apiladas en mÃ³viles (stacked table) */
 @media (max-width: 768px) {
   .table-responsive .table {
     display: block;
@@ -1033,7 +1067,7 @@ body.dark .form-control, body.dark .form-select { background: var(--white); colo
   }
 }
 
-/* ===== AJUSTES PARA BOTONES EN LA CABECERA DE LAS TARJETAS MÓVILES ===== */
+/* ===== AJUSTES PARA BOTONES EN LA CABECERA DE LAS TARJETAS MÃ“VILES ===== */
 .mobile-view .card-header {
   padding: 0.75rem 1rem;
   display: flex;
@@ -1084,13 +1118,13 @@ body.dark .form-control, body.dark .form-select { background: var(--white); colo
   text-overflow: ellipsis;
 }
 
-/* Mejora el espaciado entre etiquetas y valores en la vista móvil */
+/* Mejora el espaciado entre etiquetas y valores en la vista mÃ³vil */
 .mobile-view .list-group-item strong {
-  margin-right: 5px; /* Asegura un espacio consistente después de la etiqueta */
+  margin-right: 5px; /* Asegura un espacio consistente despuÃ©s de la etiqueta */
 }
 
 .mobile-view .list-group-item {
-  padding: 0.75rem 1rem; /* Un poco más de padding para mejor legibilidad */
+  padding: 0.75rem 1rem; /* Un poco mÃ¡s de padding para mejor legibilidad */
 }
 
 .map-container {

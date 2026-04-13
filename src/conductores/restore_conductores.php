@@ -17,19 +17,30 @@ Archivo para procesar la restauración de buses
 */
 include_once "../base_de_datos.php";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_conductor'])) {
-    $id_conductor = $_POST['id_conductor'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_usuario'])) {
+    $id_usuario = trim((string) $_POST['id_usuario']);
+    if (!preg_match('/^[0-9]+$/', $id_usuario)) {
+        header("Location: listar_conductores.php?error=1");
+        exit();
+    }
 
-    $sentencia = $base_de_datos->prepare("SELECT fun_restore_conductores(?);");
-    $resultado = $sentencia->execute([$id_conductor]);
-    
-    if ($resultado) {
-        header("Location: listar_conductores.php?restaurado=1");
-    } else {
-        header("Location: restore_conductores.php?error=1");
+    try {
+        $sentencia = $base_de_datos->prepare("SELECT fun_restore_conductores(?);");
+        $sentencia->execute([$id_usuario]);
+        $resultado = $sentencia->fetchColumn();
+        $ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
+
+        if ($ok) {
+            header("Location: listar_conductores.php?restaurado=1");
+        } else {
+            header("Location: listar_conductores.php?error=1");
+        }
+    } catch (PDOException $e) {
+        header("Location: listar_conductores.php?error=1");
     }
     exit();
 }
 
-header("Location: restore_conductores.php");
+header("Location: listar_conductores.php");
+
 

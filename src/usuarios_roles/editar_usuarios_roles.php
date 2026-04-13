@@ -1,6 +1,18 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => false,  // GET no requiere CSRF
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+// === FIN SEGURIDAD ===
+
 /*
 CRUD con PostgreSQL y PHP
 autor: alexndrcastt
@@ -9,12 +21,24 @@ Formulario para editar asignación de roles
 =================================================================
 */
 
+define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin']);
+
 if (!isset($_GET["id_usuario"]) || !isset($_GET["id_rol"])) {
     exit();
 }
 
-$id_usuario = $_GET["id_usuario"];
-$id_rol = $_GET["id_rol"];
+$id_usuario_txt = trim((string) $_GET["id_usuario"]);
+$id_rol_txt = trim((string) $_GET["id_rol"]);
+if (!preg_match('/^[0-9]+$/', $id_usuario_txt) || (int) $id_usuario_txt <= 0 ||
+    !preg_match('/^[0-9]+$/', $id_rol_txt) || (int) $id_rol_txt <= 0) {
+    echo "Parametros invalidos";
+    exit();
+}
+
+$id_usuario = (int) $id_usuario_txt;
+$id_rol = (int) $id_rol_txt;
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("SELECT id_usuario, id_rol FROM tab_usuarios_roles WHERE id_usuario = ? AND id_rol = ?");
@@ -37,19 +61,19 @@ include_once "encab_usuarios_roles.php";
                 </div>
                 <div class="card-body">
                     <form action="update_usuarios_roles.php" method="POST">
-                        <input type="hidden" name="id_usuario" value="<?php echo $usuario_rol->id_usuario; ?>">
-                        <input type="hidden" name="id_rol_old" value="<?php echo $usuario_rol->id_rol; ?>">
+                        <input type="hidden" name="id_usuario" value="<?php echo (int) $usuario_rol->id_usuario; ?>">
+                        <input type="hidden" name="id_rol_old" value="<?php echo (int) $usuario_rol->id_rol; ?>">
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <?php
-                                $sentencia = $base_de_datos->prepare("SELECT nombre FROM tab_usuarios WHERE id_usuario = ?");
+                                $sentencia = $base_de_datos->prepare("SELECT nom_usuario AS nombre FROM tab_usuarios WHERE id_usuario = ?");
                                 $sentencia->execute([$id_usuario]);
                                 $usuario = $sentencia->fetch(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
                                     <label class="form-label">Usuario</label>
-                                    <input type="text" class="form-control" value="<?php echo $usuario->nombre; ?>" disabled>
+                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($usuario->nombre, ENT_QUOTES, 'UTF-8'); ?>" disabled>
                                 </div>
 
                                 <?php
@@ -60,8 +84,8 @@ include_once "encab_usuarios_roles.php";
                                     <label for="id_rol_new" class="form-label">Rol</label>
                                     <select name="id_rol_new" id="id_rol_new" class="form-select" required>
                                         <?php foreach($roles as $rol): ?>
-                                            <option value="<?php echo $rol->id_rol ?>" <?php if($rol->id_rol == $usuario_rol->id_rol) echo "selected" ?>>
-                                                <?php echo $rol->nombre_rol ?>
+                                            <option value="<?php echo (int) $rol->id_rol ?>" <?php if((int) $rol->id_rol === (int) $usuario_rol->id_rol) echo "selected" ?>>
+                                                <?php echo htmlspecialchars($rol->nombre_rol, ENT_QUOTES, 'UTF-8') ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>

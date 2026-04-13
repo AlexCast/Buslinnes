@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION fun_update_rutas_favoritas(
     wid_ruta_favorita tab_rutas_favoritas.id_ruta_favorita%TYPE,
-    wid_pasajero tab_rutas_favoritas.id_pasajero%TYPE,
+    wid_usuario tab_rutas_favoritas.id_usuario%TYPE,
     wid_ruta tab_rutas_favoritas.id_ruta%TYPE
 ) RETURNS BOOLEAN AS
 $$
@@ -12,7 +12,7 @@ $$
             RAISE EXCEPTION USING ERRCODE = '23502';
         END IF;
 
-        IF wid_pasajero IS NULL OR wid_pasajero <= 0 THEN
+        IF wid_usuario IS NULL OR wid_usuario <= 0 THEN
             RAISE EXCEPTION USING ERRCODE = '23503';
         END IF;
 
@@ -21,13 +21,13 @@ $$
         END IF;
 
         -- Verificar si existe el registro
-        SELECT id_ruta_favorita, id_pasajero, id_ruta INTO wreg_ruta_favorita FROM tab_rutas_favoritas 
+        SELECT id_ruta_favorita, id_usuario, id_ruta INTO wreg_ruta_favorita FROM tab_rutas_favoritas 
         WHERE id_ruta_favorita = wid_ruta_favorita;
 
         IF FOUND THEN
             -- Actualizar el registro existente
             UPDATE tab_rutas_favoritas SET
-                id_pasajero = wid_pasajero,
+                id_usuario = wid_usuario,
                 id_ruta = wid_ruta
             WHERE id_ruta_favorita = wid_ruta_favorita;
 
@@ -43,7 +43,7 @@ $$
             RETURN FALSE;
 
         WHEN SQLSTATE '23503' THEN
-            RAISE NOTICE 'El ID del pasajero no puede ser nulo o menor/igual a 0';
+            RAISE NOTICE 'El ID del usuario no puede ser nulo o menor/igual a 0';
             RETURN FALSE;
 
         WHEN SQLSTATE '23504' THEN

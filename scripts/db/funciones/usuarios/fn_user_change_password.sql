@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION fn_user_change_password(
-    p_user_id INT,
+    p_user_id decimal,
     p_current_password VARCHAR,
     p_new_password VARCHAR,
     p_usr_update VARCHAR

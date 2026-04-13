@@ -19,16 +19,37 @@ Este archivo actualiza los datos enviados a través de editar_usuarios_roles.php
 ==================================================================
 */
 
+define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin']);
+
 if (!isset($_POST["id_usuario"]) || !isset($_POST["id_rol_old"]) || !isset($_POST["id_rol_new"])) {
     echo "Faltan campos obligatorios";
     exit();
 }
 
+$id_usuario_txt = trim((string) $_POST["id_usuario"]);
+$id_rol_old_txt = trim((string) $_POST["id_rol_old"]);
+$id_rol_new_txt = trim((string) $_POST["id_rol_new"]);
+
+if (!preg_match('/^[0-9]+$/', $id_usuario_txt) || (int) $id_usuario_txt <= 0) {
+    echo "El id_usuario es invalido";
+    exit();
+}
+if (!preg_match('/^[0-9]+$/', $id_rol_old_txt) || (int) $id_rol_old_txt <= 0) {
+    echo "El id_rol_old es invalido";
+    exit();
+}
+if (!preg_match('/^[0-9]+$/', $id_rol_new_txt) || (int) $id_rol_new_txt <= 0) {
+    echo "El id_rol_new es invalido";
+    exit();
+}
+
 include_once "../base_de_datos.php";
 
-$id_usuario = $_POST["id_usuario"];
-$id_rol_old = $_POST["id_rol_old"];
-$id_rol_new = $_POST["id_rol_new"];
+$id_usuario = (int) $id_usuario_txt;
+$id_rol_old = (int) $id_rol_old_txt;
+$id_rol_new = (int) $id_rol_new_txt;
 
 try {
     $sentencia = $base_de_datos->prepare("SELECT fun_update_usuarios_roles(?, ?, ?);");

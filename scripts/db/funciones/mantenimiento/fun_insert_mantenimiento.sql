@@ -6,13 +6,20 @@ CREATE OR REPLACE FUNCTION fun_insert_mantenimiento(
     wcosto_mantenimiento tab_mantenimiento.costo_mantenimiento%TYPE
 ) RETURNS BOOLEAN AS
 $$
+DECLARE
+    v_bus tab_buses.id_bus%TYPE;
 BEGIN
     IF wid_mantenimiento IS NULL OR wid_mantenimiento <= 0 THEN
         RAISE EXCEPTION USING errcode = '23502';
     END IF;
 
-    IF wid_bus IS NULL OR wid_bus <= 0 THEN
+    v_bus := UPPER(REGEXP_REPLACE(TRIM(COALESCE(wid_bus, '')), '\\s+', '', 'g'));
+    IF v_bus = '' THEN
         RAISE EXCEPTION USING errcode = '23502';
+    END IF;
+
+    IF v_bus !~ '^[A-Z]{3}[0-9]{3}$' THEN
+        RAISE EXCEPTION USING errcode = '22023';
     END IF;
 
     IF wdescripcion IS NULL OR LENGTH(TRIM(wdescripcion)) < 10 THEN
@@ -35,7 +42,7 @@ BEGIN
         costo_mantenimiento
     ) VALUES (
         wid_mantenimiento,
-        wid_bus,
+        v_bus,
         wdescripcion,
         wfecha_mantenimiento,
         wcosto_mantenimiento
@@ -51,6 +58,9 @@ EXCEPTION
         RETURN FALSE;
     WHEN SQLSTATE '22003' THEN
         RAISE NOTICE 'El costo de mantenimiento esta fuera de rango';
+        RETURN FALSE;
+    WHEN SQLSTATE '22023' THEN
+        RAISE NOTICE 'El ID de bus debe tener formato AAA123';
         RETURN FALSE;
     WHEN SQLSTATE '23503' THEN
         RAISE NOTICE 'El bus no existe';

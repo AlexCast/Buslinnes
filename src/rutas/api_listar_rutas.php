@@ -1,15 +1,19 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+// === SEGURIDAD: Solo validaciones básicas, permitir acceso público para GET ===
 require_once __DIR__ . '/../../app/SecurityMiddleware.php';
 
 SecurityMiddleware::protect([
-    'csrf' => false,  // GET no requiere CSRF
-    'rateLimit' => true,
-    'origin' => true,
-    'userAgent' => true,
-    'securityHeaders' => true
+    'csrf' => false,      // GET no requiere CSRF
+    'rateLimit' => false, // Permitir acceso público
+    'origin' => false,    // No validar origen para GET público
+    'userAgent' => false, // No filtrar user agents para acceso público
+    'securityHeaders' => true,
+    'jwt' => false        // No requerir JWT para GET públic
 ]);
 // === FIN SEGURIDAD ===
 

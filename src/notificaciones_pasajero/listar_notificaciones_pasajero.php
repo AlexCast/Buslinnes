@@ -29,16 +29,17 @@ $sentencia = $base_de_datos->prepare('
            n.titulo_notificacion,
            n.descr_notificacion,
            n.fec_insert,
-           u.nombre AS nom_usuario,
+           u.nom_usuario AS nom_usuario,
            r.nombre_rol
     FROM tab_notificaciones n
     LEFT JOIN tab_usuarios u ON n.id_usuario = u.id_usuario
     LEFT JOIN tab_roles r ON n.id_rol = r.id_rol
     WHERE n.fec_delete IS NULL
-      AND (
-            n.id_usuario = :id_usuario
-         OR (:id_rol > 0 AND n.id_rol = :id_rol)
-      )
+  AND (
+        n.id_usuario = :id_usuario
+     OR (:id_rol > 0 AND n.id_rol = :id_rol)
+     OR (n.id_usuario IS NULL AND n.id_rol IS NULL)
+  )
     ORDER BY n.id_notificacion DESC
 ');
 $sentencia->execute([

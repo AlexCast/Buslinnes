@@ -81,8 +81,8 @@ $mantenimientosEliminados = array_filter($mantenimientos, function($mantenimient
                         <?php foreach ($mantenimientosEliminados as $mantenimiento): ?>
                           <tr>
                             <td><?php echo $mantenimiento->id_mantenimiento; ?></td>
-                            <td><?php echo $mantenimiento->id_bus; ?></td>
-                            <td><?php echo substr($mantenimiento->descripcion, 0, 50) . (strlen($mantenimiento->descripcion) > 50 ? '...' : ''); ?></td>
+                                                        <td><?php echo htmlspecialchars($mantenimiento->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td><?php echo htmlspecialchars(substr($mantenimiento->descripcion, 0, 50) . (strlen($mantenimiento->descripcion) > 50 ? '...' : ''), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo date('d/m/Y', strtotime($mantenimiento->fecha_mantenimiento)); ?></td>
                             <td>$<?php echo number_format($mantenimiento->costo_mantenimiento, 0, ',', '.'); ?></td>
                             <td><?php echo htmlspecialchars($mantenimiento->usr_delete); ?></td>
@@ -121,7 +121,7 @@ $mantenimientosEliminados = array_filter($mantenimientos, function($mantenimient
                     </thead>
                     <tbody>
                         <?php if (count($mantenimientos) === 0): ?>
-                            <tr><td colspan="5" class="text-center">No hay mantenimientos registrados</td></tr>
+                            <tr><td colspan="6" class="text-center">No hay mantenimientos registrados</td></tr>
                         <?php else: ?>
                             <?php foreach($mantenimientos as $mantenimiento): 
                                 $eliminado = !empty($mantenimiento->fec_delete);
@@ -129,8 +129,8 @@ $mantenimientosEliminados = array_filter($mantenimientos, function($mantenimient
                             ?>
                             <tr>
                                 <td><?php echo $mantenimiento->id_mantenimiento; ?></td>
-                                <td><?php echo $mantenimiento->id_bus; ?></td>
-                                <td><?php echo substr($mantenimiento->descripcion, 0, 50) . (strlen($mantenimiento->descripcion) > 50 ? '...' : ''); ?></td>
+                                <td><?php echo htmlspecialchars($mantenimiento->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(substr($mantenimiento->descripcion, 0, 50) . (strlen($mantenimiento->descripcion) > 50 ? '...' : ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo date('d/m/Y', strtotime($mantenimiento->fecha_mantenimiento)); ?></td>
                                 <td>$<?php echo number_format($mantenimiento->costo_mantenimiento, 0, ',', '.'); ?></td>
                                 <td class="actions-cell">
@@ -207,7 +207,7 @@ $mantenimientosEliminados = array_filter($mantenimientos, function($mantenimient
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>ID Bus: </strong>
-                                        <span><?php echo $mantenimiento->id_bus; ?></span>
+                                        <span><?php echo htmlspecialchars($mantenimiento->id_bus, ENT_QUOTES, 'UTF-8'); ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Fecha: </strong>
@@ -219,7 +219,7 @@ $mantenimientosEliminados = array_filter($mantenimientos, function($mantenimient
                                     </li>
                                     <li class="list-group-item">
                                         <strong>Descripción: </strong>
-                                        <p class="mt-2"><?php echo $mantenimiento->descripcion; ?></p>
+                                        <p class="mt-2"><?php echo htmlspecialchars($mantenimiento->descripcion, ENT_QUOTES, 'UTF-8'); ?></p>
                                     </li>
                                 </ul>
                             </div>

@@ -21,12 +21,26 @@ Este archivo elimina (soft delete) una asignaci�n usuario-rol
 ==================================================================
 */
 
+define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin']);
+
 if (!isset($_POST["id_usuario"]) || !isset($_POST["id_rol"])) {
     exit();
 }
 
-$id_usuario = $_POST["id_usuario"];
-$id_rol = $_POST["id_rol"];
+$id_usuario_txt = trim((string) $_POST["id_usuario"]);
+$id_rol_txt = trim((string) $_POST["id_rol"]);
+if (!preg_match('/^[0-9]+$/', $id_usuario_txt) || (int) $id_usuario_txt <= 0) {
+    header("Location: listar_usuarios_roles.php?error_delete=1&msg=" . urlencode("id_usuario invalido"));
+    exit();
+}
+if (!preg_match('/^[0-9]+$/', $id_rol_txt) || (int) $id_rol_txt <= 0) {
+    header("Location: listar_usuarios_roles.php?error_delete=1&msg=" . urlencode("id_rol invalido"));
+    exit();
+}
+$id_usuario = (int) $id_usuario_txt;
+$id_rol = (int) $id_rol_txt;
 include_once "../base_de_datos.php";
 
 try {

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // === SEGURIDAD: Proteccion anti-scraping y CSRF ===
 require_once __DIR__ . '/../../app/SecurityMiddleware.php';
 
@@ -22,8 +22,8 @@ validarTokenJWT(['admin', 'conductor', 'pasajero']); // Permitir todos los roles
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->query("
-    SELECT id_bus, id_conductor,
-           num_chasis, matricula, anio_fab, capacidad_pasajeros, tipo_bus,
+    SELECT id_bus, id_usuario,
+        anio_fab, capacidad_pasajeros, tipo_bus,
            gps, ind_estado_buses, fec_insert, usr_insert, 
            usr_delete, fec_delete  -- Asegúrate de incluir estos campos
     FROM tab_buses
@@ -52,7 +52,7 @@ $busesEliminados = array_filter($buses, function($bus) {
         
         <!-- Modal flotante para buses eliminados -->
         <div class="modal fade" id="modalEliminados" tabindex="-1" aria-labelledby="modalEliminadosLabel" aria-hidden="true">
-          <div class="modal-dialog modal-lg">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                             <div class="modal-header bg-danger text-white">
                                 <!-- Ajuste de jerarquía: usar H2 con clase para mantener estilo visual -->
@@ -70,7 +70,6 @@ $busesEliminados = array_filter($buses, function($bus) {
                       <thead class="table-danger">
                         <tr>
                                                     <th scope="col">ID</th>
-                                                    <th scope="col">Matrícula</th>
                                                     <th scope="col">Conductor</th>
                                                     <th scope="col">Capacidad</th>
                                                     <th scope="col">Año</th>
@@ -85,8 +84,7 @@ $busesEliminados = array_filter($buses, function($bus) {
                         <?php foreach ($busesEliminados as $bus): ?>
                                                     <tr>
                                                         <td data-label="ID"><?php echo $bus->id_bus; ?></td>
-                                                        <td data-label="Matrícula"><?php echo $bus->matricula; ?></td>
-                                                        <td data-label="Conductor"><?php echo $bus->id_conductor; ?></td>
+                                                        <td data-label="Conductor"><?php echo $bus->id_usuario; ?></td>
                                                         <td data-label="Capacidad"><?php echo $bus->capacidad_pasajeros; ?></td>
                                                         <td data-label="Año"><?php echo $bus->anio_fab; ?></td>
                                                         <td data-label="Tipo"><?php 
@@ -101,7 +99,7 @@ $busesEliminados = array_filter($buses, function($bus) {
                                                         <td data-label="Fecha"><?php echo date('d/m/Y H:i', strtotime($bus->fec_delete)); ?></td>
                                                         <td data-label="Acciones">
                               <form method="POST" action="restore_buses.php" onsubmit="return confirm('¿Restaurar este bus?');" style="display:inline-block;">
-                                <input type="hidden" name="id_bus" value="<?php echo $bus->id_bus; ?>">
+                                                                <input type="hidden" name="id_bus" value="<?php echo htmlspecialchars((string) $bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
                                                                 <button type="submit" class="btn btn-sm btn-restore" aria-label="Restaurar bus <?php echo $bus->id_bus; ?>">
                                                                     <i class="fas fa-trash-restore" aria-hidden="true"></i> Restaurar
                                 </button>
@@ -126,7 +124,6 @@ $busesEliminados = array_filter($buses, function($bus) {
                     <thead class="table-primary">
                         <tr>
                             <th scope="col">ID</th>
-                            <th scope="col">Matrícula</th>
                             <th scope="col">Conductor</th>
                             <th scope="col">Capacidad</th>
                             <th scope="col">Año</th>
@@ -137,7 +134,7 @@ $busesEliminados = array_filter($buses, function($bus) {
                     </thead>
                     <tbody>
                         <?php if (count($buses) === 0): ?>
-                            <tr><td colspan="9" class="text-center">No hay buses registrados.</td></tr>
+                            <tr><td colspan="7" class="text-center">No hay buses registrados.</td></tr>
                         <?php else: ?>
                             <?php foreach ($buses as $bus): 
                                 $eliminado = !empty($bus->fec_delete);
@@ -145,10 +142,7 @@ $busesEliminados = array_filter($buses, function($bus) {
                             ?>
                             <tr class="<?php echo $eliminado ? 'tr-eliminada' : ''; ?>">
                                 <td data-label="ID"><?php echo $bus->id_bus; ?></td>
-                                <td data-label="Matrícula">
-                                    <span class="badge bg-info"><?php echo $bus->matricula; ?></span>
-                                </td>
-                                <td data-label="Conductor"><?php echo $bus->id_conductor; ?></td>
+                                <td data-label="Conductor"><?php echo $bus->id_usuario; ?></td>
                                 <td data-label="Capacidad"><?php echo $bus->capacidad_pasajeros; ?> pasajeros</td>
                                 <td data-label="Año"><?php echo $bus->anio_fab; ?></td>
                                 <td data-label="Tipo">
@@ -179,18 +173,18 @@ $busesEliminados = array_filter($buses, function($bus) {
                                 </td>
                                 <td class="actions-cell" data-label="Acciones">
                                     <?php if (!$eliminado): ?>
-                                        <a class="btn btn-warning btn-sm" href="editar_buses.php?id_bus=<?php echo $bus->id_bus; ?>" aria-label="Editar bus <?php echo $bus->id_bus; ?>">
+                                        <a class="btn btn-warning btn-sm" href="editar_buses.php?id_bus=<?php echo urlencode((string) $bus->id_bus); ?>" aria-label="Editar bus <?php echo $bus->id_bus; ?>">
                                             <i class="fas fa-edit" aria-hidden="true"></i>
                                         </a>
                                         <form method="POST" action="eliminar_buses.php" onsubmit="return confirm('¿Seguro que deseas eliminar este bus?');" style="display:inline-block;">
-                                            <input type="hidden" name="id_bus" value="<?php echo $bus->id_bus; ?>">
+                                            <input type="hidden" name="id_bus" value="<?php echo htmlspecialchars((string) $bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
                                             <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar bus <?php echo $bus->id_bus; ?>">
                                                 <i class="fas fa-trash" aria-hidden="true"></i>
                                             </button>
                                         </form>
                                     <?php else: ?>
                                         <form method="POST" action="restore_buses.php" onsubmit="return confirm('¿Restaurar este bus?');" style="display:inline-block;">
-                                            <input type="hidden" name="id_bus" value="<?php echo $bus->id_bus; ?>">
+                                            <input type="hidden" name="id_bus" value="<?php echo htmlspecialchars((string) $bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
                                             <button type="submit" class="btn btn-sm btn-restore" aria-label="Restaurar bus <?php echo $bus->id_bus; ?>">
                                                 <i class="fas fa-trash-restore" aria-hidden="true"></i> Restaurar
                                             </button>
@@ -236,18 +230,18 @@ $busesEliminados = array_filter($buses, function($bus) {
                                 <!-- Botones directamente en el header -->
                                 <div class="d-flex gap-2">
                                     <?php if (!$eliminado): ?>
-                                        <a class="btn btn-warning btn-sm" href="editar_buses.php?id_bus=<?php echo $bus->id_bus; ?>" aria-label="Editar bus <?php echo $bus->id_bus; ?>">
+                                        <a class="btn btn-warning btn-sm" href="editar_buses.php?id_bus=<?php echo urlencode((string) $bus->id_bus); ?>" aria-label="Editar bus <?php echo $bus->id_bus; ?>">
                                             <i class="fas fa-edit" aria-hidden="true"></i>
                                         </a>
                                         <form method="POST" action="eliminar_buses.php" onsubmit="return confirm('¿Seguro que deseas eliminar este bus?');" style="display:inline-block;">
-                                            <input type="hidden" name="id_bus" value="<?php echo $bus->id_bus; ?>">
+                                            <input type="hidden" name="id_bus" value="<?php echo htmlspecialchars((string) $bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
                                             <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar bus <?php echo $bus->id_bus; ?>">
                                                 <i class="fas fa-trash" aria-hidden="true"></i>
                                             </button>
                                         </form>
                                     <?php else: ?>
                                         <form method="POST" action="restore_buses.php" onsubmit="return confirm('¿Restaurar este bus?');" style="display:inline-block;">
-                                            <input type="hidden" name="id_bus" value="<?php echo $bus->id_bus; ?>">
+                                            <input type="hidden" name="id_bus" value="<?php echo htmlspecialchars((string) $bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
                                             <button type="submit" class="btn btn-sm btn-restore" aria-label="Restaurar bus <?php echo $bus->id_bus; ?>">
                                                 <i class="fas fa-trash-restore" aria-hidden="true"></i>
                                             </button>
@@ -265,14 +259,9 @@ $busesEliminados = array_filter($buses, function($bus) {
 
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
-                                    <!-- Matrícula ahora como primer atributo en el body -->
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <strong>Matrícula: </strong>
-                                        <span class="badge bg-info"><?php echo $bus->matricula; ?></span>
-                                    </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Conductor: </strong>
-                                        <span><?php echo $bus->id_conductor; ?></span>
+                                        <span><?php echo $bus->id_usuario; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Capacidad: </strong>
@@ -329,3 +318,4 @@ $busesEliminados = array_filter($buses, function($bus) {
 <script src="../../assets/js/bootstrap.bundle.min.js"></script>
 <!-- Script único para el modal de eliminados -->
 <script src="../../assets/js/modalEliminados.js"></script>
+

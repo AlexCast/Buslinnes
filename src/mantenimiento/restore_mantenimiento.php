@@ -18,18 +18,24 @@ Archivo para procesar la restauración de buses
 include_once "../base_de_datos.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_mantenimiento'])) {
-    $id_mantenimiento = $_POST['id_mantenimiento'];
+    $id_mantenimiento = trim((string) $_POST['id_mantenimiento']);
+    if (!preg_match('/^[0-9]+$/', $id_mantenimiento)) {
+        header("Location: listar_mantenimiento.php?error=1");
+        exit();
+    }
 
     $sentencia = $base_de_datos->prepare("SELECT fun_restore_mantenimiento(?);");
-    $resultado = $sentencia->execute([$id_mantenimiento]);
+    $sentencia->execute([$id_mantenimiento]);
+    $resultado = $sentencia->fetchColumn();
+    $ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
     
-    if ($resultado) {
+    if ($ok) {
         header("Location: listar_mantenimiento.php?restaurado=1");
     } else {
-        header("Location: restore_mantenimiento.php?error=1");
+        header("Location: listar_mantenimiento.php?error=1");
     }
     exit();
 }
 
-header("Location: restore_mantenimiento.php");
+header("Location: listar_mantenimiento.php");
 

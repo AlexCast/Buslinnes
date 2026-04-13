@@ -58,11 +58,22 @@ $validarEntero = static function ($valor, string $campo, int $min, int $max) use
 
 $validarTexto = static function ($valor, string $campo, int $min, int $max) use ($redirigirConError): string {
     $texto = trim((string) $valor);
-    $longitud = mb_strlen($texto);
+    $longitud = function_exists('mb_strlen')
+        ? mb_strlen($texto)
+        : (function_exists('iconv_strlen') ? iconv_strlen($texto, 'UTF-8') : strlen($texto));
     if ($longitud < $min || $longitud > $max) {
         $redirigirConError("El campo {$campo} debe tener entre {$min} y {$max} caracteres.");
     }
     return $texto;
+};
+
+$normalizarPlacaBus = static function ($valor, string $campo) use ($redirigirConError): string {
+    $texto = strtoupper(trim((string) $valor));
+    $compacto = preg_replace('/\s+/', '', $texto);
+    if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $compacto)) {
+        $redirigirConError("El campo {$campo} debe tener formato AAA123.");
+    }
+    return $compacto;
 };
 
 $normalizarFecha = static function ($valor, string $campo) use ($redirigirConError): string {
@@ -82,18 +93,25 @@ $normalizarFecha = static function ($valor, string $campo) use ($redirigirConErr
 include_once "../base_de_datos.php";
 
 $id_mantenimiento       = $validarEntero($_POST["id_mantenimiento"], "id_mantenimiento", 1, 2147483647);
-$id_bus                 = $validarEntero($_POST["id_bus"], "id_bus", 1, 2147483647);
+$id_bus                 = $normalizarPlacaBus($_POST["id_bus"], "id_bus");
 $descripcion            = $validarTexto($_POST["descripcion"], "descripcion", 10, 500);
 $fecha_mantenimiento    = $normalizarFecha($_POST["fecha_mantenimiento"], "fecha_mantenimiento");
 $costo_mantenimiento    = $validarEntero($_POST["costo_mantenimiento"], "costo_mantenimiento", 0, 9999999999);
 
-$sentencia = $base_de_datos->prepare("SELECT fun_update_mantenimiento(?,?,?,?,?);");
-$resultado = $sentencia->execute([$id_mantenimiento, $id_bus, $descripcion, $fecha_mantenimiento, $costo_mantenimiento]); # Pasar en el mismo orden de los ?
-if ($resultado === true) 
+try {
+    $sentencia = $base_de_datos->prepare("SELECT fun_update_mantenimiento(?,?,?,?,?);");
+    $sentencia->execute([$id_mantenimiento, $id_bus, $descripcion, $fecha_mantenimiento, $costo_mantenimiento]); # Pasar en el mismo orden de los ?
+    $resultado = $sentencia->fetchColumn();
+    $ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
+} catch (PDOException $e) {
+    $redirigirConError("Error de base de datos al actualizar mantenimiento.");
+}
+if ($ok) 
 {
     header("Location: listar_mantenimiento.php");
+    exit();
 } else {
-    echo "Algo salió mal. Por favor verifica que la tabla exista, así como el ID del mantenimiento";
+    $redirigirConError("No fue posible actualizar el mantenimiento. Verifique datos e ID.");
 }
 
 

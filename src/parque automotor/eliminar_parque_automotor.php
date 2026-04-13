@@ -24,14 +24,20 @@ if (!isset($_POST["id_parque_automotor"])) {
     exit();
 }
 
-$id_parque_automotor = $_POST["id_parque_automotor"];
+$id_parque_automotor = trim((string) $_POST["id_parque_automotor"]);
+if (!preg_match('/^[0-9]+$/', $id_parque_automotor)) {
+    echo "El ID de parque automotor no es valido.";
+    exit();
+}
 
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("SELECT fun_softdelete_parque_automotor(?);");
-$resultado = $sentencia->execute([$id_parque_automotor]);
+$sentencia->execute([$id_parque_automotor]);
+$resultado = $sentencia->fetchColumn();
+$ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true' || strtolower((string) $resultado) === 'registro eliminado lógicamente correctamente.';
 
-if ($resultado === true) {
+if ($ok) {
     header("Location: listar_parque_automotor.php");
     exit();
 } else {

@@ -25,10 +25,45 @@ if (!isset($_POST['id_notificacion']) || !isset($_POST['tipo_destino']) ||
     exit();
 }
 
-$id_notificacion     = (int) $_POST["id_notificacion"];
-$tipo_destino        = $_POST["tipo_destino"];
+$id_notificacion_txt = trim((string) $_POST["id_notificacion"]);
+if (!preg_match('/^[0-9]+$/', $id_notificacion_txt) || (int) $id_notificacion_txt <= 0) {
+    header("Location: listar_notificaciones.php?error_update=1&msg=" . urlencode("id_notificacion invalido"));
+    exit();
+}
+$id_notificacion = (int) $id_notificacion_txt;
+
+$tipo_destino = trim((string) $_POST["tipo_destino"]);
+if (!in_array($tipo_destino, ['usuario', 'rol', 'todos'], true)) {
+    header("Location: listar_notificaciones.php?error_update=1&msg=" . urlencode("tipo_destino invalido"));
+    exit();
+}
+
 $titulo_notificacion = trim((string) $_POST["titulo_notificacion"]);
-$descr_notificacion  = trim((string) $_POST["descr_notificacion"]);
+$descr_notificacion = trim((string) $_POST["descr_notificacion"]);
+if (function_exists('mb_strlen')) {
+    $lenTitulo = mb_strlen($titulo_notificacion);
+    $lenDescr = mb_strlen($descr_notificacion);
+} elseif (function_exists('iconv_strlen')) {
+    $lenTitulo = iconv_strlen($titulo_notificacion, 'UTF-8');
+    $lenDescr = iconv_strlen($descr_notificacion, 'UTF-8');
+    if ($lenTitulo === false) {
+        $lenTitulo = strlen($titulo_notificacion);
+    }
+    if ($lenDescr === false) {
+        $lenDescr = strlen($descr_notificacion);
+    }
+} else {
+    $lenTitulo = strlen($titulo_notificacion);
+    $lenDescr = strlen($descr_notificacion);
+}
+if ($lenTitulo < 3 || $lenTitulo > 120) {
+    header("Location: listar_notificaciones.php?error_update=1&msg=" . urlencode("Titulo fuera de rango"));
+    exit();
+}
+if ($lenDescr < 5 || $lenDescr > 2000) {
+    header("Location: listar_notificaciones.php?error_update=1&msg=" . urlencode("Descripcion fuera de rango"));
+    exit();
+}
 
 $id_usuario = null;
 $id_rol     = null;
@@ -37,16 +72,23 @@ if ($tipo_destino === 'usuario') {
         header("Location: editar_notificaciones.php?id_notificacion=" . $id_notificacion . "&error=1");
         exit();
     }
-    $id_usuario = (int) $_POST["id_usuario"];
+    $id_usuario_txt = trim((string) $_POST["id_usuario"]);
+    if (!preg_match('/^[0-9]+$/', $id_usuario_txt) || (int) $id_usuario_txt <= 0) {
+        header("Location: editar_notificaciones.php?id_notificacion=" . $id_notificacion . "&error=1");
+        exit();
+    }
+    $id_usuario = (int) $id_usuario_txt;
 } elseif ($tipo_destino === 'rol') {
     if (!isset($_POST["id_rol"]) || $_POST["id_rol"] === '') {
         header("Location: editar_notificaciones.php?id_notificacion=" . $id_notificacion . "&error=1");
         exit();
     }
-    $id_rol = (int) $_POST["id_rol"];
-} else {
-    header("Location: listar_notificaciones.php?error_update=1");
-    exit();
+    $id_rol_txt = trim((string) $_POST["id_rol"]);
+    if (!preg_match('/^[0-9]+$/', $id_rol_txt) || (int) $id_rol_txt <= 0) {
+        header("Location: editar_notificaciones.php?id_notificacion=" . $id_notificacion . "&error=1");
+        exit();
+    }
+    $id_rol = (int) $id_rol_txt;
 }
 
 include_once "../base_de_datos.php";
@@ -63,7 +105,11 @@ $sentencia->execute([
 $fila    = $sentencia->fetch(PDO::FETCH_NUM);
 $mensaje = $fila[0] ?? '';
 
-if ($mensaje === 'Actualizaci�n exitosa') {
+$esActualizacionExitosa = is_string($mensaje)
+    && stripos($mensaje, 'actualiz') !== false
+    && stripos($mensaje, 'exitosa') !== false;
+
+if ($esActualizacionExitosa) {
     // Enviar push v�a OneSignal a los destinatarios
     require_once __DIR__ . '/../onesignal_helper.php';
     $push = enviar_notificacion_onesignal($titulo_notificacion, $descr_notificacion, $id_usuario, $id_rol);

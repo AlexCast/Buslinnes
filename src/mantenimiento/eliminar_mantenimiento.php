@@ -24,14 +24,20 @@ if (!isset($_POST["id_mantenimiento"])) {
     exit();
 }
 
-$id_mantenimiento = $_POST["id_mantenimiento"];
+$id_mantenimiento = trim((string) $_POST["id_mantenimiento"]);
+if (!preg_match('/^[0-9]+$/', $id_mantenimiento)) {
+    echo "El ID de mantenimiento no es valido.";
+    exit();
+}
 
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("SELECT fun_softdelete_mantenimiento(?);");
-$resultado = $sentencia->execute([$id_mantenimiento]);
+$sentencia->execute([$id_mantenimiento]);
+$resultado = $sentencia->fetchColumn();
+$ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
 
-if ($resultado === true) {
+if ($ok) {
     header("Location: listar_mantenimiento.php");
     exit();
 } else {

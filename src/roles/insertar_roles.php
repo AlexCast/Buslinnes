@@ -25,9 +25,28 @@ if (!isset($_POST["nombre_rol"])) {
     exit();
 }
 
+$nombre_rol = trim((string) $_POST["nombre_rol"]);
+if (function_exists('mb_strlen')) {
+    $longitud = mb_strlen($nombre_rol);
+} elseif (function_exists('iconv_strlen')) {
+    $longitud = iconv_strlen($nombre_rol, 'UTF-8');
+    if ($longitud === false) {
+        $longitud = strlen($nombre_rol);
+    }
+} else {
+    $longitud = strlen($nombre_rol);
+}
+if ($longitud < 3 || $longitud > 40) {
+    echo "El nombre del rol debe tener entre 3 y 40 caracteres";
+    exit();
+}
+if (!preg_match('/^[A-Za-z0-9_\-\s]+$/', $nombre_rol)) {
+    echo "El nombre del rol contiene caracteres no permitidos";
+    exit();
+}
+
 include_once "../base_de_datos.php";
 
-$nombre_rol = $_POST["nombre_rol"];
 $usr_insert = '1'; // Usuario por defecto o tomar de sesi�n
 
 try {

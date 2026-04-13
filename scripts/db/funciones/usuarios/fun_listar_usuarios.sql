@@ -4,14 +4,14 @@ $$
 DECLARE 
     wreg_usuario tab_usuarios%ROWTYPE; -- Variable para almacenar la fila del usuario
 BEGIN
-    -- Validar ID del usuario
-    IF wid_usuario <= 0 THEN
+    -- Si se proporciona ID, validar que sea válido
+    IF wid_usuario IS NOT NULL AND wid_usuario <= 0 THEN
         RAISE NOTICE 'El ID del usuario no puede ser menor o igual a 0.';
         RETURN FALSE;
     END IF;
     
     -- Buscar el usuario por ID
-    SELECT id_usuario, nombre, correo, contrasena
+    SELECT tipo_doc, id_usuario, nom_usuario, email_usuario, contrasena
     INTO wreg_usuario
     FROM tab_usuarios
         WHERE id_usuario = wid_usuario
@@ -25,13 +25,15 @@ BEGIN
     
     -- Mostrar los datos del usuario
     RAISE NOTICE '
+    Tipo Documento: %,
     ID Usuario: %,
     Email: %,
     Nombre: %
     ', 
+    wreg_usuario.tipo_doc,
     wreg_usuario.id_usuario, 
-    wreg_usuario.correo,
-    wreg_usuario.nombre;
+    wreg_usuario.email_usuario,
+    wreg_usuario.nom_usuario;
     
     RETURN TRUE;
 EXCEPTION

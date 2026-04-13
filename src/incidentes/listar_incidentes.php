@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // === SEGURIDAD: Proteccion anti-scraping y CSRF ===
 require_once __DIR__ . '/../../app/SecurityMiddleware.php';
 
@@ -28,12 +28,12 @@ include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->query('
     SELECT i.id_incidente, i.titulo_incidente, i.desc_incidente, i.tipo_incidente,
-           b.id_bus, b.matricula,
-           c.id_conductor, c.nom_conductor, c.ape_conductor,
+           b.id_bus,
+           c.id_usuario, c.nom_conductor, c.ape_conductor,
            i.usr_delete, i.fec_delete
     FROM tab_incidentes i
     JOIN tab_buses b ON i.id_bus = b.id_bus
-    JOIN tab_conductores c ON i.id_conductor = c.id_conductor
+    JOIN tab_conductores c ON i.id_usuario = c.id_usuario
     ORDER BY i.id_incidente DESC
 ');
 $incidentes = $sentencia->fetchAll(PDO::FETCH_OBJ);
@@ -79,7 +79,6 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
                                                     <th>Conductor</th>
                           <th>Eliminado por</th>
                                                     <th>Fecha</th>
-                                                    <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -98,18 +97,10 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
                                 ];
                                 echo $tipo[$incidente->tipo_incidente] ?? 'Desconocido';
                             ?></td>
-                            <td><?php echo $incidente->matricula; ?></td>
+                            <td><?php echo $incidente->id_bus; ?></td>
                                                         <td><?php echo htmlspecialchars($incidente->nom_conductor . ' ' . $incidente->ape_conductor); ?></td>
                             <td><?php echo htmlspecialchars($incidente->usr_delete); ?></td>
                             <td><?php echo date('d/m/Y H:i', strtotime($incidente->fec_delete)); ?></td>
-                                                        <td>
-                                                            <form method="POST" action="restore_incidentes.php" onsubmit="return confirm('¿Restaurar este incidente?');" style="display:inline-block;">
-                                                                <input type="hidden" name="id_incidente" value="<?php echo $incidente->id_incidente; ?>">
-                                                                <button type="submit" class="btn btn-sm btn-restore" aria-label="Restaurar incidente <?php echo $incidente->id_incidente; ?>">
-                                                                    <i class="fas fa-trash-restore" aria-hidden="true"></i> Restaurar
-                                                                </button>
-                                                            </form>
-                                                        </td>
                           </tr>
                         <?php endforeach; ?>
                       </tbody>
@@ -132,12 +123,11 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
                             <th>Tipo</th>
                             <th>Bus (Matrícula)</th>
                             <th>Conductor</th>
-                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (count($incidentes) === 0): ?>
-                            <tr><td colspan="7" class="text-center">No hay incidentes registrados</td></tr>
+                            <tr><td colspan="6" class="text-center">No hay incidentes registrados</td></tr>
                         <?php else: ?>
                             <?php foreach($incidentes as $incidente): 
                                 $eliminado = !empty($incidente->fec_delete);
@@ -160,20 +150,9 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
                                     ?>
                                 </td>
                                 <td>
-                                    <span class="badge bg-secondary"><?php echo $incidente->matricula; ?></span>
+                                    <span class="badge bg-secondary"><?php echo $incidente->id_bus; ?></span>
                                 </td>
                                 <td><?php echo htmlspecialchars($incidente->nom_conductor . ' ' . $incidente->ape_conductor); ?></td>
-                                <td class="actions-cell" data-label="Acciones">
-                                    <a class="btn btn-warning btn-sm" href="editar_incidentes.php?id_incidente=<?php echo $incidente->id_incidente; ?>" aria-label="Editar incidente <?php echo $incidente->id_incidente; ?>">
-                                        <i class="fas fa-edit" aria-hidden="true"></i>
-                                    </a>
-                                    <form method="POST" action="eliminar_incidentes.php" onsubmit="return confirm('¿Seguro que deseas eliminar este incidente?');" style="display:inline-block;">
-                                        <input type="hidden" name="id_incidente" value="<?php echo $incidente->id_incidente; ?>">
-                                        <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar incidente <?php echo $incidente->id_incidente; ?>">
-                                            <i class="fas fa-trash" aria-hidden="true"></i>
-                                        </button>
-                                    </form>
-                                </td>
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -197,17 +176,6 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
                         <div class="incidente-card card">
                             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Incidente #<?php echo $incidente->id_incidente; ?></h5>
-                                <div class="d-flex gap-2">
-                                    <a class="btn btn-warning btn-sm" href="editar_incidentes.php?id_incidente=<?php echo $incidente->id_incidente; ?>" aria-label="Editar incidente <?php echo $incidente->id_incidente; ?>">
-                                        <i class="fas fa-edit" aria-hidden="true"></i>
-                                    </a>
-                                    <form method="POST" action="eliminar_incidentes.php" onsubmit="return confirm('¿Seguro que deseas eliminar este incidente?');" style="display:inline-block;">
-                                        <input type="hidden" name="id_incidente" value="<?php echo $incidente->id_incidente; ?>">
-                                        <button type="submit" class="btn btn-danger btn-sm" aria-label="Eliminar incidente <?php echo $incidente->id_incidente; ?>">
-                                            <i class="fas fa-trash" aria-hidden="true"></i>
-                                        </button>
-                                    </form>
-                                </div>
                             </div>
                             
                             <div class="card-body">
@@ -218,7 +186,7 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Bus: </strong>
-                                        <span class="badge bg-secondary"><?php echo $incidente->matricula; ?></span>
+                                        <span class="badge bg-secondary"><?php echo $incidente->id_bus; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Conductor: </strong>
@@ -260,3 +228,5 @@ $incidentesEliminados = array_filter($incidentes, function($incidente) {
 <script src="../../assets/js/bootstrap.bundle.min.js"></script>
 <!-- Script único para el modal de eliminados -->
 <script src="../../assets/js/modalEliminados.js"></script>
+
+

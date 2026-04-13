@@ -6,10 +6,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusLinnes | Propietarios</title>
+    <!--Favicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
     <link rel="stylesheet" href="/buslinnes/assets/css/main.css">
     <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+    <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
     <?php include_once __DIR__ . '/../onesignal_include.php'; ?>
+</head>
 </head>
 <body>
     <header class="header-container">

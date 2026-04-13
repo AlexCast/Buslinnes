@@ -13,8 +13,8 @@
 // ============================================
 // PASO 1: CONFIGURA TUS DATOS DE GMAIL AQUÍ
 // ============================================
-$mi_correo_gmail = 'tu-email@gmail.com';  // ⬅️ CAMBIA ESTO: Tu correo Gmail
-$mi_password_gmail = 'tu-contraseña-app';  // ⬅️ CAMBIA ESTO: Contraseña de aplicación (ver abajo)
+$mi_correo_gmail = 'buslinnesenterprise@gmail.com';  // ⬅️ CAMBIA ESTO: Tu correo Gmail
+$mi_password_gmail = 'qhlm boah eaxw ywwx';  // ⬅️ CAMBIA ESTO: Contraseña de aplicación (ver abajo)
 
 // ============================================
 // NO TOCAR NADA DE AQUÍ HACIA ABAJO

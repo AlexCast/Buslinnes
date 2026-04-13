@@ -1,4 +1,4 @@
-* {
+﻿* {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -11,22 +11,14 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            background-color: #0a0014; /* color base por si el SVG no carga */
-            position: relative; /* Añadido para el posicionamiento del pseudo-elemento */
-        }
-
-        /* Fondo animado (por defecto) */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("/buslinnes/assets/img/pattern.svg");
-            background-repeat: repeat;
-            background-size: 140px; /* mantiene la escala original */
-            z-index: -1;
+            background-color: #d1d1d1ff;
+            position: relative;
+            /* Fondo patrón de puntos (Modo Claro) */
+            background-image: 
+                radial-gradient(var(--primary-color) 3%, transparent 6%),
+                radial-gradient(var(--primary-color) 3%, transparent 6%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
         }
 
         .login-container {
@@ -38,7 +30,7 @@
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             overflow: visible;
-            border: 1px solid #8059d4ff;
+            border: 1px solid var(--primary-color, #8059d4ff);
             animation: fadeIn 0.5s ease;
         }
 
@@ -62,7 +54,7 @@ a i {
             padding-bottom: 10px;
             padding-top: 10px;
             text-align: center;
-            background: #362163ff;
+            background: var(--primary-color, #8059d4ff);
             color: #ffffff;
         }
 
@@ -78,7 +70,7 @@ a i {
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            background: #362163ff;
+            background: var(--primary-color);
             border: 2px solid #ffffff;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
             z-index: 3;
@@ -86,7 +78,7 @@ a i {
         }
 
         .login-back-btn:hover {
-            background: #4a2c82;
+            background: var(--primary-color);
             transform: scale(1.1);
         }
 
@@ -111,8 +103,8 @@ a i {
         }
 
         .login-header img {
-            width: 60px;   /* ajusta el tamaño según tu logo */
-            height: auto;  /* mantiene proporción */
+            width: 60px;   /* ajusta el tamaÃ±o segÃºn tu logo */
+            height: auto;  /* mantiene proporciÃ³n */
         }
 
         .login-body {
@@ -143,15 +135,15 @@ a i {
         }
 
         .form-input:focus {
-            outline: 2px solid #8059d4ff; /* Cambio: Reemplazar outline: none por un outline visible para accesibilidad */
+            outline: 2px solid var(--primary-color, #8059d4ff); /* Cambio: Reemplazar outline: none por un outline visible para accesibilidad */
             outline-offset: 2px;
-            border-color: #8059d4ff;
+            border-color: var(--primary-color, #8059d4ff);
             transform: scale(1.02);
         }
 
-        /* Cambio: Añadir focus visible para botones y pestañas */
+        /* Cambio: AÃ±adir focus visible para botones y pestaÃ±as */
         .btn:focus-visible, .tab:focus-visible {
-            outline: 2px solid #8059d4ff;
+            outline: 2px solid var(--primary-color, #8059d4ff);
             outline-offset: 2px;
         }
 
@@ -161,16 +153,18 @@ a i {
 
         .input-icon i {
             position: absolute;
-            left: 15px;
+            left: 12px;
             top: 50%;
             transform: translateY(-50%);
-            color: #362163ff;
+            color: var(--primary-color, #8059d4ff);
             z-index: 2; /* Asegura que el icono esté sobre el input */
             pointer-events: none; /* Permite hacer clic a través del icono al input */
+            font-size: 16px;
         }
 
-        .input-icon input {
-            padding-left: 45px;
+        .input-icon input,
+        .input-icon select {
+            padding-left: 50px;
         }
 
         .btn {
@@ -189,7 +183,7 @@ a i {
         }
 
         .btn-primary {
-            background: #362163ff;
+            background: var(--primary-color, #8059d4ff);
             color: white;
         }
 
@@ -217,7 +211,7 @@ a i {
         }
 
         .login-footer a {
-            color: #8059d4ff; /* Morado oscuro para modo claro */
+            color: var(--primary-color, #8059d4ff); /* Morado oscuro para modo claro */
             text-decoration: none;
             font-weight: 500;
         }
@@ -254,8 +248,8 @@ a i {
         }
 
         .tab.active {
-            color: #8059d4ff; /* Morado oscuro para modo claro */
-            border-bottom-color: #8059d4ff;
+            color: var(--primary-color, #8059d4ff); /* Morado oscuro para modo claro */
+            border-bottom-color: var(--primary-color, #8059d4ff);
         }
 
         .tab-content {
@@ -267,7 +261,7 @@ a i {
         }
         
         .error-message {
-            color: #8059d4ff; /* Morado oscuro para modo claro */
+            color: var(--primary-color, #8059d4ff); /* Morado oscuro para modo claro */
             font-size: 13px;
             margin-top: 5px;
             text-align: center;
@@ -334,18 +328,19 @@ a i {
             }
         }
 
-                /* 🌙 Dark Mode */
+                /* ðŸŒ™ Dark Mode */
 body.dark {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: white;
     line-height: 1.6;
     min-height: 100vh;
-    background-color: #0a0014;
-}
-
-body.dark::before {
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
-    background-size: 150px;
+    background-color: #25212cff;
+    /* Fondo patrón de puntos (Modo Oscuro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 body.dark .login-container {
@@ -356,7 +351,7 @@ body.dark .login-container {
              border-radius: 16px;
              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
              overflow: visible;
-             border: 1px solid #362163ff;
+             border: 1px solid var(--primary-color, #8059d4ff);
              animation: fadeIn 0.5s ease;
          }
 
@@ -376,15 +371,15 @@ body.dark .login-back-btn {
     top: -16px;
     left: -16px;
     background: #1a1620;
-    border-color: #8059d4;
-    color: #8059d4;
+    border-color: var(--primary-color, #8059d4ff);
+    color: var(--primary-color, #8059d4ff);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
 body.dark .login-back-btn:hover {
     background: #2a2330;
-    border-color: #8059d4;
-    color: #8059d4;
+    border-color: var(--primary-color, #8059d4ff);
+    color: var(--primary-color, #8059d4ff);
 }
 
         /* Logo switching for light/dark modes */
@@ -415,21 +410,21 @@ body.dark .form-input {
 }
 
 body.dark .form-input:focus {
-    border-color: #b39ddb;
-    outline-color: #b39ddb;
+    border-color: var(--primary-color);
+    outline-color: var(--primary-color);
 }
 
 body.dark .input-icon i {
-    color: #8059d4;
+    color: var(--primary-color);
 }
 
 body.dark .tab {
-    color: #aaa;
+    color: #cccccc;
 }
 
 body.dark .tab.active {
-    color: #b39ddb;
-    border-bottom-color: #b39ddb;
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
 }
 
 body.dark .login-footer {
@@ -437,7 +432,7 @@ body.dark .login-footer {
 }
 
 body.dark .login-footer a {
-    color: #b39ddb;
+    color: var(--primary-color);
 }
 
 body.dark .error-message {
@@ -451,7 +446,7 @@ body.dark .success-message {
     border-left-color: #5edb7d;
 }
 
-/* Estilos extraídos de login.php */
+/* Estilos extraÃ­dos de login.php */
 .tab-button {
     background: transparent;
     border-top: none;
@@ -488,7 +483,7 @@ body.dark .success-message {
 }
 
 .forgot-password-link {
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     font-size: 13px;
     text-decoration: none;
 }
@@ -545,7 +540,7 @@ body.dark .success-message {
 
 .modal-title {
     margin-bottom: 15px;
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
 }
 
 .modal-text {
@@ -562,17 +557,17 @@ body.dark .success-message {
 }
 
 .btn-modal-yes {
-    background: #8059d4;
+    background: var(--primary-color, #8059d4ff);
     color: #fff;
     margin-right: 10px;
 }
 
 .btn-modal-no {
     background: #eee;
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
 }
 
-/* 🌙 Dark Mode para los nuevos elementos */
+/* ðŸŒ™ Dark Mode para los nuevos elementos */
 body.dark .form-title {
     color: #aaa; /* Gris claro para modo oscuro */
 }
@@ -582,7 +577,7 @@ body.dark .login-footer p {
 }
 
 body.dark .forgot-password-link {
-    color: #b39ddb; /* Morado más claro para mejor contraste */
+    color: var(--primary-color); /* Morado mÃ¡s claro para mejor contraste */
 }
 
 body.dark .btn-google-custom {
@@ -600,13 +595,13 @@ body.dark .terms-container {
 }
 
 body.dark .terms-link {
-    color: #8c9eff; /* Azul más claro para mejor contraste */
+    color: #8c9eff; /* Azul mÃ¡s claro para mejor contraste */
 }
 
 body.dark .modal-content {
     background: #25212cff;
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
-    border: 1px solid #362163ff;
+    border: 1px solid var(--primary-color, #8059d4ff);
 }
 
 body.dark .modal-title {
@@ -618,7 +613,7 @@ body.dark .modal-text {
 }
 
 body.dark .btn-modal-yes {
-    background: #673ab7; /* Morado ligeramente diferente para el botón */
+    background: #673ab7; /* Morado ligeramente diferente para el botÃ³n */
 }
 
 body.dark .btn-modal-no {
@@ -679,3 +674,4 @@ body.dark .toggle-password:hover {
 body.dark .form-text {
     color: #aaa;
 }
+

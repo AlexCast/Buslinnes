@@ -18,10 +18,14 @@ if (!isset($_GET["id_ruta_bus"])) {
     exit();
 }
 
-$id_ruta_bus = $_GET["id_ruta_bus"];
+$id_ruta_bus = trim((string) $_GET["id_ruta_bus"]);
+if (!preg_match('/^[0-9]+$/', $id_ruta_bus)) {
+    echo "ID de ruta-bus invalido";
+    exit();
+}
 
 // Seleccionar la ruta por ID
-$sentencia = $base_de_datos->prepare("SELECT id_ruta_bus, id_ruta, id_bus FROM tab_ruta_bus WHERE id_ruta_bus = ?;");
+$sentencia = $base_de_datos->prepare("SELECT id_ruta_bus, id_ruta, id_bus FROM tab_ruta_bus WHERE id_ruta_bus = ? AND fec_delete IS NULL;");
 $sentencia->execute([$id_ruta_bus]);
 $ruta = $sentencia->fetchObject();
 if (!$ruta) {
@@ -32,13 +36,13 @@ if (!$ruta) {
 // Obtener IDs y nombres de rutas
 $rutas = [];
 try {
-    $sentenciaRutas = $base_de_datos->query('SELECT id_ruta, nom_ruta FROM tab_rutas ORDER BY nom_ruta');
+    $sentenciaRutas = $base_de_datos->query('SELECT id_ruta, nom_ruta FROM tab_rutas WHERE fec_delete IS NULL ORDER BY nom_ruta');
     $rutas = $sentenciaRutas->fetchAll(PDO::FETCH_OBJ);
 } catch(Exception $e) {}
 // Obtener IDs y placas de buses
 $buses = [];
 try {
-    $sentenciaBuses = $base_de_datos->query('SELECT id_bus, matricula FROM tab_buses ORDER BY id_bus');
+    $sentenciaBuses = $base_de_datos->query('SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus');
     $buses = $sentenciaBuses->fetchAll(PDO::FETCH_OBJ);
 } catch(Exception $e) {}
 ?>
@@ -52,7 +56,7 @@ try {
                 </div>
                 <div class="card-body">
                     <form action="update_rutas_buses.php" method="POST">
-                        <input type="hidden" name="id_ruta_bus" value="<?php echo $ruta->id_ruta_bus; ?>">
+                        <input type="hidden" name="id_ruta_bus" value="<?php echo htmlspecialchars((string) $ruta->id_ruta_bus, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -63,7 +67,7 @@ try {
                                             <option value="" disabled>No hay rutas disponibles</option>
                                         <?php else: ?>
                                             <?php foreach($rutas as $r): ?>
-                                                <option value="<?php echo $r->id_ruta; ?>" <?php echo ($ruta->id_ruta == $r->id_ruta) ? 'selected' : ''; ?>><?php echo $r->id_ruta . ' - ' . $r->nom_ruta; ?></option>
+                                                <option value="<?php echo $r->id_ruta; ?>" <?php echo ((string) $ruta->id_ruta === (string) $r->id_ruta) ? 'selected' : ''; ?>><?php echo $r->id_ruta . ' - ' . htmlspecialchars($r->nom_ruta, ENT_QUOTES, 'UTF-8'); ?></option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
@@ -78,7 +82,7 @@ try {
                                             <option value="" disabled>No hay buses disponibles</option>
                                         <?php else: ?>
                                             <?php foreach($buses as $b): ?>
-                                                <option value="<?php echo $b->id_bus; ?>" <?php echo ($ruta->id_bus == $b->id_bus) ? 'selected' : ''; ?>><?php echo $b->id_bus . ' - ' . $b->matricula; ?></option>
+                                                <option value="<?php echo htmlspecialchars($b->id_bus, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ((string) $ruta->id_bus === (string) $b->id_bus) ? 'selected' : ''; ?>><?php echo htmlspecialchars($b->id_bus, ENT_QUOTES, 'UTF-8'); ?></option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
@@ -100,5 +104,7 @@ try {
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 

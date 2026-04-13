@@ -4,21 +4,28 @@ CREATE OR REPLACE FUNCTION fun_update_parque_automotor(
     wdir_parque_automotor tab_parque_automotor.dir_parque_automotor%type
 ) RETURNS BOOLEAN AS
 $$
+DECLARE
+    v_bus tab_parque_automotor.id_bus%TYPE;
 BEGIN
-    IF wid_parque_automotor IS NULL OR wid_parque_automotor <= 1 THEN
-        RAISE EXCEPTION 'Error: El ID del parque automotor no puede ser nulo o menor que 1';
-    END IF;
-    
-    IF wid_bus IS NULL OR wid_bus <= 1 THEN
-        RAISE EXCEPTION 'Error: El ID del bus no puede ser nulo o menor que 1';
+    IF wid_parque_automotor IS NULL OR wid_parque_automotor <= 0 THEN
+        RAISE EXCEPTION USING errcode = '23502';
     END IF;
 
-    IF wdir_parque_automotor IS NULL OR LENGTH(wdir_parque_automotor) < 5 THEN
-        RAISE EXCEPTION 'Error: La dirección del parque automotor no puede ser nula o tener menos de 5 caracteres';
+    v_bus := UPPER(REGEXP_REPLACE(TRIM(COALESCE(wid_bus, '')), '\\s+', '', 'g'));
+    IF v_bus = '' THEN
+        RAISE EXCEPTION USING errcode = '23502';
+    END IF;
+
+    IF v_bus !~ '^[A-Z]{3}[0-9]{3}$' THEN
+        RAISE EXCEPTION USING errcode = '22023';
+    END IF;
+
+    IF wdir_parque_automotor IS NULL OR LENGTH(TRIM(wdir_parque_automotor)) < 5 THEN
+        RAISE EXCEPTION USING errcode = '22001';
     END IF;
     
     UPDATE tab_parque_automotor
-    SET id_bus = wid_bus,
+    SET id_bus = v_bus,
         dir_parque_automotor = wdir_parque_automotor
         WHERE id_parque_automotor = wid_parque_automotor
             AND fec_delete IS NULL;
@@ -33,13 +40,23 @@ BEGIN
 
 EXCEPTION
     WHEN SQLSTATE '23502' THEN
-        RAISE EXCEPTION 'Error: Está colocando un valor nulo en un campo obligatorio';
+        RAISE NOTICE 'Error: campos obligatorios no pueden ser nulos';
+        RETURN FALSE;
     WHEN SQLSTATE '23505' THEN
-        RAISE EXCEPTION 'Error: El registro ya existe';
+        RAISE NOTICE 'Error: el registro ya existe';
+        RETURN FALSE;
     WHEN SQLSTATE '22001' THEN
-        RAISE EXCEPTION 'Error: Algún campo es demasiado corto';
+        RAISE NOTICE 'Error: la direccion debe tener minimo 5 caracteres';
+        RETURN FALSE;
+    WHEN SQLSTATE '22023' THEN
+        RAISE NOTICE 'Error: el ID de bus debe tener formato AAA123';
+        RETURN FALSE;
+    WHEN SQLSTATE '23503' THEN
+        RAISE NOTICE 'Error: el bus no existe';
+        RETURN FALSE;
     WHEN OTHERS THEN
-        RAISE EXCEPTION 'Error desconocido: %', SQLERRM;
+        RAISE NOTICE 'Error desconocido: %', SQLERRM;
+        RETURN FALSE;
 END;
 $$
 LANGUAGE plpgsql;

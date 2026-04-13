@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buslinnes - Rutas en Tiempo Real</title>
   <!--Favicon-->
-    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
   <!-- OneSignal Notificaciones Push -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -104,6 +104,7 @@
   
   <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
   <link rel="stylesheet" href="/buslinnes/assets/css/passenger.css">
   <!-- Aseguramos que darkmode.js se cargue correctamente -->
   <script src="/buslinnes/assets/js/darkmode.js" defer></script>
@@ -237,6 +238,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
   <script src="/buslinnes/assets/js/security.js"></script>
   <script src="/buslinnes/assets/js/app_lockdown.js"></script>
 
@@ -339,6 +341,10 @@
       };
       
       if (searchInput) {
+        // Asegurar que no queden filtros previos del buscador al iniciar la página.
+        searchInput.value = '';
+        window.__buslinnesRouteSearchTerm = '';
+
         searchInput.addEventListener('input', function(e) {
           const searchTerm = e.target.value.toLowerCase();
           // Guardar el término actual para re-aplicarlo tras refrescos (drawRoutes cada 20s)
@@ -552,10 +558,12 @@
         applyMapTheme();
         L.control.scale().addTo(map);
         window.buslinnesMap = map;
+        map.invalidateSize();
         // ya tenemos mapa, si ya conseguimos ubicación mostrémosla
         maybeShowUserMarker();
       } else {
         applyMapTheme();
+        map.invalidateSize();
       }
 
       // Sincronizar el tema del mapa cuando el body cambie entre modo claro/oscuro.
@@ -637,7 +645,11 @@
         if (favoritesLoaded) return;
         try {
           const response = await securityHelper.get(FAVORITES_API.list);
-          if (!response.ok) throw new Error('HTTP ' + response.status);
+          if (!response.ok) {
+            console.warn('⚠️ No se pudieron cargar favoritos (API ' + response.status + ')');
+            favoritesLoaded = true;
+            return;
+          }
 
           const payload = await response.json();
           const ids = Array.isArray(payload.route_ids) ? payload.route_ids : [];
@@ -645,58 +657,46 @@
           ids.forEach(id => lovedRouteIds.add(String(id)));
           favoritesLoaded = true;
         } catch (error) {
-          console.warn('No fue posible cargar favoritos desde DB:', error);
+          console.warn('⚠️ No fue posible cargar favoritos:', error?.message || error);
           favoritesLoaded = true;
         }
       }
 
       async function saveFavoriteToDb(routeId) {
-        const response = await securityHelper.post(FAVORITES_API.add, {
-          id_ruta: Number(routeId)
-        });
+        try {
+          const response = await securityHelper.post(FAVORITES_API.add, {
+            id_ruta: Number(routeId)
+          });
 
-        if (!response.ok) {
-          const statusInfo = `HTTP ${response.status} ${response.statusText}`;
-          let detail = 'No se pudo guardar favorito';
-          let fullResponse = null;
-          try {
-            fullResponse = await response.json();
-            detail = fullResponse.detail || fullResponse.error || detail;
-          } catch (e) {
-            const rawText = await response.text();
-            detail = rawText || detail;
+          if (!response.ok) {
+            console.warn('⚠️ Error guardando favorito (HTTP ' + response.status + '), pero se mantiene localmente');
+            return { ok: true }; // Aceptar el cambio local aunque falle en el servidor
           }
-          
-          console.error('Error guardando favorito:', { statusInfo, fullResponse });
-          throw new Error(`${statusInfo} - ${detail}`);
-        }
 
-        return response.json();
+          return response.json();
+        } catch (e) {
+          console.warn('⚠️ Error guardando favorito:', e?.message);
+          return { ok: true }; // Aceptar cambio local
+        }
       }
 
       async function removeFavoriteFromDb(routeId) {
-        const response = await securityHelper.delete(FAVORITES_API.remove, {
-          body: JSON.stringify({ id_ruta: Number(routeId) }),
-          headers: { 'Content-Type': 'application/json' }
-        });
+        try {
+          const response = await securityHelper.delete(FAVORITES_API.remove, {
+            body: JSON.stringify({ id_ruta: Number(routeId) }),
+            headers: { 'Content-Type': 'application/json' }
+          });
 
-        if (!response.ok) {
-          const statusInfo = `HTTP ${response.status} ${response.statusText}`;
-          let detail = 'No se pudo eliminar favorito';
-          let fullResponse = null;
-          try {
-            fullResponse = await response.json();
-            detail = fullResponse.detail || fullResponse.error || detail;
-          } catch (e) {
-            const rawText = await response.text();
-            detail = rawText || detail;
+          if (!response.ok) {
+            console.warn('⚠️ Error eliminando favorito (HTTP ' + response.status + '), pero se mantiene localmente');
+            return { ok: true }; // Aceptar el cambio local aunque falle en el servidor
           }
-          
-          console.error('Error eliminando favorito:', { statusInfo, fullResponse });
-          throw new Error(`${statusInfo} - ${detail}`);
-        }
 
-        return response.json();
+          return response.json();
+        } catch (e) {
+          console.warn('⚠️ Error eliminando favorito:', e?.message);
+          return { ok: true }; // Aceptar cambio local
+        }
       }
 
       async function toggleFavorite(routeId, buttonEl) {
@@ -947,66 +947,57 @@
 
       function normalizeRoutesPayload(payload) {
         if (Array.isArray(payload)) return payload;
-        if (payload && Array.isArray(payload.rutas)) return payload.rutas;
-        if (payload && Array.isArray(payload.data)) return payload.data;
-        if (payload && payload.data && Array.isArray(payload.data.rutas)) return payload.data.rutas;
-        if (payload && payload.result && Array.isArray(payload.result.rutas)) return payload.result.rutas;
+        if (!payload || typeof payload !== 'object') return [];
+        if (Array.isArray(payload.rutas)) return payload.rutas;
+        if (Array.isArray(payload.data)) return payload.data;
+        if (payload.data && Array.isArray(payload.data.rutas)) return payload.data.rutas;
+        if (payload.result && Array.isArray(payload.result.rutas)) return payload.result.rutas;
         return [];
       }
 
-      function getDirectRouteCoords(route) {
-        const startLat = parseFloat(route.inicio_lat);
-        const startLng = parseFloat(route.inicio_lng);
-        const endLat = parseFloat(route.fin_lat);
-        const endLng = parseFloat(route.fin_lng);
-
-        if (!isFinite(startLat) || !isFinite(startLng) || !isFinite(endLat) || !isFinite(endLng)) {
-          return null;
+      async function fetchRoutesFromApi() {
+        try {
+          const response = await securityHelper.get('/buslinnes/src/rutas/api_listar_rutas.php');
+          if (response.ok) {
+            const payload = await response.json();
+            return normalizeRoutesPayload(payload);
+          }
+          console.warn('⚠️ API rutas devolvió estado no OK:', response.status);
+        } catch (firstError) {
+          console.warn('⚠️ securityHelper.get falló para rutas, intentando fetch directo:', firstError?.message || firstError);
         }
 
-        return [[startLat, startLng], [endLat, endLng]];
+        try {
+          const response = await fetch('/buslinnes/src/rutas/api_listar_rutas.php', {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+          if (response.ok) {
+            const payload = await response.json();
+            return normalizeRoutesPayload(payload);
+          }
+          console.warn('⚠️ Fetch directo de rutas devolvió estado no OK:', response.status);
+        } catch (secondError) {
+          console.error('❌ No se pudo cargar rutas desde el servidor:', secondError);
+        }
+
+        return [];
       }
 
       async function drawRoutes() {
         if (isDrawingRoutes) return;
         isDrawingRoutes = true;
         try {
+          if (map && typeof map.invalidateSize === 'function') {
+            map.invalidateSize();
+          }
+
           const prevActiveRouteId = activeRouteId;
-          let response;
-          try {
-            response = await securityHelper.get('/buslinnes/src/rutas/api_listar_rutas.php');
-          } catch (helperError) {
-            console.warn('securityHelper.get fallo para rutas, intentando fetch directo:', helperError);
-            response = await fetch('/buslinnes/src/rutas/api_listar_rutas.php', {
-              method: 'GET',
-              credentials: 'include',
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-              }
-            });
-          }
-
-          let apiPayload = null;
-          if (response instanceof Response) {
-            try {
-              apiPayload = await response.json();
-            } catch (jsonError) {
-              console.warn('No se pudo parsear JSON de rutas:', jsonError);
-              apiPayload = [];
-            }
-
-            if (!response.ok) {
-              console.warn('API rutas respondió con estado no OK:', response.status, apiPayload);
-            }
-          } else {
-            apiPayload = response;
-          }
-
-          const rutas = normalizeRoutesPayload(apiPayload);
-          console.log('API rutas (passenger):', apiPayload);
+          const rutas = await fetchRoutesFromApi();
+          console.log('API rutas (passenger):', rutas);
 
           if (!Array.isArray(rutas) || rutas.length === 0) {
-            console.warn('No se recibieron rutas válidas para pintar en pasajero:', apiPayload);
+            console.warn('No se recibieron rutas válidas para pintar en pasajero:', rutas);
             latestSortedRoutes = [];
             renderRoutesList([]);
             updateNoResults();
@@ -1018,81 +1009,73 @@
           const seenRouteIds = new Set();
 
           for (const r of rutas) {
-            try {
-              const routeId = String(r.id_ruta);
-              if (!routeId || routeId === 'undefined' || routeId === 'null') {
-                continue;
+            const routeId = String(r.id_ruta);
+            seenRouteIds.add(routeId);
+
+            // limpiar capas anteriores para esta ruta si existían
+            const existing = routeLayers[routeId] || null;
+
+            // Construir lista de coordenadas para OSRM: inicio; waypoint...; fin
+            const coordParts = [];
+            function pushLngLat(lng, lat) {
+              const nlat = parseFloat(lat);
+              const nlng = parseFloat(lng);
+              if (!isFinite(nlat) || !isFinite(nlng)) return false;
+              coordParts.push(`${nlng},${nlat}`);
+              return true;
+            }
+
+            const okStart = pushLngLat(r.inicio_lng, r.inicio_lat);
+            // waypoints expected as array [{orden, lat, lng, nombre}, ...]
+            if (Array.isArray(r.waypoints) && r.waypoints.length > 0) {
+              // ordenar por 'orden' si existe
+              r.waypoints.sort((a,b)=> (a.orden||0)-(b.orden||0));
+              for (const w of r.waypoints) {
+                pushLngLat(w.lng, w.lat);
               }
-              seenRouteIds.add(routeId);
+            }
+            const okEnd = pushLngLat(r.fin_lng, r.fin_lat);
 
-              // limpiar capas anteriores para esta ruta si existían
-              const existing = routeLayers[routeId] || null;
-
-              // Construir lista de coordenadas para OSRM: inicio; waypoint...; fin
-              const coordParts = [];
-              function pushLngLat(lng, lat) {
-                const nlat = parseFloat(lat);
-                const nlng = parseFloat(lng);
-                if (!isFinite(nlat) || !isFinite(nlng)) return false;
-                coordParts.push(`${nlng},${nlat}`);
-                return true;
-              }
-
-              const okStart = pushLngLat(r.inicio_lng, r.inicio_lat);
-              // waypoints expected as array [{orden, lat, lng, nombre}, ...]
-              if (Array.isArray(r.waypoints) && r.waypoints.length > 0) {
-                // ordenar por 'orden' si existe
-                r.waypoints.sort((a,b)=> (a.orden||0)-(b.orden||0));
-                for (const w of r.waypoints) {
-                  pushLngLat(w.lng, w.lat);
+            // Si faltan coords válidas, saltar a dibujo directo
+            let coordsToDraw = null;
+            const osrmUrl = coordParts.length >= 2 ? `https://router.project-osrm.org/route/v1/driving/${coordParts.join(';')}?overview=full&geometries=geojson` : null;
+            if (!osrmUrl) {
+              console.warn('RUTA: coordenadas insuficientes para OSRM, usando puntos directos', r.id_ruta, r);
+              coordsToDraw = [[parseFloat(r.inicio_lat), parseFloat(r.inicio_lng)], [parseFloat(r.fin_lat), parseFloat(r.fin_lng)]];
+            } else {
+              console.log('OSRM URL:', osrmUrl);
+              try {
+                const respOsrm = await fetch(osrmUrl);
+                const data = await respOsrm.json();
+                if (data && data.code === 'Ok' && data.routes && data.routes[0] && data.routes[0].geometry) {
+                  coordsToDraw = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                } else {
+                  console.warn('OSRM devolvió sin ruta válida, fallback directo', r.id_ruta, data && data.code);
+                  coordsToDraw = [[parseFloat(r.inicio_lat), parseFloat(r.inicio_lng)], [parseFloat(r.fin_lat), parseFloat(r.fin_lng)]];
                 }
+              } catch (e) {
+                console.warn('OSRM falla, usando puntos directos', e);
+                coordsToDraw = [[parseFloat(r.inicio_lat), parseFloat(r.inicio_lng)], [parseFloat(r.fin_lat), parseFloat(r.fin_lng)]];
               }
-              const okEnd = pushLngLat(r.fin_lng, r.fin_lat);
+            }
 
-              // Si faltan coords válidas, saltar a dibujo directo
-              let coordsToDraw = null;
-              const directCoords = getDirectRouteCoords(r);
-              const osrmUrl = coordParts.length >= 2 ? `https://router.project-osrm.org/route/v1/driving/${coordParts.join(';')}?overview=full&geometries=geojson` : null;
-              if (!osrmUrl) {
-                console.warn('RUTA: coordenadas insuficientes para OSRM, usando puntos directos', r.id_ruta, r);
-                coordsToDraw = directCoords;
-              } else {
-                console.log('OSRM URL:', osrmUrl);
-                try {
-                  const respOsrm = await fetch(osrmUrl);
-                  const data = await respOsrm.json();
-                  if (data && data.code === 'Ok' && data.routes && data.routes[0] && data.routes[0].geometry) {
-                    coordsToDraw = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                  } else {
-                    console.warn('OSRM devolvió sin ruta válida, fallback directo', r.id_ruta, data && data.code);
-                    coordsToDraw = directCoords;
-                  }
-                } catch (e) {
-                  console.warn('OSRM falla, usando puntos directos', e);
-                  coordsToDraw = directCoords;
-                }
-              }
-
-              if (!Array.isArray(coordsToDraw) || coordsToDraw.length < 2) {
-                console.warn('Ruta omitida por coordenadas inválidas:', r.id_ruta, r.nom_ruta);
-                continue;
-              }
-
-              const colorIdxCurrent = existing?.colorIdx ?? (colorIdx % colores.length);
-              const color = colores[colorIdxCurrent];
-              if (!existing) {
-                colorIdx++;
-              }
+            const colorIdxCurrent = existing?.colorIdx ?? (colorIdx % colores.length);
+            const color = colores[colorIdxCurrent];
+            if (!existing) {
+              colorIdx++;
+            }
 
             // Polyline: crear o actualizar
             let poly = existing?.poly || null;
             if (!poly) {
-              poly = L.polyline(coordsToDraw, { color, weight:5, opacity:0.85 }).addTo(map);
+              poly = L.polyline(coordsToDraw, { color, weight: 6, opacity: 0.95 }).addTo(map);
               poly.bindPopup(`<strong>${r.nom_ruta}</strong><br>${r.inicio_ruta} → ${r.fin_ruta}`);
+              console.log('Ruta dibujada:', routeId, 'puntos=', coordsToDraw.length);
             } else {
-              poly.setStyle({ color, weight:5, opacity:0.85 });
+              poly.setStyle({ color, weight: 6, opacity: 0.95 });
               poly.setLatLngs(coordsToDraw);
               poly.setPopupContent(`<strong>${r.nom_ruta}</strong><br>${r.inicio_ruta} → ${r.fin_ruta}`);
+              console.log('Ruta actualizada:', routeId, 'puntos=', coordsToDraw.length);
             }
 
             // dibujar marcadores de waypoints (si los hay)
@@ -1144,18 +1127,15 @@
               }
             }
 
-              routeLayers[routeId] = {
-                poly,
-                wpg: wpgGroup,
-                startMk,
-                endMk,
-                name: r.nom_ruta,
-                colorIdx: colorIdxCurrent,
-                colorClass: `route-color-${colorIdxCurrent}`
-              };
-            } catch (routeError) {
-              console.warn('No se pudo procesar una ruta en drawRoutes:', routeError, r);
-            }
+            routeLayers[routeId] = {
+              poly,
+              wpg: wpgGroup,
+              startMk,
+              endMk,
+              name: r.nom_ruta,
+              colorIdx: colorIdxCurrent,
+              colorClass: `route-color-${colorIdxCurrent}`
+            };
           }
 
           // Remover rutas que ya no vienen en API

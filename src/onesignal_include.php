@@ -4,12 +4,18 @@
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 OneSignalDeferred.push(async function(OneSignal) {
   try {
+    const appBasePath = window.location.pathname.startsWith('/buslinnes/') ? '/buslinnes' : '';
+    const swScope = appBasePath ? appBasePath + '/' : '/';
+    const swPath = (appBasePath || '') + '/OneSignalSDKWorker.js';
+    const swUpdaterPath = (appBasePath || '') + '/OneSignalSDKUpdaterWorker.js';
+
     await OneSignal.init({
       appId: "5f5d1290-a2ef-43ce-866d-d2efefec6041",
       safari_web_id: "web.onesignal.auto.0e731bf1-0f8d-4c8c-8593-03e4c907000a",
       notifyButton: { enable: true },
-      serviceWorkerParam: { scope: '/' },
-      serviceWorkerPath: '/OneSignalSDKWorker.js',
+      serviceWorkerParam: { scope: swScope },
+      serviceWorkerPath: swPath,
+      serviceWorkerUpdaterPath: swUpdaterPath,
     });
     
     // Solicitar permiso de notificaciones al usuario

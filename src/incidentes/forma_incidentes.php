@@ -46,10 +46,10 @@ Formulario para agregar nuevos incidentes al sistema
                                         <option value="" disabled selected>Seleccione un bus</option>
                                         <?php
                                         include_once "../base_de_datos.php";
-                                        $sentencia = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses WHERE fec_delete IS NULL ORDER BY matricula");
+                                        $sentencia = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus");
                                         $buses = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                         foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus ?>"><?php echo $bus->matricula ?></option>
+                                            <option value="<?php echo $bus->id_bus ?>"><?php echo $bus->id_bus ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -88,5 +88,7 @@ Formulario para agregar nuevos incidentes al sistema
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
 
 

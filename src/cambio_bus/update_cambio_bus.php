@@ -21,16 +21,49 @@ Actualiza registros en la tabla tab_cambio_bus
 
 # Verificar que todos los campos obligatorios estén presentes
 if (
-    !isset($_POST["id_cambio"])      ||
+    !isset($_POST["id_cambio_bus"])      ||
+    !isset($_POST["id_incidente"])      ||
     !isset($_POST["id_bus"])         ||
-    !isset($_POST["id_conductor"])   ||
-    !isset($_POST["fecha_cambio"])   ||
-    !isset($_POST["motivo_cambio"])  ||
-    !isset($_POST["usr_update"])
+    !isset($_POST["ubicacion_cambio"])
 ) {
     echo "Faltan campos obligatorios en el formulario";
     exit();
 }
+
+$salirConError = static function (string $mensaje): void {
+    echo htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8');
+    exit();
+};
+
+$validarEntero = static function ($valor, string $campo) use ($salirConError): int {
+    $texto = trim((string) $valor);
+    if (!preg_match('/^[0-9]+$/', $texto)) {
+        $salirConError("El campo {$campo} debe ser un entero positivo.");
+    }
+    $numero = (int) $texto;
+    if ($numero <= 0) {
+        $salirConError("El campo {$campo} debe ser mayor a cero.");
+    }
+    return $numero;
+};
+
+$validarTexto = static function ($valor, string $campo, int $min, int $max) use ($salirConError): string {
+    $texto = trim((string) $valor);
+    if (function_exists('mb_strlen')) {
+        $longitud = mb_strlen($texto);
+    } elseif (function_exists('iconv_strlen')) {
+        $longitud = iconv_strlen($texto, 'UTF-8');
+        if ($longitud === false) {
+            $longitud = strlen($texto);
+        }
+    } else {
+        $longitud = strlen($texto);
+    }
+    if ($longitud < $min || $longitud > $max) {
+        $salirConError("El campo {$campo} debe tener entre {$min} y {$max} caracteres.");
+    }
+    return $texto;
+};
 
 include_once "../base_de_datos.php";
 
@@ -38,26 +71,22 @@ include_once "../base_de_datos.php";
    Sanitizar / convertir datos.
    Ajusta los tipos según tu estructura real de tab_cambio_bus
 */
-$id_cambio      = (int)    $_POST["id_cambio"];
-$id_bus         = (int)    $_POST["id_bus"];
-$id_conductor   = (int)    $_POST["id_conductor"];
-$fecha_cambio   = (string) $_POST["fecha_cambio"];   // formato 'YYYY-MM-DD' o 'YYYY-MM-DD HH:MM'
-$motivo_cambio  = (string) $_POST["motivo_cambio"];
-$usr_update     = (string) $_POST["usr_update"];
+$id_cambio_bus = $validarEntero($_POST["id_cambio_bus"], 'id_cambio_bus');
+$id_incidente = $validarEntero($_POST["id_incidente"], 'id_incidente');
+$id_bus = $validarEntero($_POST["id_bus"], 'id_bus');
+$ubicacion_cambio = $validarTexto($_POST["ubicacion_cambio"], 'ubicacion_cambio', 3, 255);
 
 try {
     // Llamada a la función que actualiza en PostgreSQL
     $sentencia = $base_de_datos->prepare("
-        SELECT fun_update_cambio_bus(?, ?, ?, ?, ?, ?);
+        SELECT fun_update_cambio_bus(?, ?, ?, ?);
     ");
 
     $resultado = $sentencia->execute([
-        $id_cambio,
+        $id_cambio_bus,
+        $id_incidente,
         $id_bus,
-        $id_conductor,
-        $fecha_cambio,
-        $motivo_cambio,
-        $usr_update
+        $ubicacion_cambio
     ]);
 
     if ($resultado) {
@@ -74,5 +103,6 @@ try {
     echo "</div>";
     exit();
 }
+
 
 

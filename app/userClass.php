@@ -18,18 +18,22 @@ class userClass {
     
     /**
      * Registro de usuario
-     * @param string $password
-     * @param string $email
-     * @param string $name
+     * @param string $tipo_doc
+     * @param string $id_usuario
+     * @param string $nom_usuario
+     * @param string $email_usuario
+     * @param string $contraseña
+     * 
+     * 
      * @return boolean
      */
-    public function fun_insert_usuario($password, $correo, $nombre) {
+    public function fun_insert_usuario($tipo_doc, $id_usuario, $nom_usuario, $email_usuario, $contraseña) {
         try {
             $this->lastErrorCode = null;
             $this->lastErrorMessage = null;
-            error_log("Intentando registrar usuario: $nombre, $correo"); // Log de depuración
+            error_log("Intentando registrar usuario: $tipo_doc, $id_usuario, $nom_usuario, $email_usuario");
 
-            if (empty($password) || empty($correo) || empty($nombre)) {
+            if (empty($tipo_doc) || empty($id_usuario) || empty($nom_usuario) || empty($email_usuario) || empty($contraseña)) {
                 $this->lastErrorCode = 'INVALID_INPUT';
                 $this->lastErrorMessage = 'Datos incompletos';
                 error_log("Error: Datos incompletos");
@@ -37,8 +41,8 @@ class userClass {
             }
 
             // Verificar correo existente (el nombre puede repetirse)
-            $stmt = $this->db->prepare("SELECT id_usuario FROM tab_usuarios WHERE correo = ? LIMIT 1");
-            if(!$stmt->execute([$correo])) {
+            $stmt = $this->db->prepare("SELECT id_usuario FROM tab_usuarios WHERE email_usuario = ? AND usr_delete IS NULL LIMIT 1");
+            if(!$stmt->execute([$email_usuario])) {
                 $this->lastErrorCode = 'SYSTEM_ERROR';
                 $this->lastErrorMessage = 'Error verificando correo existente';
                 error_log("Error en verificación de usuario existente: " . print_r($stmt->errorInfo(), true));
@@ -52,10 +56,10 @@ class userClass {
                 return false;
             }
 
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $hashedPassword = password_hash($contraseña, PASSWORD_DEFAULT);
 
-            $stmt = $this->db->prepare("INSERT INTO tab_usuarios (contrasena, correo, nombre) VALUES (?, ?, ?) RETURNING id_usuario");
-            if(!$stmt->execute([$hashedPassword, $correo, $nombre])) {
+            $stmt = $this->db->prepare("INSERT INTO tab_usuarios (tipo_doc, id_usuario, nom_usuario, email_usuario, contrasena, usr_insert, fec_insert) VALUES (?, ?, ?, ?, ?, ?, NOW()) RETURNING id_usuario");
+            if(!$stmt->execute([$tipo_doc, $id_usuario, $nom_usuario, $email_usuario, $hashedPassword, 'self_register'])) {
                 $errorInfo = $stmt->errorInfo();
                 $sqlState = $errorInfo[0] ?? null;
                 $this->lastErrorCode = $sqlState === '23505' ? 'EMAIL_EXISTS' : 'SYSTEM_ERROR';
@@ -66,16 +70,17 @@ class userClass {
                 return false;
             }
 
-            if ($stmt->rowCount() > 0) {
-                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($result && !empty($result['id_usuario'])) {
                 error_log("Usuario registrado con ID: " . $result['id_usuario']);
                 $_SESSION['id_usuario'] = $result['id_usuario'];
-                $_SESSION['nombre'] = $nombre;
+                $_SESSION['nombre'] = $nom_usuario;
                 return true;
             }
+
             $this->lastErrorCode = 'SYSTEM_ERROR';
             $this->lastErrorMessage = 'No fue posible registrar el usuario en este momento.';
-            error_log("No se pudo registrar el usuario (rowCount = 0)");
+            error_log("No se pudo registrar el usuario: no se obtuvo ID del registro");
             return false;
         } catch (PDOException $e) {
             $this->lastErrorCode = $e->getCode() === '23505' ? 'EMAIL_EXISTS' : 'SYSTEM_ERROR';
@@ -90,20 +95,55 @@ class userClass {
     /**
      * Inicio de sesión del usuario validando el hash de la contraseña en PHP
      * @param string $usernameEmail Nombre de usuario o email
-     * @param string $password Contraseña sin encriptar
+     * @param string $contraseña Contraseña sin encriptar
      * @return mixed ID del usuario si es exitoso, false si falla
      */
-    public function iniciar_sesion_usuario($email, $password) {
+    public function iniciar_sesion_usuario($email_usuario, $contraseña) {
         try {
-            // Buscar usuario por correo
-            $stmt = $this->db->prepare("SELECT id_usuario, correo, contrasena FROM tab_usuarios WHERE correo = :correo LIMIT 1");
-            $stmt->bindParam(':correo', $email);
+            $isPasswordValid = false;
+            // Buscar usuario activo por correo
+            $stmt = $this->db->prepare("SELECT id_usuario, email_usuario, contrasena, usr_update, fec_update FROM tab_usuarios WHERE email_usuario = :email_usuario AND usr_delete IS NULL LIMIT 1");
+            $stmt->bindParam(':email_usuario', $email_usuario);
             $stmt->execute();
             $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($userData && password_verify($password, $userData['contrasena'])) {
+            if ($userData) {
+                $isPasswordValid = password_verify($contraseña, $userData['contrasena']);
+                $inputFingerprint = substr(hash('sha256', (string)$contraseña), 0, 12);
+                $hashFingerprint = substr(hash('sha256', (string)$userData['contrasena']), 0, 12);
+
+                if ($isPasswordValid) {
+                    error_log(
+                        "[login_debug] Password válida para email={$email_usuario} " .
+                        "id_usuario={$userData['id_usuario']} " .
+                        "input_len=" . strlen((string)$contraseña) . " " .
+                        "input_fp={$inputFingerprint} " .
+                        "hash_fp={$hashFingerprint} " .
+                        "usr_update=" . ($userData['usr_update'] ?? 'NULL') . " " .
+                        "fec_update=" . ($userData['fec_update'] ?? 'NULL')
+                    );
+                }
+
+                if (!$isPasswordValid) {
+                    // Diagnóstico temporal: no registra contraseña, solo metadatos.
+                    error_log(
+                        "[login_debug] Password no válida para email={$email_usuario} " .
+                        "id_usuario={$userData['id_usuario']} " .
+                        "input_len=" . strlen((string)$contraseña) . " " .
+                        "hash_prefix=" . substr((string)$userData['contrasena'], 0, 4) . " " .
+                        "input_fp={$inputFingerprint} " .
+                        "hash_fp={$hashFingerprint} " .
+                        "usr_update=" . ($userData['usr_update'] ?? 'NULL') . " " .
+                        "fec_update=" . ($userData['fec_update'] ?? 'NULL')
+                    );
+                }
+            } else {
+                error_log("[login_debug] Usuario no encontrado para email={$email_usuario}");
+            }
+
+            if ($userData && $isPasswordValid) {
                 $_SESSION['id_usuario'] = $userData['id_usuario'];
-                $_SESSION['correo'] = $userData['correo'];
+                $_SESSION['email_usuario'] = $userData['email_usuario'];
                 return $userData['id_usuario'];
             }
             return false;

@@ -1,19 +1,22 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buslinnes - Sistema de Gestión de Transporte</title>
     <!--Favicon-->
-    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
     <meta name="theme-color" content="#ffffff">
     <!--Estilos de la página-->
+    <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
     <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/buslinnes/assets/css/index.css">
+    <link rel="stylesheet" href="/buslinnes/assets/css/legal-modal.css">
     <link rel="stylesheet" href="/buslinnes/assets/css/cookie-banner.css">
     <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+    <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
 </head>
 <body>
     <!-- Header -->
@@ -68,7 +71,7 @@
                 <!-- Cambio WCAG: Se elimina aria-hidden="false" por ser innecesario y generar ruido -->
                 <div class="hero-image">
                     <img src="/buslinnes/assets/img/buslinnes.svg" alt="Sistema de gestión de transporte" class="hero-img-light">
-                    <img src="/buslinnes/assets/img/buslinnes2.svg" alt="Sistema de gestión de transporte" class="hero-img-dark">
+                    <img src="/buslinnes/assets/img/buslinnes.svg" alt="Sistema de gestión de transporte" class="hero-img-dark">
                 </div>
             </div>
         </section>
@@ -227,7 +230,7 @@
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2025 Buslinnes. Todos los derechos reservados.</p>
-                <p><strong><a href="/buslinnes/templates/privacy.html">Privacidad</a> | <a href="/buslinnes/templates/terms.html">Términos</a></strong></p>
+                <p><strong><a href="#" class="open-legal-modal" data-tab="tab-privacy">Privacidad</a> | <a href="#" class="open-legal-modal" data-tab="tab-terms">Términos</a></strong></p>
             </div>
         </div>
     </footer>
@@ -251,9 +254,9 @@
                     Usamos cookies para mejorar tu experiencia, analizar el tráfico
                     y personalizar contenidos. Puedes aceptar, rechazar o configurar
                     tus preferencias. Para más información consulta nuestra
-                    <a href="/buslinnes/templates/privacy.html" class="cookie-banner__link">Política de Privacidad</a>,
-                    <a href="/buslinnes/templates/cookies.html" class="cookie-banner__link">Política de Cookies</a> y
-                    <a href="/buslinnes/templates/terms.html" class="cookie-banner__link">Términos y Condiciones</a>.
+                    <a href="#" class="cookie-banner__link open-legal-modal" data-tab="tab-privacy">Política de Privacidad</a>,
+                    <a href="#" class="cookie-banner__link open-legal-modal" data-tab="tab-cookies">Política de Cookies</a> y
+                    <a href="#" class="cookie-banner__link open-legal-modal" data-tab="tab-terms">Términos y Condiciones</a>.
                 </p>
                 <div class="cookie-banner__consent">
                     <input
@@ -291,7 +294,159 @@
         </div>
     </div>
 
+    <!-- Modal Legal -->
+    <div class="legal-modal-backdrop" id="legal-modal-backdrop"></div>
+    <div class="legal-modal" id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
+        <div class="legal-modal__header">
+            <div class="legal-modal__tabs">
+                <button class="legal-tab-btn active" data-target="tab-privacy">Privacidad</button>
+                <button class="legal-tab-btn" data-target="tab-terms">Términos</button>
+                <button class="legal-tab-btn" data-target="tab-cookies">Cookies</button>
+            </div>
+            <button class="legal-modal__close" id="legal-modal-close" aria-label="Cerrar modal">&times;</button>
+        </div>
+        <div class="legal-modal__body">
+            
+            <!-- TAB PRIVACIDAD -->
+            <div class="legal-tab-content active" id="tab-privacy">
+                <h1 id="legal-modal-title" style="margin-top:0;">Política de Privacidad</h1>
+                <p>La presente Política de Privacidad describe el tratamiento de los datos personales recopilados y gestionados por <strong>Buslinnes</strong>.</p>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">1. Ámbito de aplicación y marco normativo</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>Esta Política aplica a todos los datos personales recolectados, almacenados, usados, transmitidos y/o transferidos por Buslinnes respecto de <strong>pasajeros, conductores, administradores y demás usuarios</strong> del sistema.</p>
+                        <p>El tratamiento de datos personales se realiza en cumplimiento de la <strong>Ley 1581 de 2012</strong>, el <strong>Decreto 1377 de 2013</strong> y las demás normas que las modifiquen, adicionen o sustituyan, así como de las directrices de la Superintendencia de Industria y Comercio (SIC) en Colombia.</p>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">2. Responsable del tratamiento</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p><strong>Nombre comercial:</strong> Buslinnes</p>
+                        <p><strong>Actividad:</strong> Plataforma web para la gestión de flotas de transporte y usuarios asociados.</p>
+                        <p><strong>Dirección:</strong> Av. Tecnológica 123, Colombia</p>
+                        <p><strong>Teléfono:</strong> +57 321 321 3210</p>
+                        <p><strong>Correo electrónico:</strong> info@buslinnes.com</p>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">3. Datos personales recopilados</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <ul>
+                            <li><strong>Datos de identificación:</strong> nombre completo, tipo y número de documento de identidad.</li>
+                            <li><strong>Datos de contacto:</strong> número de teléfono, correo electrónico.</li>
+                            <li><strong>Datos de perfil y rol:</strong> información asociada al rol.</li>
+                            <li><strong>Datos de uso:</strong> registros de acceso, rutas consultadas, interacciones.</li>
+                        </ul>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">4. Finalidades del tratamiento</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <ul>
+                            <li><strong>Prestación del servicio:</strong> permitir el registro y autenticación de usuarios.</li>
+                            <li><strong>Gestión de la relación contractual:</strong> comunicación y soporte técnico.</li>
+                            <li><strong>Seguridad:</strong> validación de identidad y monitoreo de actividades.</li>
+                        </ul>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">5. Derechos de los titulares</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>Conocer, actualizar, rectificar y suprimir sus datos personales. Revocar la autorización otorgada para el tratamiento de datos. Presentar quejas ante la Superintendencia de Industria y Comercio.</p>
+                    </div>
+                </details>
+            </div>
+
+            <!-- TAB TERMINOS -->
+            <div class="legal-tab-content" id="tab-terms">
+                <h1 style="margin-top:0;">Términos y Condiciones de Buslinnes</h1>
+                <p>El presente documento establece los Términos y Condiciones que regulan el acceso y uso de la plataforma web <strong>Buslinnes</strong> destinada a la gestión de sistemas de transporte.</p>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">1. Aceptación de los Términos</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>Al acceder, registrarse o utilizar la Plataforma, el usuario manifiesta haber leído, comprendido y aceptado íntegramente estos Términos y Condiciones.</p>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">2. Condiciones de uso de la Plataforma</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>El Usuario se compromete a:</p>
+                        <ul>
+                            <li>Utilizar la Plataforma únicamente para fines lícitos y autorizados.</li>
+                            <li>Proporcionar información veraz, completa y actualizada en los formularios.</li>
+                            <li>No intentar vulnerar, interferir o interrumpir el funcionamiento de la Plataforma.</li>
+                            <li>No utilizar la Plataforma para fines fraudulentos, abusivos o contrarios a la ley.</li>
+                        </ul>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">3. Responsabilidades del Usuario</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <ul>
+                            <li>Mantener la confidencialidad de sus credenciales de acceso.</li>
+                            <li>Notificar de inmediato a Buslinnes en caso de uso no autorizado.</li>
+                            <li>Abstenerse de compartir sus credenciales con terceros.</li>
+                        </ul>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">4. Alcance y limitación de responsabilidad</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>Buslinnes se compromete a realizar esfuerzos razonables para mantener la disponibilidad de la Plataforma. No será responsable por daños indirectos, incidentales, pérdida de información o utilidades derivadas del uso de la misma.</p>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">5. Legislación aplicable y jurisdicción</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>Estos Términos y Condiciones se rigen por las leyes de la <strong>República de Colombia</strong>. Cualquier controversia será sometida a los jueces competentes.</p>
+                    </div>
+                </details>
+            </div>
+
+            <!-- TAB COOKIES -->
+            <div class="legal-tab-content" id="tab-cookies">
+                <h1 style="margin-top:0;">Política de Cookies de Buslinnes</h1>
+                <p>La presente Política de Cookies explica qué son las cookies, cómo las utiliza la Plataforma y las opciones de gestión disponibles para los usuarios.</p>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">1. ¿Qué son las cookies?</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>Las cookies son pequeños archivos de texto que se almacenan en el dispositivo del usuario cuando navega por sitios web o utiliza aplicaciones para recordar información o preferencias de uso.</p>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">2. Tipos de cookies utilizadas</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <ul>
+                            <li><strong>Estrictamente necesarias:</strong> esenciales para el funcionamiento básico, inicio de sesión seguro, etc.</li>
+                            <li><strong>Preferencia o personalización:</strong> permiten recordar configuración visual o de idioma.</li>
+                            <li><strong>Análisis o rendimiento:</strong> para cuantificar y analizar estadísticamente el uso de la Plataforma.</li>
+                        </ul>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">3. Finalidades del uso de cookies</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <ul>
+                            <li>Garantizar el funcionamiento seguro y estable de la Plataforma.</li>
+                            <li>Recordar sesiones iniciadas y parámetros de configuración.</li>
+                            <li>Mejorar la usabilidad y experiencia.</li>
+                            <li>Analizar el tráfico de red de forma agregada.</li>
+                        </ul>
+                    </div>
+                </details>
+                <details style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;"><h2 style="margin: 0; font-size: inherit;">4. Gestión y desactivación de cookies</h2><span>▼</span></summary>
+                    <div style="padding-top: 10px;">
+                        <p>El usuario puede configurar su navegador o dispositivo para aceptar o rechazar cookies, así como para eliminarlas. Si se desactivan o eliminan, algunas funcionalidades pueden no funcionar o verse limitadas.</p>
+                    </div>
+                </details>
+            </div>
+
+        </div>
+    </div>
+    <script src="/buslinnes/assets/js/legal-modal.js" defer></script>
     <script src="/buslinnes/assets/js/index.js" defer></script>
     <script src="/buslinnes/assets/js/legal-banner.js" defer></script>
 </body>
 </html>
+

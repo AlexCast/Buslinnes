@@ -19,17 +19,17 @@ Elimina un conductor por su ID
 Autor: @alexndrcastt
 */
 
-if (!isset($_POST["id_conductor"])) {
+if (!isset($_POST["id_usuario"])) {
     echo "No se especific� el conductor a eliminar.";
     exit();
 }
 
-$id_conductor = $_POST["id_conductor"];
+$id_usuario = $_POST["id_usuario"];
 
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("SELECT fun_softdelete_conductores(?);");
-$resultado = $sentencia->execute([$id_conductor]);
+$resultado = $sentencia->execute([$id_usuario]);
 
 if ($resultado === true) {
     header("Location: listar_conductores.php");
@@ -40,6 +40,7 @@ if ($resultado === true) {
     echo "Error en la consulta: " . $error[2];
 }
 ?>
+
 
 
 

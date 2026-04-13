@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS tab_roles;
 DROP TABLE IF EXISTS tab_mantenimiento;
 DROP TABLE IF EXISTS tab_propietarios;
 DROP TABLE IF EXISTS tab_parque_automotor;
+DROP TABLE IF EXISTS tab_seguro_bus;
 DROP TABLE IF EXISTS tab_ruta_bus;
 DROP TABLE IF EXISTS tab_cambio_bus;
 DROP TABLE IF EXISTS tab_incidentes;
@@ -16,15 +17,17 @@ DROP TABLE IF EXISTS tab_buses;
 DROP TABLE IF EXISTS tab_conductores;
 DROP TABLE IF EXISTS tab_rutas_favoritas;
 DROP TABLE IF EXISTS tab_pasajeros;
+DROP TABLE IF EXISTS password_reset_tokens;
 DROP TABLE IF EXISTS tab_usuarios;
 DROP TABLE IF EXISTS tab_ruta_waypoints;
 DROP TABLE IF EXISTS tab_rutas;
-DROP TABLE IF EXISTS password_reset_tokens;
+DROP TABLE IF EXISTS tab_branding_config;
 
 CREATE TABLE IF NOT EXISTS tab_usuarios (
-    id_usuario          SERIAL   NOT NULL, -- Identificador del usuario
-    nombre              VARCHAR NOT NULL,  -- Nombre del usuario
-    correo              VARCHAR NOT NULL UNIQUE, --Correo del usuario
+    tipo_doc            VARCHAR NOT NULL DEFAULT 'CD'CHECK (tipo_doc = 'CD' OR tipo_doc = 'TI' OR tipo_doc = 'CE'), -- CD = CEDULA DE CIUDADANIA, TI = TARJETA DE IDENTIDAD Y CE = SEDULA EXTRANJERA
+    id_usuario          DECIMAL(10,0)  NOT NULL, --Identificador del usuario
+    nom_usuario         VARCHAR NOT NULL,  -- Nombre del usuario
+    email_usuario       VARCHAR NOT NULL UNIQUE, --Correo del usuario
     contrasena          VARCHAR NOT NULL, --Contraseña 
     usr_insert          VARCHAR NOT NULL,
     fec_insert          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -37,10 +40,11 @@ CREATE TABLE IF NOT EXISTS tab_usuarios (
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id                  SERIAL PRIMARY KEY,--Identificador del token
-    email               VARCHAR NOT NULL,--Correo del usuario
+    email_usuario               VARCHAR NOT NULL,--Correo del usuario
     token               VARCHAR NOT NULL UNIQUE,--Token dado por el sistema
     expires_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (email_usuario) REFERENCES tab_usuarios(email_usuario)
 );
 
 
@@ -58,7 +62,7 @@ CREATE TABLE IF NOT EXISTS tab_roles (
 
 
 CREATE TABLE IF NOT EXISTS tab_usuarios_roles (
-    id_usuario          INT NOT NULL,--Identificador del usuario
+    id_usuario          DECIMAL(10,0)  NOT NULL,--Identificador del usuario
     id_rol              INT NOT NULL,--Identificador del Rol
     usr_insert          VARCHAR NOT NULL,
     fec_insert          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -111,27 +115,30 @@ CREATE TABLE IF NOT EXISTS tab_ruta_waypoints (
 
 
 CREATE TABLE IF NOT EXISTS tab_conductores(
-    id_conductor        INT NOT NULL CHECK(id_conductor > 100000),--id del usuario conductor (FK a tab_usuarios)
-    nom_conductor       VARCHAR NOT NULL CHECK(LENGTH(nom_conductor)>=3), --nombre conductor
-    ape_conductor       VARCHAR NOT NULL CHECK(LENGTH(ape_conductor)>=3),--apellido del conductor
+    id_usuario          DECIMAL(10,0),--id del usuario conductor (FK a tab_usuarios)
+    nom_conductor       VARCHAR NOT NULL DEFAULT 'NOMBRE' CHECK(LENGTH(nom_conductor)>=3), --nombre conductor
+    ape_conductor       VARCHAR NULL  DEFAULT 'APELLIDO' CHECK(LENGTH(ape_conductor)>=3),--apellido del conductor
+    genero_conductor    VARCHAR NOT NULL DEFAULT 'OTRO' CHECK(genero_conductor = 'M' OR genero_conductor = 'F' OR genero_conductor = 'O'),--genero M = masculino, F = femenino y O _ otros 
     email_conductor     VARCHAR NOT NULL UNIQUE,--correo del conductor
-    licencia_conductor  VARCHAR NOT NULL,
-    tipo_licencia       CHAR(2) NOT NULL CHECK (tipo_licencia = 'C1' OR tipo_licencia = 'C2' OR tipo_licencia = 'C3') , --C1 = automoviles de servicio publico,C2 = camiones y buses,C3 = vehiculo articulados o pesados
-    fec_venc_licencia   DATE NOT NULL,
-    estado_conductor    CHAR(1) NOT NULL DEFAULT 'A' CHECK (estado_conductor = 'A' OR estado_conductor = 'S' OR estado_conductor = 'R'),--A = activo, S = suspendido, R = retirado --El estado del conductor
-    edad                decimal(2,0) NOT NULL CHECK (edad >= 18) ,
-    tipo_sangre         VARCHAR NOT NULL CHECK(tipo_sangre = 'A+' OR tipo_sangre = 'A-' OR tipo_sangre = 'B+' OR tipo_sangre = 'B-' OR tipo_sangre = 'AB+' OR tipo_sangre = 'AB-' OR tipo_sangre = 'O+' OR tipo_sangre = 'O-'),--Tipo de sangre del conductor
+    licencia_conductor  VARCHAR NOT NULL CHECK (LENGTH(licencia_conductor) >= 7 AND LENGTH(licencia_conductor) <= 10),
+    tipo_licencia       CHAR(2) NOT NULL DEFAULT 'T'CHECK (tipo_licencia = 'C2' OR tipo_licencia = 'C3' OR tipo_licencia = 'T' ) , --C2 = camiones y buses,C3 = vehiculo articulados o pesados, T = que tipo de licencia
+    fec_venc_licencia   DATE NULL CHECK (fec_venc_licencia > CURRENT_DATE),
+    estado_conductor    CHAR(1) NOT NULL DEFAULT 'P' CHECK (estado_conductor = 'A' OR estado_conductor = 'S' OR estado_conductor = 'R' OR estado_conductor = 'P'),--A = activo, S = suspendido, R = retirado, P = pendiente --El estado del conductor
+    fec_nacimiento      DATE,
+    tipo_sangre         VARCHAR NOT NULL DEFAULT 'PENDIENTE'CHECK(tipo_sangre = 'A+' OR tipo_sangre = 'A-' OR tipo_sangre = 'B+' OR tipo_sangre = 'B-' OR tipo_sangre = 'AB+' OR tipo_sangre = 'AB-' OR tipo_sangre = 'O+' OR tipo_sangre = 'O-' OR tipo_sangre ='PENDIENTE'),--Tipo de sangre del conductor
+    perfil_completdo    BOOLEAN NOT NULL DEFAULT FALSE, --Indica si el conductor ha completado su perfil con toda la información requerida
     usr_insert          VARCHAR NOT NULL,
     fec_insert          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     usr_update          VARCHAR,
     fec_update          TIMESTAMP WITHOUT TIME ZONE,
     usr_delete          VARCHAR,
     fec_delete          TIMESTAMP WITHOUT TIME ZONE,
-    PRIMARY KEY (id_conductor)
+    PRIMARY KEY (id_usuario),
+    FOREIGN KEY (id_usuario) REFERENCES tab_usuarios(id_usuario)
 );
 
 CREATE TABLE IF NOT EXISTS tab_pasajeros(
-    id_usuario          INT NOT NULL,                                     --id del usuario pasajero (FK a tab_usuarios)
+    id_usuario          DECIMAL(10,0) NOT NULL,                                     --id del usuario pasajero (FK a tab_usuarios)
     nom_pasajero        VARCHAR NOT NULL CHECK(LENGTH(nom_pasajero)>=3), --nombre del pasajero
     email_pasajero       VARCHAR NOT NULL UNIQUE,                                 --correo del pasajero
     usr_insert          VARCHAR NOT NULL,
@@ -146,18 +153,16 @@ CREATE TABLE IF NOT EXISTS tab_pasajeros(
 
 CREATE TABLE  If NOT EXISTS tab_rutas_favoritas (
     id_ruta_favorita    INT NOT NULL,--Identificador de la ruta favorita
-    id_pasajero         INT NOT NULL,--Identificador del pasajero
+    id_usuario          DECIMAL(10,0) NOT NULL,--Identificador del usuario
     id_ruta             INT NOT NULL,--Identificador de las rutas
     PRIMARY KEY(id_ruta_favorita),
-    FOREIGN KEY (id_pasajero) REFERENCES tab_pasajeros,
-    FOREIGN KEY (id_ruta) REFERENCES tab_rutas
+    FOREIGN KEY (id_usuario) REFERENCES tab_pasajeros(id_usuario),
+    FOREIGN KEY (id_ruta) REFERENCES tab_rutas(id_ruta)
 );
 
 CREATE TABLE IF NOT EXISTS tab_buses(
-    id_bus              INT NOT NULL,--identificador bus
-    id_conductor        INT NOT NULL, --id_conductor asignado al bus
-    num_chasis          VARCHAR(17) NOT NULL,--numero del chasis del bus
-    matricula           VARCHAR(6) NOT NULL,--matricula del bus
+    id_bus              varchar(6) NOT NULL,--Matricula del bus
+    id_usuario          DECIMAL(10,0) NOT NULL, --id_usuario asignado al bus
     anio_fab            DECIMAL(4,0)NOT NULL,--año de fabricación del bus
     capacidad_pasajeros DECIMAL(2,0) NOT NULL,--capacidad de pasajeros del bus
     tipo_bus            CHAR(1) NOT NULL DEFAULT 'U' CHECK (tipo_bus = 'U' OR tipo_bus = 'M' OR tipo_bus = 'A' OR tipo_bus = 'E'),--U = urbano,M = Municipal,A = articulado, E = especializado 
@@ -170,12 +175,12 @@ CREATE TABLE IF NOT EXISTS tab_buses(
     usr_delete          VARCHAR,
     fec_delete          TIMESTAMP WITHOUT TIME ZONE,
     PRIMARY KEY(id_bus),
-    FOREIGN KEY(id_conductor) REFERENCES tab_conductores(id_conductor)
+    FOREIGN KEY(id_usuario) REFERENCES tab_conductores(id_usuario)
 );
 
 CREATE TABLE IF NOT EXISTS tab_mantenimiento(
     id_mantenimiento    INT NOT NULL,--identificador del mantenimiento
-    id_bus              INT NOT NULL,--identificador del bus
+    id_bus              varchar(6) NOT NULL,--identificador del bus
     descripcion         VARCHAR NOT NULL,--que se hizo en el mantenimiento
     fecha_mantenimiento TIMESTAMP WITHOUT TIME ZONE NOT NULL,--fecha en la que se hizo el mantenimiento
     costo_mantenimiento DECIMAL(10,0) NOT NULL,--costo del mantenimiento
@@ -191,7 +196,7 @@ CREATE TABLE IF NOT EXISTS tab_mantenimiento(
 
 CREATE TABLE IF NOT EXISTS tab_propietarios(
     id_propietario      DECIMAL(10) NOT NULL CHECK(id_propietario>=1000000000),--el documento de identidad del propietario
-    id_bus              INT NOT NULL,--identificador del bus
+    id_bus              varchar(6) NOT NULL,--identificador del bus
     nom_propietario     VARCHAR NOT NULL CHECK(LENGTH(nom_propietario)>=3),--nombre del propietario
     ape_propietario     VARCHAR NOT NULL CHECK(LENGTH(ape_propietario)>=3),--apellido del propietario
     tel_propietario     DECIMAL(10,0) NOT NULL CHECK(tel_propietario>=2999999999),--telefono del propietario
@@ -208,7 +213,7 @@ CREATE TABLE IF NOT EXISTS tab_propietarios(
 
 CREATE TABLE IF NOT EXISTS tab_parque_automotor(
     id_parque_automotor  INT NOT NULL,--identificador del parque automotor
-    id_bus               INT NOT NULL,--identificador del bus
+    id_bus               varchar(6) NOT NULL,--identificador del bus
     dir_parque_automotor VARCHAR NOT NULL,--direccion del parque automotor
     usr_insert           VARCHAR NOT NULL,
     fec_insert           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -240,7 +245,7 @@ CREATE TABLE IF NOT EXISTS tab_notificaciones(
 CREATE TABLE IF NOT EXISTS tab_ruta_bus(
     id_ruta_bus         INT NOT NULL,--identificador del bus asignado a la ruta
     id_ruta             INT NOT NULL,--identificador de la ruta
-    id_bus              INT NOT NULL,--identificador del bus
+    id_bus              varchar(6) NOT NULL,--identificador del bus
     usr_insert          VARCHAR         NOT NULL,
     fec_insert          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     usr_update          VARCHAR,
@@ -256,8 +261,8 @@ CREATE TABLE IF NOT EXISTS tab_incidentes(
     id_incidente        INT NOT NULL,--identificador del incidente
     titulo_incidente    VARCHAR NOT NULL,--titulo del incidente
     desc_incidente      VARCHAR NOT NULL,--descripcion del incidente 
-    id_bus              INT NOT NULL,--identificador del bus
-    id_conductor        INT NOT NULL,--identificador del conductor
+    id_bus              varchar(6) NOT NULL,--identificador del bus
+    id_usuario          INT NOT NULL,--identificador del conductor
     tipo_incidente      CHAR(1) NOT NULL DEFAULT 'O' CHECK (tipo_incidente =  'C' OR tipo_incidente =  'E' OR tipo_incidente =  'D' OR tipo_incidente =  'A' OR tipo_incidente =  'O'),--indicador del incidente ej: C=choque, E=embotellamiento, D=desviacion de ruta, A=atropello, O=otros
     usr_insert          VARCHAR         NOT NULL,
     fec_insert          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -267,13 +272,13 @@ CREATE TABLE IF NOT EXISTS tab_incidentes(
     fec_delete		    TIMESTAMP WITHOUT TIME ZONE,
     PRIMARY KEY(id_incidente),
     FOREIGN KEY(id_bus)REFERENCES tab_buses(id_bus),
-    FOREIGN KEY(id_conductor)REFERENCES tab_conductores(id_conductor)
+    FOREIGN KEY(id_usuario)REFERENCES tab_conductores(id_usuario)
 );
 
-CREATE  TABLE IF NOT EXISTS tab_cambio_bus(
+CREATE TABLE IF NOT EXISTS tab_cambio_bus(
     id_cambio_bus       INT NOT NULL,--identificador del cambio de bus
     id_incidente        INT NOT NULL,--identificador del incidente
-    id_bus              INT NOT NULL,--identificador del bus que se va a cambiar
+    id_bus              varchar(6) NOT NULL,--identificador del bus que se va a cambiar
     ubicacion_cambio    VARCHAR NOT NULL,--ubicacion donde se va a hacer el cambio de bus
     usr_insert          VARCHAR         NOT NULL,
     fec_insert          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -285,6 +290,42 @@ CREATE  TABLE IF NOT EXISTS tab_cambio_bus(
     FOREIGN KEY(id_incidente)REFERENCES tab_incidentes(id_incidente),
     FOREIGN KEY(id_bus)REFERENCES tab_buses(id_bus)
 );
+
+CREATE TABLE IF NOT EXISTS tab_seguro_bus(
+    id_control              INT GENERATED BY DEFAULT AS IDENTITY,
+    id_bus                  varchar(6) NOT NULL,--identificador del bus
+    soat_num                VARCHAR NOT NULL,--Es un codigo alfanumerico de 17 digitos
+    soat_venc               DATE NOT NULL,--Fecha de vencimiento del soat 
+    soat_aseguradora        VARCHAR NOT NULL,--Nombre de la aseguradora
+    rcc_num_poliza          VARCHAR NOT NULL,--Es un codigo alfanumerico de 12 digitos
+    rcc_venc                DATE NOT NULL,--Fecha de vencimiento de rcc 'Responsabilidad Civil Contractual'
+    rce_num_poliza          VARCHAR NOT NULL,--Codigo alfanumeroco de la poliza Responsabilidad Civil Extracontractual 
+    rce_venc                DATE NOT NULL,--Fecha de vencimiento del Responsabilidad Civil Extracontractual
+    exceso_num_poliza       VARCHAR NOT NULL,--codigo alfanumerico de entre 10 a 15 digitos 
+    exceso_vencimiento      DATE NOT NULL,--Fecha de vencimiento de Póliza en Exceso
+    exceso_valor_cobertura  DECIMAL NOT NULL,--Cuanto es el monto que cubre adicional mente
+    usr_insert              VARCHAR         NOT NULL,
+    fec_insert              TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    usr_update              VARCHAR,
+    fec_update              TIMESTAMP WITHOUT TIME ZONE,
+    usr_delete		        VARCHAR,
+    fec_delete		        TIMESTAMP WITHOUT TIME ZONE,
+    PRIMARY KEY(id_control),
+    FOREIGN KEY(id_bus) REFERENCES tab_buses(id_bus)
+);
+
+CREATE TABLE IF NOT EXISTS tab_branding_config (
+    id_config               SMALLINT PRIMARY KEY CHECK (id_config = 1),
+    primary_color           VARCHAR(9) NOT NULL DEFAULT '#8059d4ff',
+    logo_url                TEXT NOT NULL DEFAULT '/buslinnes/assets/img/logomorado.svg',
+    favicon_url             TEXT NOT NULL DEFAULT '/buslinnes/mkcert/favicon.ico',
+    updated_at              TIMESTAMP NOT NULL DEFAULT NOW() --Aqui deciden si quieren agregar auditoria a esta tabla o no, por ahora solo se actualiza la fecha de actualizacion cada vez que se hace un cambio
+);
+
+INSERT INTO tab_branding_config (id_config, primary_color, logo_url, favicon_url)
+VALUES (1, '#8059d4ff', '/buslinnes/assets/img/logomorado.svg', '/buslinnes/mkcert/favicon.ico')
+ON CONFLICT (id_config) DO NOTHING;
+
 /*=============================================*/
 /*              TRIGGERS                       */
 /*=============================================*/
@@ -387,6 +428,11 @@ FOR EACH ROW EXECUTE PROCEDURE fun_audit_tablas();
 CREATE OR REPLACE TRIGGER tri_audit_incidentes BEFORE INSERT OR UPDATE ON tab_incidentes
 FOR EACH ROW EXECUTE PROCEDURE fun_audit_tablas();
 
+-- Auditoría: registra insert/update en tab_seguro_bus
+CREATE OR REPLACE TRIGGER tri_audit_seguro_bus BEFORE INSERT OR UPDATE ON tab_seguro_bus
+FOR EACH ROW EXECUTE PROCEDURE fun_audit_tablas();
+
+
 /*---------------------------------------------*/
 /* GRUPO 2 - SOFT DELETE                       */
 /* Intercepta el DELETE antes de ejecutarse y  */
@@ -465,6 +511,9 @@ FOR EACH ROW EXECUTE PROCEDURE fun_soft_delete_tablas();
 CREATE OR REPLACE TRIGGER tri_soft_delete_incidentes BEFORE DELETE ON tab_incidentes
 FOR EACH ROW EXECUTE PROCEDURE fun_soft_delete_tablas();
 
+-- Soft delete: marca como eliminado en tab_seguro_bus
+CREATE OR REPLACE TRIGGER tri_soft_delete_seguro_bus BEFORE DELETE ON tab_seguro_bus
+FOR EACH ROW EXECUTE PROCEDURE fun_soft_delete_tablas();
 -- =======================
 --  Roles (1,2,3)
 -- =======================
@@ -480,7 +529,7 @@ VALUES
 
 -- Índice para búsqueda rápida de tokens por correo
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_email
-    ON password_reset_tokens (email);
+    ON password_reset_tokens (email_usuario);
 
 -- Índice para búsqueda rápida de tokens por fecha de expiración
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at
@@ -532,18 +581,18 @@ CREATE OR REPLACE FUNCTION fun_crear_perfil_por_rol()
 RETURNS TRIGGER AS $$
 DECLARE
     v_rol    VARCHAR;
-    v_nombre VARCHAR;
-    v_correo VARCHAR;
+    v_nom_usuario VARCHAR;
+    v_email_usuario VARCHAR;
 BEGIN
     SELECT nombre_rol INTO v_rol
     FROM tab_roles WHERE id_rol = NEW.id_rol;
 
-    SELECT nombre, correo INTO v_nombre, v_correo
+    SELECT nom_usuario, email_usuario INTO v_nom_usuario, v_email_usuario
     FROM tab_usuarios WHERE id_usuario = NEW.id_usuario;
 
     IF v_rol = 'pasajero' THEN
         INSERT INTO tab_pasajeros (id_usuario, nom_pasajero, email_pasajero)
-        VALUES (NEW.id_usuario, v_nombre, v_correo)
+        VALUES (NEW.id_usuario, v_nom_usuario, v_email_usuario)
         ON CONFLICT (id_usuario) DO NOTHING;
     END IF;
 

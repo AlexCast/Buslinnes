@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buslinnes - Panel del Conductor</title>
   <!--Favicon-->
-    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
   <!-- OneSignal Notificaciones Push -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -16,43 +16,37 @@
     
     OneSignalDeferred.push(async function(OneSignal) {
       try {
-        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const swPath = isLocalhost ? '/OneSignalSDKWorker.js' : '/buslinnes/OneSignalSDKWorker.js';
+        const appBasePath = window.location.pathname.startsWith('/buslinnes/') ? '/buslinnes' : '';
+        const swScope = appBasePath ? appBasePath + '/' : '/';
+        const swPath = (appBasePath || '') + '/OneSignalSDKWorker.js';
+        const swUpdaterPath = (appBasePath || '') + '/OneSignalSDKUpdaterWorker.js';
         
         await OneSignal.init({
           appId: "5f5d1290-a2ef-43ce-866d-d2efefec6041",
           safari_web_id: "web.onesignal.auto.0e731bf1-0f8d-4c8c-8593-03e4c907000a",
           allowLocalhostAsSecureOrigin: true,
-          serviceWorkerParam: { scope: '/' },
+          serviceWorkerParam: { scope: swScope },
           serviceWorkerPath: swPath,
+          serviceWorkerUpdaterPath: swUpdaterPath,
         });
         
-        console.log('🌐 Dominio:', window.location.hostname);
-        console.log('📍 Service Worker path:', swPath);
-        
         window.OneSignalInstance = OneSignal;
-        console.log('✅ OneSignal inicializado correctamente');
         
         const checkAndRequestPermission = async () => {
           try {
             const currentPermission = await OneSignal.Notifications.permission;
-            console.log('Estado actual de permisos:', currentPermission);
-            
             if (currentPermission === false) {
               const result = await OneSignal.Notifications.requestPermission();
-              console.log('✅ Permiso solicitado, resultado:', result);
             } else {
-              console.log('✅ Ya tienes permisos de notificación');
             }
           } catch (e) {
-            console.log('⚠️ Error al solicitar permisos:', e.message);
+            console.warn('Error al solicitar permisos de notificación:', e.message);
             document.body.addEventListener('click', async function requestOnClick() {
               try {
                 await OneSignal.Notifications.requestPermission();
-                console.log('✅ Permisos solicitados tras click');
                 document.body.removeEventListener('click', requestOnClick);
               } catch (err) {
-                console.log('Usuario rechazó permisos');
+                console.warn('Usuario rechazó permisos de notificación');
               }
             }, { once: true });
           }
@@ -70,19 +64,17 @@
             }).join('')));
             if (json.id_usuario) {
               await OneSignal.login(String(json.id_usuario));
-              console.log('✅ Usuario suscrito:', json.id_usuario);
             }
             if (json.id_rol) {
               try {
                 if (OneSignal.User && typeof OneSignal.User.addTag === 'function') {
                   await OneSignal.User.addTag("rol_id", String(json.id_rol));
-                  console.log('✅ Rol asignado correctamente:', json.id_rol);
                 } else {
                   console.warn('⚠️ OneSignal.User.addTag no disponible. Disponibles:', Object.keys(OneSignal.User || {}));
                 }
               } catch (tagError) {
-                console.error('❌ Error al asignar rol:', tagError);
-                console.log('🔍 Métodos disponibles en OneSignal.User:', Object.keys(OneSignal.User || {}));
+                console.error('Error al asignar rol:', tagError);
+                console.warn('Métodos disponibles en OneSignal.User:', Object.keys(OneSignal.User || {}));
               }
             }
           } catch (e) {
@@ -90,15 +82,17 @@
           }
         }
       } catch (error) {
-        console.error('❌ Error al inicializar OneSignal:', error);
+        console.error('Error al inicializar OneSignal:', error);
       }
     });
   </script>
   
   <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
   <link rel="stylesheet" href="/buslinnes/assets/css/driver.css?v=20260317">
   <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+  <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -107,7 +101,7 @@
         <div class="header-left">
           <div class="logo">
             <div class="logo-icon">
-              <img src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo">
+              <img class="logo-img" src="/buslinnes/assets/img/logomorado.svg" alt="Buslinnes Logo">
             </div>
           </div>
           <div class="separator"></div>
@@ -130,6 +124,10 @@
           </button>
         </div>
         <div class="header-right">
+          <a href="/buslinnes/templates/passenger_interface.html" class="btn btn-light" title="Ir a interfaz de pasajero">
+            <i class="fas fa-user"></i>
+            <span>Pasajero</span>
+          </a>
           <a href="/buslinnes/src/notificaciones_conductor/listar_notificaciones_conductor.php" class="btn btn-light notif-bell" title="Ver mis notificaciones">
             <i class="fas fa-bell"></i>
             <span class="notif-dot"></span>
@@ -180,6 +178,13 @@
           <span>Notificaciones</span>
           <i class="fas fa-chevron-right"></i>
         </a>
+        <a href="/buslinnes/templates/passenger_interface.html" class="mobile-menu-item">
+          <div class="icon-circle">
+            <i class="fas fa-user"></i>
+          </div>
+          <span>Interfaz pasajero</span>
+          <i class="fas fa-chevron-right"></i>
+        </a>
         <a href="/buslinnes/public/logout.php" class="mobile-menu-item">
           <div class="icon-circle logout-icon">
             <i class="fas fa-sign-out-alt"></i>
@@ -213,6 +218,22 @@
     </main>
   </div>
 
+  <div id="profileAlertModal" class="profile-alert-modal" aria-hidden="true">
+    <div class="profile-alert-modal__backdrop" data-profile-modal-close></div>
+    <div class="profile-alert-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="profileAlertModalTitle">
+      <button type="button" class="profile-alert-modal__close" aria-label="Cerrar" data-profile-modal-close>&times;</button>
+      <div class="profile-alert-modal__content">
+        <span class="profile-alert-modal__badge"><i class="fas fa-exclamation-triangle"></i> Perfil pendiente</span>
+        <h2 class="profile-alert-modal__title" id="profileAlertModalTitle">Debes completar tu perfil profesional</h2>
+        <p class="profile-alert-modal__text">Tu ficha de conductor aún no está completa. Antes de continuar, revisa y actualiza tu información profesional.</p>
+        <div class="profile-alert-modal__actions">
+          <button type="button" class="profile-alert-modal__btn profile-alert-modal__btn--secondary" id="profileAlertLogoutBtn">Cerrar sesión</button>
+          <button type="button" class="profile-alert-modal__btn profile-alert-modal__btn--primary" id="profileAlertAcceptBtn">Completar perfil</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="/buslinnes/assets/js/security.js"></script>
   <script src="/buslinnes/assets/js/app_lockdown.js"></script>
@@ -220,20 +241,91 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
     const API_URL = '/buslinnes/src/rutas/api_listar_rutas.php';
+    const API_ASSIGNED_ROUTE = '/buslinnes/src/conductores/api_perfil_conductor.php';
+    const DRIVER_PROFILE_URL = '/buslinnes/templates/driver_professional_profile.html';
     const colores = ['#2563eb','#dc2626','#16a34a','#ca8a04','#7c3aed','#9333ea','#ea580c','#0891b2'];
     let routes = [];
     let selectedRoute = null;
     let map = null;
     let currentTileLayer = null;
+    let activeRouteLayerGroup = null;
+    let conductorId = null;
+    let conductorEmail = null;
+    let jwtPayload = null;
+    const CACHE_KEY_ROUTES = 'buslinnes_routes_cache';
+    const CACHE_KEY_ASSIGNED = 'buslinnes_assigned_route_cache';
+    const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos
 
     const routesListContainer = document.getElementById('routes-list-container');
     const mapPlaceholder = document.getElementById('map-placeholder');
     const mapContainer = document.getElementById('map-container');
+    const profileAlertModal = document.getElementById('profileAlertModal');
+    const profileAlertAcceptBtn = document.getElementById('profileAlertAcceptBtn');
+    const profileAlertLogoutBtn = document.getElementById('profileAlertLogoutBtn');
+    const logoutUrl = '/buslinnes/public/logout.php';
+
+    function toNumber(value) {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+      const normalized = String(value).trim().replace(',', '.');
+      if (!normalized) return null;
+      const n = Number(normalized);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    // Decodificar JWT una sola vez
+    function decodeJWT() {
+      const token = localStorage.getItem('jwt_token');
+      if (!token || jwtPayload) return jwtPayload;
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        jwtPayload = JSON.parse(decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join('')));
+        return jwtPayload;
+      } catch (e) {
+        console.error('Error decodificando JWT:', e);
+        return null;
+      }
+    }
+
+    // Extraer datos del JWT una sola vez
+    const decoded = decodeJWT();
+    conductorId = decoded ? (decoded.id_usuario || decoded.id_conductor || decoded.sub) : null;
+    conductorEmail = decoded ? (decoded.email || decoded.correo) : null;
 
     const mapUrls = {
       light: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
     };
+
+    // Sistema de caché
+    function getCache(key) {
+      try {
+        const data = sessionStorage.getItem(key);
+        if (!data) return null;
+        const parsed = JSON.parse(data);
+        if (Date.now() - parsed.timestamp > CACHE_EXPIRY) {
+          sessionStorage.removeItem(key);
+          return null;
+        }
+        return parsed.value;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setCache(key, value) {
+      try {
+        sessionStorage.setItem(key, JSON.stringify({
+          value,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn('Error guardando en caché:', e);
+      }
+    }
 
     function updateMapTheme() {
       if (!map) return;
@@ -244,6 +336,63 @@
       currentTileLayer = L.tileLayer(mapUrl, { attribution, maxZoom: 19 }).addTo(map);
     }
 
+    function clearActiveRouteVisualization() {
+      if (map && activeRouteLayerGroup) {
+        try {
+          map.removeLayer(activeRouteLayerGroup);
+        } catch (_) {}
+      }
+      activeRouteLayerGroup = null;
+    }
+
+    function openProfileAlertModal() {
+      if (!profileAlertModal) return;
+      profileAlertModal.classList.add('active');
+      profileAlertModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeProfileAlertModal() {
+      if (!profileAlertModal) return;
+      profileAlertModal.classList.remove('active');
+      profileAlertModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+    }
+
+    if (profileAlertModal) {
+      profileAlertModal.addEventListener('click', (event) => {
+        if (event.target && event.target.hasAttribute('data-profile-modal-close')) {
+          closeProfileAlertModal();
+        }
+      });
+    }
+
+    if (profileAlertAcceptBtn) {
+      profileAlertAcceptBtn.addEventListener('click', () => {
+        window.location.href = DRIVER_PROFILE_URL;
+      });
+    }
+
+    if (profileAlertLogoutBtn) {
+      profileAlertLogoutBtn.addEventListener('click', async () => {
+        try {
+          if (window.OneSignalInstance) {
+            await window.OneSignalInstance.logout();
+          }
+        } catch (error) {
+          console.warn('No se pudo desconectar OneSignal antes del logout:', error);
+        }
+
+        try {
+          localStorage.removeItem('jwt_token');
+        } catch (error) {
+          // Ignorar si localStorage no está disponible.
+        }
+
+        window.location.href = logoutUrl;
+      });
+    }
+
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') updateMapTheme();
@@ -251,50 +400,117 @@
     });
     observer.observe(document.body, { attributes: true });
 
+    // Normalizar respuesta API
+    function normalizeRouteResponse(data) {
+      if (!Array.isArray(data)) {
+        if (data && data.data && Array.isArray(data.data)) return data.data;
+        if (data && data.rutas && Array.isArray(data.rutas)) return data.rutas;
+        return [];
+      }
+      return data;
+    }
+
+    // Convertir datos crudos a formato de ruta
+    function formatRoute(r, idx) {
+      return {
+        id: r.id_ruta,
+        number: String(r.id_ruta),
+        name: r.nom_ruta,
+        description: `${r.inicio_ruta} → ${r.fin_ruta}`,
+        inicio_ruta: r.inicio_ruta,
+        fin_ruta: r.fin_ruta,
+        buses: Number(r.buses_count) || 0,
+        frequency: '',
+        color: colores[idx % colores.length],
+        colorClass: `route-color-${idx % colores.length}`,
+        inicio_lat: toNumber(r.inicio_lat),
+        inicio_lng: toNumber(r.inicio_lng),
+        fin_lat: toNumber(r.fin_lat),
+        fin_lng: toNumber(r.fin_lng),
+        waypoints: r.waypoints || []
+      };
+    }
+
     async function fetchRoutes() {
+      // Intentar utilizar caché
+      const cached = getCache(CACHE_KEY_ROUTES);
+      if (cached) {
+        routes = cached;
+        renderRoutes(true);
+        return;
+      }
+
       try {
         const response = await securityHelper.get(API_URL);
-        
-        // Parse JSON from response
         let data = await response.json();
-        console.log('API data:', data);
+        data = normalizeRouteResponse(data);
         
-        // Validar que la respuesta sea un array
-        if (!Array.isArray(data)) {
-          // Intentar extraer el array de diferentes estructuras posibles
-          if (data && data.data && Array.isArray(data.data)) {
-            data = data.data;
-          } else if (data && data.rutas && Array.isArray(data.rutas)) {
-            data = data.rutas;
-          } else {
-            console.error('La respuesta no es un array válido:', data);
-            routes = [];
-            renderRoutes(true);
-            return;
-          }
-        }
-        
-        routes = data.map((r, idx) => ({
-          id: r.id_ruta,
-          number: String(r.id_ruta),
-          name: r.nom_ruta,
-          description: `${r.inicio_ruta} → ${r.fin_ruta}`,
-          buses: Number(r.buses_count) || 0,
-          frequency: '',
-          color: colores[idx % colores.length],
-          colorClass: `route-color-${idx % colores.length}`,
-          inicio_lat: r.inicio_lat,
-          inicio_lng: r.inicio_lng,
-          fin_lat: r.fin_lat,
-          fin_lng: r.fin_lng,
-          waypoints: r.waypoints || []
-        }));
-        // vista por defecto: mostrar primero "Mi Ruta"
-        renderRoutes(false);
+        routes = data.map((r, idx) => formatRoute(r, idx));
+        setCache(CACHE_KEY_ROUTES, routes);
+        renderRoutes(true);
       } catch (e) {
         console.error('Error fetching routes:', e);
         routes = [];
         renderRoutes(true);
+      }
+    }
+
+    async function fetchAssignedRoute() {
+      if (!conductorId && !conductorEmail) {
+        console.warn('No conductor ID ni correo disponible');
+        return null;
+      }
+
+      // Verificar caché
+      const cached = getCache(CACHE_KEY_ASSIGNED);
+      if (cached) {
+        return cached;
+      }
+
+      let query = conductorId 
+        ? '?id_usuario=' + encodeURIComponent(conductorId)
+        : '?email_conductor=' + encodeURIComponent(conductorEmail);
+
+      try {
+        const response = await securityHelper.get(API_ASSIGNED_ROUTE + query);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          console.warn('fetchAssignedRoute: respuesta no OK', response.status);
+          return null;
+        }
+
+        let data = JSON.parse(responseText);
+        const rutaData = data && (data.ruta_asignada || data);
+        const busData = data && (data.bus_asignado || {});
+        const waypointsData = data && (data.waypoints_ruta || []);
+
+        if (rutaData && rutaData.id_ruta) {
+          const result = {
+            id: rutaData.id_ruta,
+            number: String(rutaData.id_ruta),
+            name: rutaData.nom_ruta,
+            description: `${rutaData.inicio_ruta} → ${rutaData.fin_ruta}`,
+            inicio_ruta: rutaData.inicio_ruta,
+            fin_ruta: rutaData.fin_ruta,
+            buses: 1,
+            frequency: '',
+            color: colores[0],
+            colorClass: 'route-color-0',
+            inicio_lat: toNumber(rutaData.inicio_lat),
+            inicio_lng: toNumber(rutaData.inicio_lng),
+            fin_lat: toNumber(rutaData.fin_lat),
+            fin_lng: toNumber(rutaData.fin_lng),
+            waypoints: Array.isArray(waypointsData) ? waypointsData : [],
+            bus_info: busData
+          };
+          setCache(CACHE_KEY_ASSIGNED, result);
+          return result;
+        }
+        return null;
+      } catch (e) {
+        console.error('Error obteniendo ruta asignada:', e);
+        return null;
       }
     }
 
@@ -304,22 +520,21 @@
       if (!item) return;
       const id = item.dataset.routeId;
       const found = routes.find(r => String(r.id) === String(id));
-      if (found) handleRouteSelect(found);
+      if (found) {
+        handleRouteSelect(found);
+      }
     });
 
     // renderRoutes puede mostrar sólo la ruta asignada (modo por defecto) o todas
-    // cuando showAll==true.
     function renderRoutes(showAll = false) {
       routesListContainer.innerHTML = '';
       
-      // Validar que routes sea un array
       if (!Array.isArray(routes)) {
         console.error('routes no es un array:', routes);
         routes = [];
       }
       
       if (showAll) {
-        // listar todas las rutas disponibles
         routes.forEach(r => {
           const el = document.createElement('div');
           el.className = `route-item route-item-compact ${r.colorClass || ''}`;
@@ -338,7 +553,6 @@
           routesListContainer.appendChild(el);
         });
       } else {
-        // vista normal: sólo la primera ruta (asignada)
         if (routes.length > 0) {
           const route = routes[0];
           const routeElement = document.createElement('div');
@@ -352,6 +566,7 @@
                 <div class="route-details">
                   <h3 class="route-title-compact">${route.name}</h3>
                   <p class="route-desc-text">${route.description}</p>
+                  ${route.bus_info && route.bus_info.id_bus ? `<p class="route-desc-text">Bus: ${route.bus_info.id_bus}</p>` : ''}
                 </div>
               </div>
             </div>
@@ -367,19 +582,41 @@
       }
     }
 
+    // Renderizar mapa de la ruta
     async function handleRouteSelect(route) {
-      console.log('handleRouteSelect llamada con:', route);
       selectedRoute = route;
+      const allRouteItems = document.querySelectorAll('#routes-list .route-item');
+      allRouteItems.forEach(el => {
+        el.classList.toggle('selected', String(el.dataset.routeId) === String(route.id));
+      });
+      
       mapPlaceholder.classList.add('hidden');
       mapContainer.classList.remove('hidden');
 
+      const startLat = toNumber(route.inicio_lat);
+      const startLng = toNumber(route.inicio_lng);
+      const endLat = toNumber(route.fin_lat);
+      const endLng = toNumber(route.fin_lng);
+
+      if (startLat === null || startLng === null || endLat === null || endLng === null) {
+        console.warn('Ruta sin coordenadas válidas:', route);
+        mapPlaceholder.classList.remove('hidden');
+        mapContainer.classList.add('hidden');
+        mapPlaceholder.innerHTML = `
+          <div class="placeholder-content">
+            <div class="map-emoji">⚠️</div>
+            <h2>Ruta sin coordenadas</h2>
+            <p>La ruta "${route.name || route.id}" no tiene coordenadas válidas.</p>
+          </div>
+        `;
+        return;
+      }
+
       map = window.buslinnesMap || null;
       if (!map) {
-        console.log('Creando mapa nuevo');
         map = L.map('map-container').setView([7.1193, -73.1227], 13);
         window.buslinnesMap = map;
       } else {
-        console.log('Mapa existente, limpiando capas anteriores');
         map.eachLayer(layer => {
           if (layer instanceof L.TileLayer) return;
           if (layer instanceof L.Marker && layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'user-location-icon') {
@@ -388,44 +625,54 @@
           map.removeLayer(layer);
         });
       }
+      
       if (map && typeof map.invalidateSize === 'function') {
         map.invalidateSize();
-        console.log('invalidateSize ejecutado');
       }
       updateMapTheme();
       if (typeof maybeShowUserMarker === 'function') {
         maybeShowUserMarker();
       } else {
-        console.log('maybeShowUserMarker no disponible al dibujar ruta');
       }
 
-      let osrmCoords = `${route.inicio_lng},${route.inicio_lat}`;
+      // Construir coordenadas OSRM
+      let osrmCoords = `${startLng},${startLat}`;
       if (route.waypoints && route.waypoints.length > 0) {
-        route.waypoints.sort((a, b) => a.orden - b.orden);
-        route.waypoints.forEach(wp => {
-          osrmCoords += `;${wp.lng},${wp.lat}`;
+        route.waypoints.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        route.waypoints.forEach((wp, idx) => {
+          const wpLat = toNumber(wp.lat);
+          const wpLng = toNumber(wp.lng);
+          if (wpLat !== null && wpLng !== null) {
+            osrmCoords += `;${wpLng},${wpLat}`;
+          }
         });
+      } else {
       }
-      osrmCoords += `;${route.fin_lng},${route.fin_lat}`;
+      
+      osrmCoords += `;${endLng},${endLat}`;
       const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${osrmCoords}?overview=full&geometries=geojson`;
-      console.log('OSRM URL:', osrmUrl);
+      
       try {
         const resp = await fetch(osrmUrl);
         const data = await resp.json();
-        console.log('OSRM respuesta:', data.code, data.routes && data.routes.length);
+        
         let coords;
         if (data.code === 'Ok' && data.routes && data.routes[0]) {
           coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
         } else {
-          coords = [[route.inicio_lat, route.inicio_lng], [route.fin_lat, route.fin_lng]];
+          coords = [[startLat, startLng], [endLat, endLng]];
         }
-        console.log('Coordenadas para polyline:', coords.length, coords.slice(0,2));
         const poly = L.polyline(coords, { color: route.color, weight: 5 }).addTo(map);
         map.fitBounds(poly.getBounds().pad(0.1));
+        
         if (map && typeof map.invalidateSize === 'function') map.invalidateSize();
-        console.log('Polyline añadida y bounds ajustados');
-        L.circleMarker(coords[0], { radius:6, color:'#4c1d95', fillColor:'#4c1d95', weight:2 }).addTo(map);
-        L.circleMarker(coords[coords.length-1], { radius:6, color:'red', fillColor:'red', weight:2 }).addTo(map);
+        
+        L.circleMarker(coords[0], { radius: 6, color: '#4c1d95', fillColor: '#4c1d95', weight: 2 })
+          .addTo(map)
+          .bindPopup('<strong>Inicio de ruta</strong>');
+        L.circleMarker(coords[coords.length - 1], { radius: 6, color: 'red', fillColor: 'red', weight: 2 })
+          .addTo(map)
+          .bindPopup('<strong>Fin de ruta</strong>');
         
         if (route.waypoints && route.waypoints.length > 0) {
           route.waypoints.forEach((wp, idx) => {
@@ -434,48 +681,98 @@
               color: '#FFA500', 
               fillColor: '#FFA500', 
               weight: 2 
-            }).bindPopup(`<strong>${wp.nombre || 'Waypoint ' + (idx + 1)}</strong>`).addTo(map);
+            }).bindPopup(`<strong>Parada ${idx + 1}</strong><br/>${wp.nombre || 'Parada'}`).addTo(map);
           });
         }
       } catch (e) {
         console.error('OSRM error:', e);
-        const coords = [[route.inicio_lat, route.inicio_lng], [route.fin_lat, route.fin_lng]];
+        const coords = [[startLat, startLng], [endLat, endLng]];
         const poly = L.polyline(coords, { color: route.color, weight: 5 }).addTo(map);
         map.fitBounds(poly.getBounds().pad(0.1));
       }
     }
 
-    fetchRoutes();
-    setInterval(fetchRoutes, 20000);
+    // Cargar ruta inicial: solo la ruta asignada
+    async function loadInitialRouteView() {
+      const assignedRoute = await fetchAssignedRoute();
+      if (assignedRoute) {
+        routes = [assignedRoute];
+        renderRoutes(false);
+        return;
+      }
+      // Si no hay ruta asignada, mostrar mensaje
+      routesListContainer.innerHTML = '<div class="route-empty-state">No tienes ruta asignada actualmente.</div>';
+      mapPlaceholder.classList.remove('hidden');
+      mapContainer.classList.add('hidden');
+    }
+
+    async function loadDriverProfileStatus() {
+      try {
+        if (!conductorId && !conductorEmail) return;
+        const query = conductorId
+          ? '?id_usuario=' + encodeURIComponent(conductorId)
+          : '?email_conductor=' + encodeURIComponent(conductorEmail);
+        const response = await securityHelper.get(API_ASSIGNED_ROUTE + query);
+        if (!response.ok) return;
+        const data = await response.json();
+        const existePerfil = data && data.existe_perfil !== false;
+        const perfilCompleto = String(data && data.perfil_completdo).toLowerCase();
+        if (!existePerfil || perfilCompleto === 'false' || perfilCompleto === '0') {
+          openProfileAlertModal();
+        }
+      } catch (error) {
+        console.warn('No se pudo verificar el estado del perfil del conductor:', error);
+      }
+    }
+
+    async function loadAssignedRouteView() {
+      const assignedRoute = await fetchAssignedRoute();
+      if (assignedRoute) {
+        routes = [assignedRoute];
+        renderRoutes(false);
+        return true;
+      }
+      routes = [];
+      routesListContainer.innerHTML = '<div class="route-empty-state">No tienes ruta asignada actualmente.</div>';
+      mapPlaceholder.classList.remove('hidden');
+      mapContainer.classList.add('hidden');
+      return false;
+    }
+
+    loadInitialRouteView();
+    loadDriverProfileStatus();
 
     // botón para mostrar todas las rutas
     const showAllBtn = document.getElementById('showAllRoutesBtn');
     const showAssignedBtn = document.getElementById('showAssignedBtn');
+    
     function syncRouteModeButtons(showAllMode) {
       if (!showAllBtn || !showAssignedBtn) return;
-      // En modo "Rutas" se muestra "Mi Ruta" para volver; en modo "Mi Ruta" se muestra "Rutas".
       showAssignedBtn.classList.toggle('hidden', !showAllMode);
       showAllBtn.classList.toggle('hidden', showAllMode);
     }
 
     if (showAllBtn) {
-      showAllBtn.addEventListener('click', () => {
+      showAllBtn.addEventListener('click', async () => {
+        await fetchRoutes();
         renderRoutes(true);
-        // no ocultamos el placeholder; la visualización del mapa
-        // se deja para cuando el conductor seleccione una ruta.
+        clearActiveRouteVisualization();
+        selectedRoute = null;
+        mapPlaceholder.classList.remove('hidden');
+        mapContainer.classList.add('hidden');
         if (typeof maybeShowUserMarker === 'function') maybeShowUserMarker();
         syncRouteModeButtons(true);
       });
     }
+    
     if (showAssignedBtn) {
-      showAssignedBtn.addEventListener('click', () => {
-        renderRoutes(false);
+      showAssignedBtn.addEventListener('click', async () => {
+        await loadAssignedRouteView();
         if (typeof maybeShowUserMarker === 'function') maybeShowUserMarker();
         syncRouteModeButtons(false);
       });
     }
 
-    // estado inicial: estamos en "Mi Ruta"
     syncRouteModeButtons(false);
 
   });
@@ -501,12 +798,7 @@
       }
 
       const payload = parseJwt(token);
-      const isExpired = !payload || !payload.exp || Date.now() / 1000 > payload.exp;
-      if (isExpired) {
-        localStorage.removeItem('jwt_token');
-        window.location.href = '/buslinnes/public/login.php';
-        return null;
-      }
+      // Los tokens ya no expiran por tiempo
 
       const rol = (payload.nombre_rol || payload.rol || '').toLowerCase();
       if (rol !== 'conductor' && rol !== 'admin') {
@@ -589,6 +881,15 @@
       const routesListEl = document.getElementById('routes-list');
       const noResultsEl = document.getElementById('no-results');
       const handleEscape = (event) => { if (event.key === 'Escape') closeMenu(); };
+      
+      // Debounce para búsqueda
+      let searchDebounceTimer = null;
+      function debounceSearch(fn, delay = 300) {
+        return function(...args) {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = setTimeout(() => fn.apply(this, args), delay);
+        };
+      }
 
       function syncDarkToggleMobileState() {
         if (!darkToggleMobile) return;
@@ -639,12 +940,10 @@
 
       function maybeShowUserMarker() {
         if (!userLocation || !window.buslinnesMap) {
-          console.log('maybeShowUserMarker ignorada', {userLocation, hasMap: !!window.buslinnesMap});
           return;
         }
         const map = window.buslinnesMap;
         if (!userMarker) {
-          console.log('Creando marcador de usuario en', userLocation);
           const userIcon = L.divIcon({
             className: 'user-location-icon',
             html: '<i class="fas fa-user"></i>',
@@ -682,7 +981,8 @@
         const searchIcon = document.querySelector('.search-icon');
         if (searchIcon) searchIcon.addEventListener('click', () => searchInput.focus());
 
-        searchInput.addEventListener('input', function(e){
+        // Handler de búsqueda con debounce
+        const handleSearch = debounceSearch(function(e){
           const searchTerm = (e.target.value || '').toLowerCase();
           const routeCards = document.querySelectorAll('.route-card');
           const routeItems = document.querySelectorAll('#routes-list .route-item, .route-item');
@@ -713,29 +1013,32 @@
                   if (obj.poly && window.buslinnesMap.hasLayer(obj.poly)) window.buslinnesMap.removeLayer(obj.poly);
                   if (obj.wpg && window.buslinnesMap.hasLayer(obj.wpg)) window.buslinnesMap.removeLayer(obj.wpg);
                 }
-              } catch(e){ console.warn('Error sincronizando capa', e); }
+              } catch (e) {
+                console.warn('Error sincronizando capas del mapa:', e);
+              }
             }
           });
-
-          updateNoResults();
         });
-      }
 
-      function updateNoResults() {
-        if (!noResultsEl) return;
-        const anyVisible = Array.from(document.querySelectorAll('#routes-list .route-item, .route-item')).some(el => !el.classList.contains('hidden'));
-        if (!anyVisible) {
-          const layers = window.routeLayersGlobal || window.routeLayers || {};
-          if (userLocation && Object.keys(layers).length > 0) {
-            const suggestions = Object.entries(layers).map(([id,obj]) => ({ id, name: (obj && obj.poly && obj.poly.getPopup ? (obj.poly.getPopup() && obj.poly.getPopup().getContent()) : id), dist: obj && obj.poly ? getMinDistanceToPoly(obj.poly, userLocation) : 1e9 })).sort((a,b)=>a.dist-b.dist).slice(0,3);
-            noResultsEl.innerHTML = 'No hay resultados. Rutas cercanas: ' + suggestions.map(s=>`<strong>${s.name||s.id}</strong>`).join(', ');
+        searchInput.addEventListener('input', handleSearch);
+
+        // Llamar updateNoResults después del debounce inicial
+        function updateNoResults() {
+          if (!noResultsEl) return;
+          const anyVisible = Array.from(document.querySelectorAll('#routes-list .route-item, .route-item')).some(el => !el.classList.contains('hidden'));
+          if (!anyVisible) {
+            const layers = window.routeLayersGlobal || window.routeLayers || {};
+            if (userLocation && Object.keys(layers).length > 0) {
+              const suggestions = Object.entries(layers).map(([id,obj]) => ({ id, name: (obj && obj.poly && obj.poly.getPopup ? (obj.poly.getPopup() && obj.poly.getPopup().getContent()) : id), dist: obj && obj.poly ? getMinDistanceToPoly(obj.poly, userLocation) : 1e9 })).sort((a,b)=>a.dist-b.dist).slice(0,3);
+              noResultsEl.innerHTML = 'No hay resultados. Rutas cercanas: ' + suggestions.map(s=>`<strong>${s.name||s.id}</strong>`).join(', ');
+            } else {
+              const sample = Array.from(document.querySelectorAll('#routes-list .route-item')).slice(0,3).map(el=>el.textContent.trim());
+              noResultsEl.innerHTML = 'No hay resultados. Prueba: ' + (sample.length ? sample.join(', ') : 'Intenta otra búsqueda');
+            }
+            if (noResultsEl) noResultsEl.classList.remove('hidden');
           } else {
-            const sample = Array.from(document.querySelectorAll('#routes-list .route-item')).slice(0,3).map(el=>el.textContent.trim());
-            noResultsEl.innerHTML = 'No hay resultados. Prueba: ' + (sample.length ? sample.join(', ') : 'Intenta otra búsqueda');
+            if (noResultsEl) noResultsEl.classList.add('hidden');
           }
-          if (noResultsEl) noResultsEl.classList.remove('hidden');
-        } else {
-          if (noResultsEl) noResultsEl.classList.add('hidden');
         }
       }
 
@@ -759,7 +1062,6 @@
           if (window.OneSignalInstance) {
             try {
               await window.OneSignalInstance.logout();
-              console.log('✅ Desconectado de OneSignal desde interfaz');
             } catch (e) {
               console.warn('⚠️ Error al desconectar:', e);
             }

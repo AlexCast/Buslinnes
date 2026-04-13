@@ -14,9 +14,9 @@
     --sidebar-width: 350px;
 
     /* branding / accents */
-    --accent: #8059d4;
+    --accent: var(--primary-color, #8059d4ff);
     --text-color: #25212c;
-    --header-text: #8059d4; /* Cambiado a color morado */
+    --header-text: var(--primary-color, #8059d4ff); /* Cambiado a color morado */
     
     /* rutas y elementos */
     --bg-color: #0a0014;
@@ -51,27 +51,19 @@ body {
     line-height: 1.6;
     min-height: 100vh;
     position: relative;
-    background-color: var(--bg-color);
+    background-color: #d1d1d1ff;
     overflow-x: hidden;
     padding-top: var(--header-height);
+    /* Fondo patrón de puntos (Modo Claro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 body.no-scroll {
     overflow: hidden;
-}
-
-/* Fondo animado - Corregido para coincidir exactamente con index.css */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("/buslinnes/assets/img/pattern.svg");
-    background-repeat: repeat;
-    background-size: 150px;
-    z-index: -1;
 }
 
 /* =========================
@@ -97,7 +89,8 @@ header {
     z-index: 1200;
     backdrop-filter: blur(8px);
     background: rgba(255, 255, 255, 0.12);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    background: color-mix(in srgb, var(--primary-color, #8059d4ff) 14%, transparent);
+    border-bottom: 1px solid var(--primary-color, #8059d4ff);
     color: var(--header-text);
 }
 
@@ -167,7 +160,7 @@ header {
 .separator {
     width: 1px;
     height: 24px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--primary-color, #8059d4ff);
 }
 
 /* Logo */
@@ -212,7 +205,7 @@ header {
     height: 40px;
     margin-left: 8px;
     border-radius: 12px;
-    border: 1px solid #f0e3e2;
+    border: 1px solid var(--primary-color, #8059d4ff);
     background: var(--header-text);
     color: var(--card-bg);
     display: inline-flex;
@@ -226,12 +219,12 @@ header {
 .dark-toggle:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    background: #362163ff;
+    background: var(--primary-color, #8059d4ff);
 }
 
 .dark-toggle:active {
     transform: scale(0.96);
-    box-shadow: 0 8px 16px rgba(212, 89, 89, 0.25), 0 0 0 4px rgba(128, 89, 212, 0.18);
+    box-shadow: 0 8px 16px rgba(128, 89, 212, 0.25), 0 0 0 4px rgba(128, 89, 212, 0.18);
     background: rgba(128, 89, 212, 0.16);
 }
 
@@ -250,7 +243,7 @@ header {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: #8059d4ff;
+        color: var(--primary-color, #8059d4ff);
         background: rgba(128, 89, 212, 0.08);
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
         text-decoration: none;
@@ -290,7 +283,7 @@ header {
 
     @media (prefers-color-scheme: dark) {
         .notif-bell {
-            color: #8059d4ff;
+            color: var(--primary-color, #8059d4ff);
             background: rgba(255, 255, 255, 0.07);
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
         }
@@ -408,7 +401,7 @@ header {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8059d4 0%, #8059d4 100%);
+    background: linear-gradient(135deg, var(--primary-color, #8059d4ff) 0%, var(--primary-color, #8059d4ff) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -433,7 +426,7 @@ body.dark .user-role {
 }
 
 .logout-desktop {
-    background: #8059d4ff;
+    background: var(--primary-color, #8059d4ff);
     color: #ffffff;
     border: none;
     padding: 10px 18px;
@@ -740,10 +733,13 @@ body.dark {
     --gray-light: #2c2c2c;
     --route-selected-bg: #312e81;
     --route-selected-border: #6366f1;
-}
-
-body.dark::before {
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
+    background-color: #25212cff;
+    /* Fondo patrón de puntos (Modo Oscuro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 /* Mejoras para el mapa en modo oscuro */
@@ -797,8 +793,8 @@ body.dark .notif-bell {
 
 body.dark .dark-toggle {
     background: #1f1f1f56;
-    border-color: #8059d4ff;
-    color: #8059d4ff;
+    border-color: var(--primary-color, #8059d4ff);
+    color: var(--primary-color, #8059d4ff);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
@@ -838,7 +834,7 @@ body.dark .icon-circle.logout-icon {
 
 body.dark .burger-toggle {
     background: #1f1f1f56;
-    border-color: #8059d4ff;
+    border-color: var(--primary-color, #8059d4ff);
     color: #d1d1d1;
 }
 
@@ -854,9 +850,9 @@ body.dark .burger-line {
     height: 42px;
     margin-left: 8px;
     border-radius: 12px;
-    border: 1px solid #8059d4;
+    border: 1px solid var(--primary-color, #8059d4ff);
     background: #26262600;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     cursor: pointer;
     padding: 10px;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
@@ -866,7 +862,7 @@ body.dark .burger-line {
 .burger-toggle:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    background: #362163ff;
+    background: var(--primary-color, #8059d4ff);
 }
 
 .burger-toggle:active {

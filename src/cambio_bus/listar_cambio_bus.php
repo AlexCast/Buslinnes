@@ -16,8 +16,8 @@ SecurityMiddleware::protect([
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->query("
-    SELECT id_cambio, id_bus_salida, id_bus_entrada, fecha_cambio,
-           motivo, usr_insert, fec_insert, usr_delete, fec_delete
+  SELECT id_cambio_bus, id_incidente, id_bus, ubicacion_cambio,
+       usr_insert, fec_insert, usr_delete, fec_delete
     FROM tab_cambio_bus
     ORDER BY fec_insert DESC
 ");
@@ -57,10 +57,9 @@ $cambiosEliminados = array_filter($cambios, fn($c) => !empty($c->fec_delete));
                       <thead class="table-danger">
                         <tr>
                           <th>ID</th>
-                          <th>Bus Salida</th>
-                          <th>Bus Entrada</th>
-                          <th>Fecha Cambio</th>
-                          <th>Motivo</th>
+                          <th>Incidente</th>
+                          <th>Bus</th>
+                          <th>Ubicación</th>
                           <th>Eliminado por</th>
                           <th>Fecha</th>
                           <th>Acciones</th>
@@ -69,16 +68,15 @@ $cambiosEliminados = array_filter($cambios, fn($c) => !empty($c->fec_delete));
                       <tbody>
                         <?php foreach ($cambiosEliminados as $c): ?>
                           <tr>
-                            <td><?php echo $c->id_cambio; ?></td>
-                            <td><?php echo $c->id_bus_salida; ?></td>
-                            <td><?php echo $c->id_bus_entrada; ?></td>
-                            <td><?php echo date('d/m/Y H:i', strtotime($c->fecha_cambio)); ?></td>
-                            <td><?php echo htmlspecialchars($c->motivo); ?></td>
+                            <td><?php echo $c->id_cambio_bus; ?></td>
+                            <td><?php echo $c->id_incidente; ?></td>
+                            <td><?php echo $c->id_bus; ?></td>
+                            <td><?php echo htmlspecialchars($c->ubicacion_cambio); ?></td>
                             <td><?php echo htmlspecialchars($c->usr_delete); ?></td>
                             <td><?php echo date('d/m/Y H:i', strtotime($c->fec_delete)); ?></td>
                             <td>
                               <form method="POST" action="restore_cambio_bus.php" onsubmit="return confirm('¿Restaurar este registro?');" style="display:inline-block;">
-                                <input type="hidden" name="id_cambio" value="<?php echo $c->id_cambio; ?>">
+                                <input type="hidden" name="id_cambio_bus" value="<?php echo $c->id_cambio_bus; ?>">
                                 <button type="submit" class="btn btn-sm btn-restore">
                                   <i class="fas fa-trash-restore"></i> Restaurar
                                 </button>
@@ -102,10 +100,9 @@ $cambiosEliminados = array_filter($cambios, fn($c) => !empty($c->fec_delete));
                     <thead class="table-primary">
                         <tr>
                             <th>ID</th>
-                            <th>Bus Salida</th>
-                            <th>Bus Entrada</th>
-                            <th>Fecha Cambio</th>
-                            <th>Motivo</th>
+                          <th>Incidente</th>
+                          <th>Bus</th>
+                          <th>Ubicación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -117,17 +114,16 @@ $cambiosEliminados = array_filter($cambios, fn($c) => !empty($c->fec_delete));
                                 if (!empty($c->fec_delete)) continue; // ocultar eliminados
                             ?>
                             <tr>
-                                <td><?php echo $c->id_cambio; ?></td>
-                                <td><?php echo $c->id_bus_salida; ?></td>
-                                <td><?php echo $c->id_bus_entrada; ?></td>
-                                <td><?php echo date('d/m/Y H:i', strtotime($c->fecha_cambio)); ?></td>
-                                <td><?php echo htmlspecialchars($c->motivo); ?></td>
+                              <td><?php echo $c->id_cambio_bus; ?></td>
+                              <td><?php echo $c->id_incidente; ?></td>
+                              <td><?php echo $c->id_bus; ?></td>
+                              <td><?php echo htmlspecialchars($c->ubicacion_cambio); ?></td>
                                 <td>
-                                    <a class="btn btn-warning btn-sm" href="editar_cambio_bus.php?id_cambio=<?php echo $c->id_cambio; ?>">
+                                <a class="btn btn-warning btn-sm" href="editar_cambio_bus.php?id_cambio_bus=<?php echo $c->id_cambio_bus; ?>">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <form method="POST" action="eliminar_cambio_bus.php" onsubmit="return confirm('¿Eliminar este cambio?');" style="display:inline-block;">
-                                        <input type="hidden" name="id_cambio" value="<?php echo $c->id_cambio; ?>">
+                                  <input type="hidden" name="id_cambio_bus" value="<?php echo $c->id_cambio_bus; ?>">
                                         <button type="submit" class="btn btn-danger btn-sm">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -155,20 +151,19 @@ $cambiosEliminados = array_filter($cambios, fn($c) => !empty($c->fec_delete));
                     <div class="col-md-6 mb-3">
                         <div class="card cambio-card">
                             <div class="card-header bg-primary text-white">
-                                Cambio #<?php echo $c->id_cambio; ?>
+                          Cambio #<?php echo $c->id_cambio_bus; ?>
                             </div>
                             <div class="card-body">
-                                <p><strong>Bus Salida:</strong> <?php echo $c->id_bus_salida; ?></p>
-                                <p><strong>Bus Entrada:</strong> <?php echo $c->id_bus_entrada; ?></p>
-                                <p><strong>Fecha:</strong> <?php echo date('d/m/Y H:i', strtotime($c->fecha_cambio)); ?></p>
-                                <p><strong>Motivo:</strong> <?php echo htmlspecialchars($c->motivo); ?></p>
+                          <p><strong>Incidente:</strong> <?php echo $c->id_incidente; ?></p>
+                          <p><strong>Bus:</strong> <?php echo $c->id_bus; ?></p>
+                          <p><strong>Ubicación:</strong> <?php echo htmlspecialchars($c->ubicacion_cambio); ?></p>
                             </div>
                             <div class="card-footer d-flex justify-content-end gap-2">
-                                <a class="btn btn-warning btn-sm" href="editar_cambio_bus.php?id_cambio=<?php echo $c->id_cambio; ?>">
+                          <a class="btn btn-warning btn-sm" href="editar_cambio_bus.php?id_cambio_bus=<?php echo $c->id_cambio_bus; ?>">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form method="POST" action="eliminar_cambio_bus.php" onsubmit="return confirm('¿Eliminar este cambio?');" style="display:inline-block;">
-                                    <input type="hidden" name="id_cambio" value="<?php echo $c->id_cambio; ?>">
+                            <input type="hidden" name="id_cambio_bus" value="<?php echo $c->id_cambio_bus; ?>">
                                     <button type="submit" class="btn btn-danger btn-sm">
                                         <i class="fas fa-trash"></i>
                                     </button>

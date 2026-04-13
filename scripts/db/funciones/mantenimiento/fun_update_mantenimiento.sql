@@ -6,20 +6,34 @@ CREATE OR REPLACE FUNCTION fun_update_mantenimiento(
     wcosto_mantenimiento tab_mantenimiento.costo_mantenimiento%TYPE
 ) RETURNS BOOLEAN AS
 $$
-    DECLARE 
+    DECLARE
+        v_bus tab_buses.id_bus%TYPE;
         wreg_mantenimiento RECORD;
     BEGIN
         -- Validaciones iniciales
         IF wid_mantenimiento IS NULL OR wid_mantenimiento <= 0 THEN
             RAISE EXCEPTION USING ERRCODE = '23502';
         END IF;
-        
-        IF wdescripcion IS NULL OR LENGTH(wdescripcion) < 10 THEN
-            RAISE EXCEPTION USING ERRCODE = '22001';
+
+        v_bus := UPPER(REGEXP_REPLACE(TRIM(COALESCE(wid_bus, '')), '\\s+', '', 'g'));
+        IF v_bus = '' THEN
+            RAISE EXCEPTION USING ERRCODE = '23502';
+        END IF;
+
+        IF v_bus !~ '^[A-Z]{3}[0-9]{3}$' THEN
+            RAISE EXCEPTION USING ERRCODE = '22023';
         END IF;
         
-        IF wcosto_mantenimiento IS NULL OR wcosto_mantenimiento < 10000 THEN
-            RAISE EXCEPTION USING ERRCODE = '22002';
+        IF wdescripcion IS NULL OR LENGTH(TRIM(wdescripcion)) < 10 THEN
+            RAISE EXCEPTION USING ERRCODE = '22001';
+        END IF;
+
+        IF wfecha_mantenimiento IS NULL THEN
+            RAISE EXCEPTION USING ERRCODE = '23502';
+        END IF;
+        
+        IF wcosto_mantenimiento IS NULL OR wcosto_mantenimiento < 0 OR wcosto_mantenimiento > 9999999999 THEN
+            RAISE EXCEPTION USING ERRCODE = '22003';
         END IF;
         
         -- Verificar si existe el registro
@@ -32,7 +46,7 @@ $$
         IF FOUND THEN
             -- Actualizar el registro existente
             UPDATE tab_mantenimiento SET
-                id_bus = wid_bus,
+                id_bus = v_bus,
                 descripcion = wdescripcion,
                 fecha_mantenimiento = wfecha_mantenimiento,
                 costo_mantenimiento = wcosto_mantenimiento
@@ -52,13 +66,21 @@ $$
         WHEN SQLSTATE '22001' THEN
             RAISE NOTICE 'La descripción es muy corta. Mínimo 10 caracteres';
             RETURN FALSE;
+
+        WHEN SQLSTATE '22023' THEN
+            RAISE NOTICE 'El ID de bus debe tener formato AAA123';
+            RETURN FALSE;
             
-        WHEN SQLSTATE '22002' THEN
-            RAISE NOTICE 'El costo del mantenimiento debe ser al menos de 10,000 pesos';
+        WHEN SQLSTATE '22003' THEN
+            RAISE NOTICE 'El costo del mantenimiento esta fuera de rango';
             RETURN FALSE;
             
         WHEN SQLSTATE '23505' THEN
             RAISE NOTICE 'El mantenimiento con ID % no existe para actualizar', wid_mantenimiento;
+            RETURN FALSE;
+
+        WHEN SQLSTATE '23503' THEN
+            RAISE NOTICE 'El bus no existe';
             RETURN FALSE;
             
         WHEN OTHERS THEN

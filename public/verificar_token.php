@@ -6,8 +6,17 @@ ob_start();
 error_reporting(0);
 ini_set('display_errors', 0);
 
+// Este endpoint es público (para validar tokens de recuperación sin sesión)
+// No validamos CSRF ni sesión, solo headers de seguridad
 require_once('../app/SecurityMiddleware.php');
-SecurityMiddleware::protect();
+SecurityMiddleware::protect([
+    'csrf' => false,
+    'rateLimit' => false,
+    'origin' => false,
+    'userAgent' => false,
+    'securityHeaders' => true,
+    'jwt' => false
+]);
 
 // Función para responder JSON
 function jsonResponse($data, $httpCode = 200) {
@@ -40,18 +49,12 @@ if (empty($token)) {
 }
 
 try {
-    // Configuración de PostgreSQL
-    $host = "10.5.213.111";  // Cambia si tu base de datos no está en localhost
-    $port = "5432";
-    $dbname = "db_buslinnes";
-    $user = "gr_buslinnes";
-    $password = "buslinnes";
-
-    $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Conectar a la base de datos usando la configuración centralizada
+    include_once('../config/database.php');
+    $pdo = $db;
 
     // Verificar token
-    $stmt = $pdo->prepare("SELECT email, expires_at FROM password_reset_tokens WHERE token = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT email_usuario, expires_at FROM password_reset_tokens WHERE token = ? LIMIT 1");
     $stmt->execute([$token]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -67,13 +70,13 @@ try {
         jsonResponse(['valid' => false, 'message' => 'El token ha expirado. Por favor, solicita un nuevo enlace de recuperación.'], 400);
     }
     
-    jsonResponse(['valid' => true, 'email' => $row['email']]);
+    jsonResponse(['valid' => true, 'email' => $row['email_usuario']]);
 
 } catch (PDOException $e) {
-    error_log("Error en verificar_token.php: " . $e->getMessage());
+    error_log("[verificar_token.php] Error en base de datos: " . $e->getMessage());
     jsonResponse(['valid' => false, 'message' => 'Error del servidor'], 500);
 } catch (Exception $e) {
-    error_log("Error en verificar_token.php: " . $e->getMessage());
+    error_log("[verificar_token.php] Error general: " . $e->getMessage());
     jsonResponse(['valid' => false, 'message' => 'Error del servidor'], 500);
 }
 ?>

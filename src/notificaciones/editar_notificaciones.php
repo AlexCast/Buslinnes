@@ -1,6 +1,18 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => false,  // GET no requiere CSRF
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+// === FIN SEGURIDAD ===
+
 /*
 Editar notificación. Destino: un usuario O un rol.
 @yerson @2025
@@ -14,11 +26,16 @@ if (!isset($_GET["id_notificacion"])) {
     exit();
 }
 
-$id_notificacion = (int) $_GET["id_notificacion"];
+$id_notificacion_txt = trim((string) $_GET["id_notificacion"]);
+if (!preg_match('/^[0-9]+$/', $id_notificacion_txt) || (int) $id_notificacion_txt <= 0) {
+    header("Location: listar_notificaciones.php?error=ID%20invalido");
+    exit();
+}
+$id_notificacion = (int) $id_notificacion_txt;
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("
-    SELECT n.*, u.nombre AS nom_usuario, r.nombre_rol
+    SELECT n.*, u.nom_usuario, r.nombre_rol
     FROM tab_notificaciones n
     LEFT JOIN tab_usuarios u ON n.id_usuario = u.id_usuario
     LEFT JOIN tab_roles r ON n.id_rol = r.id_rol
@@ -36,10 +53,10 @@ $tiene_usuario = !empty($notificacion->id_usuario);
 $tiene_rol     = !empty($notificacion->id_rol);
 
 $sentencia_usuarios = $base_de_datos->query("
-    SELECT id_usuario, nombre
+    SELECT id_usuario, nom_usuario
     FROM tab_usuarios
     WHERE fec_delete IS NULL
-    ORDER BY nombre
+    ORDER BY nom_usuario
 ");
 $usuarios = $sentencia_usuarios->fetchAll(PDO::FETCH_OBJ);
 
@@ -67,14 +84,14 @@ $roles = $sentencia_roles->fetchAll(PDO::FETCH_OBJ);
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">Destino de la notificación</label>
-                            <div class="d-flex gap-4">
+                            <div class="d-flex flex-wrap" style="column-gap: 2rem; row-gap: 0.75rem;">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="tipo_destino" id="destino_usuario" value="usuario" <?php echo $tiene_usuario ? 'checked' : ''; ?>>
                                     <label class="form-check-label" for="destino_usuario">Un usuario</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="tipo_destino" id="destino_rol" value="rol" <?php echo $tiene_rol ? 'checked' : ''; ?>>
-                                    <label class="form-check-label" for="destino_rol">Un rol (todos los que tengan ese rol)</label>
+                                    <label class="form-check-label" for="destino_rol">Un rol</label>
                                 </div>
                             </div>
                         </div>
@@ -85,7 +102,7 @@ $roles = $sentencia_roles->fetchAll(PDO::FETCH_OBJ);
                                 <option value="">-- Seleccione usuario --</option>
                                 <?php foreach ($usuarios as $u): ?>
                                     <option value="<?php echo (int) $u->id_usuario; ?>" <?php echo ($tiene_usuario && (int)$u->id_usuario === (int)$notificacion->id_usuario) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($u->nombre); ?>
+                                        <?php echo htmlspecialchars($u->nom_usuario); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -105,17 +122,17 @@ $roles = $sentencia_roles->fetchAll(PDO::FETCH_OBJ);
 
                         <div class="mb-3">
                             <label for="titulo_notificacion" class="form-label">Título</label>
-                            <input type="text" name="titulo_notificacion" id="titulo_notificacion" class="form-control" required
+                            <input type="text" name="titulo_notificacion" id="titulo_notificacion" class="form-control" required minlength="3" maxlength="120"
                                 value="<?php echo htmlspecialchars($notificacion->titulo_notificacion ?? ''); ?>"
                                 placeholder="Título de la notificación">
                         </div>
-                        <div class="mb-3">
+                        <div style="margin-bottom: 1.25rem;">
                             <label for="descr_notificacion" class="form-label">Descripción</label>
-                            <textarea name="descr_notificacion" id="descr_notificacion" class="form-control" rows="5" required
+                            <textarea name="descr_notificacion" id="descr_notificacion" class="form-control" rows="5" required minlength="5" maxlength="2000"
                                 placeholder="Descripción de la notificación"><?php echo htmlspecialchars($notificacion->descr_notificacion ?? ''); ?></textarea>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2 mt-4">
+                        <div class="d-flex justify-content-end gap-2" style="margin-top: 1.25rem;">
                             <a href="listar_notificaciones.php" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-1"></i> Volver
                             </a>

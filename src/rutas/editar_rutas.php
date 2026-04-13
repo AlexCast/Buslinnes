@@ -17,7 +17,12 @@ if (!isset($_GET["id_ruta"])) {
     exit();
 }
 
-$id_ruta = $_GET["id_ruta"];
+$id_ruta_txt = trim((string) $_GET["id_ruta"]);
+if (!preg_match('/^[0-9]+$/', $id_ruta_txt) || (int) $id_ruta_txt <= 0) {
+    echo "ID de ruta invalido";
+    exit();
+}
+$id_ruta = (int) $id_ruta_txt;
 
 // Seleccionar el ruta por ID (agregar coordenadas inicio y fin)
 $sentencia = $base_de_datos->prepare("SELECT id_ruta, nom_ruta, hora_inicio, hora_final, inicio_ruta, fin_ruta, longitud, val_pasaje, inicio_lat, inicio_lng, fin_lat, fin_lng FROM tab_rutas WHERE id_ruta = ?;");
@@ -61,6 +66,12 @@ $waypoints = $stmtWaypoints->fetchAll(PDO::FETCH_ASSOC);
         .suggestions-list li:last-child {
             border-bottom: none;
         }
+        .text-muted-rutas {
+            color: #6c757d !important;
+        }
+        .text-success {
+            color: #28a745 !important;
+        }
     </style>
 </head>
 <main class="main-container">
@@ -77,6 +88,11 @@ $waypoints = $stmtWaypoints->fetchAll(PDO::FETCH_ASSOC);
                     <form action="update_rutas.php" method="POST" id="formRuta">
                         <input type="hidden" name="id_ruta" value="<?php echo $cli->id_ruta; ?>">
                         <input type="hidden" name="waypoints_json" id="waypoints_json" value="">
+                        <!-- Campos ocultos para coordenadas -->
+                        <input type="hidden" name="inicio_lat" id="inicio_lat" value="<?php echo htmlspecialchars($cli->inicio_lat); ?>">
+                        <input type="hidden" name="inicio_lng" id="inicio_lng" value="<?php echo htmlspecialchars($cli->inicio_lng); ?>">
+                        <input type="hidden" name="fin_lat" id="fin_lat" value="<?php echo htmlspecialchars($cli->fin_lat); ?>">
+                        <input type="hidden" name="fin_lng" id="fin_lng" value="<?php echo htmlspecialchars($cli->fin_lng); ?>">
                         <div class="row">
                             <!-- Columna 1 -->
                             <div class="col-md-6">
@@ -95,10 +111,12 @@ $waypoints = $stmtWaypoints->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="form-group mb-3">
                                     <label for="inicio_ruta" class="form-label">Inicio de la Ruta</label>
                                     <input value="<?php echo htmlspecialchars($cli->inicio_ruta); ?>" required name="inicio_ruta" type="text" id="inicio_ruta" class="form-control" placeholder="Punto de inicio">
+                                    <div id="suggestions-inicio" class="suggestions-list" style="display: none;"></div>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label for="fin_ruta" class="form-label">Fin de la Ruta</label>
                                     <input value="<?php echo htmlspecialchars($cli->fin_ruta); ?>" required name="fin_ruta" type="text" id="fin_ruta" class="form-control" placeholder="Punto final">
+                                    <div id="suggestions-fin" class="suggestions-list" style="display: none;"></div>
                                 </div>
                             </div>
                             <!-- Columna 2 -->
@@ -114,48 +132,6 @@ $waypoints = $stmtWaypoints->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
 
-                        <!-- Coordenadas de Inicio -->
-                        <div class="row mt-4">
-                            <div class="col-md-6">
-                                <h6 class="text-success mb-3">📍 Punto de Inicio (Verde)</h6>
-                                <div class="form-group mb-3">
-                                    <label for="inicio_ruta" class="form-label">Dirección de Inicio</label>
-                                    <input value="<?php echo htmlspecialchars($cli->inicio_ruta); ?>" name="inicio_ruta" type="text" id="inicio_ruta" class="form-control" placeholder="Buscar dirección de inicio">
-                                    <div id="suggestions-inicio" class="suggestions-list" style="display: none;"></div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="inicio_lat" class="form-label">Latitud Inicio</label>
-                                    <input value="<?php echo htmlspecialchars($cli->inicio_lat ?? ''); ?>" name="inicio_lat" type="number" step="0.000001" id="inicio_lat" class="form-control map-sync-input" placeholder="Latitud">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="inicio_lng" class="form-label">Longitud Inicio</label>
-                                    <input value="<?php echo htmlspecialchars($cli->inicio_lng ?? ''); ?>" name="inicio_lng" type="number" step="0.000001" id="inicio_lng" class="form-control map-sync-input" placeholder="Longitud">
-                                </div>
-                                <button type="button" class="btn btn-success btn-sm" id="btnEditarInicio">
-                                    <i class="fas fa-map-marker-alt me-1"></i> Editar Inicio
-                                </button>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-danger mb-3">📍 Punto de Fin (Rojo)</h6>
-                                <div class="form-group mb-3">
-                                    <label for="fin_ruta" class="form-label">Dirección de Fin</label>
-                                    <input value="<?php echo htmlspecialchars($cli->fin_ruta); ?>" name="fin_ruta" type="text" id="fin_ruta" class="form-control" placeholder="Buscar dirección de fin">
-                                    <div id="suggestions-fin" class="suggestions-list" style="display: none;"></div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="fin_lat" class="form-label">Latitud Fin</label>
-                                    <input value="<?php echo htmlspecialchars($cli->fin_lat ?? ''); ?>" name="fin_lat" type="number" step="0.000001" id="fin_lat" class="form-control map-sync-input" placeholder="Latitud">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="fin_lng" class="form-label">Longitud Fin</label>
-                                    <input value="<?php echo htmlspecialchars($cli->fin_lng ?? ''); ?>" name="fin_lng" type="number" step="0.000001" id="fin_lng" class="form-control map-sync-input" placeholder="Longitud">
-                                </div>
-                                <button type="button" class="btn btn-danger btn-sm" id="btnEditarFin">
-                                    <i class="fas fa-map-marker-alt me-1"></i> Editar Fin
-                                </button>
-                            </div>
-                        </div>
-
                         <!-- Waypoints -->
                         <div class="mt-4">
                             <h6 class="mb-3">🛑 Waypoints (Paradas Intermedias - Naranja)</h6>
@@ -166,7 +142,7 @@ $waypoints = $stmtWaypoints->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                             <div id="waypointsContainer">
                                 <?php foreach ($waypoints as $index => $wp): ?>
-                                    <div class="waypoint-item card mb-3 p-3" data-waypoint-index="<?php echo $index; ?>">
+                                    <div class="waypoint-item card mb-3 p-3" data-waypoint-index="<?php echo $index; ?>" data-waypoint-id="<?php echo $wp['id_waypoint'] ?? ''; ?>">
                                         <div class="row">
                                             <div class="col-md-3">
                                                 <label class="form-label">Nombre</label>
@@ -221,21 +197,36 @@ $waypoints = $stmtWaypoints->fetchAll(PDO::FETCH_ASSOC);
 // Función para recolectar waypoints y enviar al formulario
 document.getElementById('formRuta').addEventListener('submit', function(e) {
     const waypoints = [];
+    console.log('DEBUG Cliente - Iniciando recolección de waypoints');
     document.querySelectorAll('.waypoint-item').forEach((wpDiv, index) => {
+        const id_waypoint = wpDiv.getAttribute('data-waypoint-id');
         const nombre = wpDiv.querySelector('.waypoint-nombre').value.trim();
         const lat = parseFloat(wpDiv.querySelector('.waypoint-lat').value);
         const lng = parseFloat(wpDiv.querySelector('.waypoint-lng').value);
         const orden = parseInt(wpDiv.querySelector('.waypoint-orden').value) || (index + 1);
-        if (nombre && !isNaN(lat) && !isNaN(lng)) {
-            waypoints.push({
+        
+        console.log('DEBUG Cliente - Item', index, '| id:', id_waypoint, '| nombre:', nombre, '| lat:', lat, '| lng:', lng, '| orden:', orden);
+        
+        // Se requieren lat y lng, nombre es opcional (puede ser vacío)
+        if (!isNaN(lat) && !isNaN(lng)) {
+            const wpData = {
                 orden: orden,
                 lat: lat,
                 lng: lng,
-                nombre: nombre
-            });
+                nombre: nombre || 'Parada ' + (index + 1)
+            };
+            // Si tiene id_waypoint y no está vacío, es un waypoint existente
+            if (id_waypoint && id_waypoint.trim() !== '') {
+                wpData.id_waypoint = parseInt(id_waypoint);
+            }
+            waypoints.push(wpData);
+            console.log('DEBUG Cliente - Waypoint añadido!', wpData);
         }
     });
-    document.getElementById('waypoints_json').value = JSON.stringify(waypoints);
+    const waypointsJson = JSON.stringify(waypoints);
+    console.log('DEBUG Cliente - JSON final enviado:', waypointsJson);
+    console.log('DEBUG Cliente - Cantidad de waypoints:', waypoints.length);
+    document.getElementById('waypoints_json').value = waypointsJson;
 });
 
 if (typeof L !== 'undefined') {
@@ -245,6 +236,221 @@ if (typeof L !== 'undefined') {
     let routePolyline; // Variable para la línea de la ruta
     let modo = null; // 'inicio', 'fin', 'waypoint', 'edit_waypoint'
     let editingWaypointDiv = null;
+
+    let debounceTimer = {};
+
+    // Función para obtener sugerencias de Nominatim
+    async function getSuggestions(query, tipoRuta) {
+        if (query.length < 2) {
+            const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
+            suggestionsList.style.display = 'none';
+            return;
+        }
+
+        const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
+        suggestionsList.innerHTML = '<li style="padding: 10px 12px; color: #666;">🔍 Buscando...</li>';
+        suggestionsList.style.display = 'block';
+
+        try {
+            // Límites expandidos de los 4 municipios para cubrir todos los barrios:
+            // Bucaramanga: ~7.1,-73.1, Girón: ~7.0,-73.2, Piedecuesta: ~6.8,-73.1, Lebrija: ~6.9,-73.2
+            // Viewbox expandido: lon -73.4 a -72.85, lat 6.65 a 7.3
+            const viewbox = '-73.4,6.65,-72.85,7.3';
+            
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=20&viewbox=${viewbox}&dedupe=1`;
+            
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'BuslinnesApp/1.0 (route-finder)'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
+            suggestionsList.innerHTML = '';
+
+            if (data.length === 0) {
+                const li = document.createElement('li');
+                li.style.padding = '10px 12px';
+                li.style.color = '#999';
+                li.textContent = 'No encontrado en Bucaramanga, Girón, Piedecuesta o Lebrija';
+                suggestionsList.appendChild(li);
+                suggestionsList.style.display = 'block';
+                return;
+            }
+
+            // Filtrar solo resultados dentro del área de los 4 municipios (con rango expandido)
+            const validResults = data.filter(place => {
+                const lat = parseFloat(place.lat);
+                const lon = parseFloat(place.lon);
+                // Verificar si está dentro del rango expandido
+                return lat >= 6.65 && lat <= 7.3 && lon >= -73.4 && lon <= -72.85;
+            });
+
+            if (validResults.length === 0) {
+                const li = document.createElement('li');
+                li.style.padding = '10px 12px';
+                li.style.color = '#999';
+                li.textContent = 'No encontrado en estos municipios. Intenta otra búsqueda.';
+                suggestionsList.appendChild(li);
+                suggestionsList.style.display = 'block';
+                return;
+            }
+
+            validResults.slice(0, 8).forEach((place) => {
+                const li = document.createElement('li');
+                li.style.padding = '10px 12px';
+                li.style.borderBottom = '1px solid #eee';
+                li.style.cursor = 'pointer';
+                li.style.transition = 'background 0.2s';
+                
+                // Detectar tipo de lugar por el nombre
+                let icon = '📍';
+                const displayNameLower = place.display_name.toLowerCase();
+                if (displayNameLower.includes('parque')) icon = '🎡';
+                if (displayNameLower.includes('universi')) icon = '🎓';
+                if (displayNameLower.includes('estación') || displayNameLower.includes('terminal') || displayNameLower.includes('station') || displayNameLower.includes('bus')) icon = '🚌';
+                if (displayNameLower.includes('barrio') || displayNameLower.includes('comuna') || displayNameLower.includes('neighborhood')) icon = '🏘️';
+                
+                li.innerHTML = `
+                    <strong>${icon} ${place.name || place.display_name.split(',')[0]}</strong><br>
+                    <small style="color: #666;">${place.display_name.substring(0, 65)}</small>
+                `;
+
+                li.addEventListener('mouseover', () => {
+                    li.style.background = '#f5f5f5';
+                });
+                li.addEventListener('mouseout', () => {
+                    li.style.background = 'white';
+                });
+
+                li.addEventListener('click', () => {
+                    selectPlace(place, tipoRuta);
+                });
+
+                suggestionsList.appendChild(li);
+            });
+
+            suggestionsList.style.display = 'block';
+        } catch (error) {
+            console.error('Error obteniendo sugerencias:', error);
+            const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
+            suggestionsList.innerHTML = '<li style="padding: 10px 12px; color: #999;">⚠️ Error de conexión. Intenta de nuevo.</li>';
+            suggestionsList.style.display = 'block';
+        }
+    }
+
+    // Función para seleccionar un lugar de la lista
+    function selectPlace(place, tipoRuta) {
+        const lat = parseFloat(place.lat);
+        const lng = parseFloat(place.lon);
+        const displayName = place.name || place.display_name.split(',')[0];
+
+        const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
+        const inputEl = tipoRuta === 'inicio' ? document.getElementById('inicio_ruta') : document.getElementById('fin_ruta');
+
+        // Actualizar el input
+        inputEl.value = displayName;
+
+        // Actualizar campos ocultos
+        if (tipoRuta === 'inicio') {
+            document.getElementById('inicio_lat').value = lat.toFixed(6);
+            document.getElementById('inicio_lng').value = lng.toFixed(6);
+
+            // Remover marcador anterior y crear uno nuevo
+            if (startMarker) map.removeLayer(startMarker);
+            startMarker = L.marker([lat, lng], { 
+                icon: L.divIcon({ 
+                    className: 'inicio-marker', 
+                    html: '<span style="color:green;font-size:24px">●</span>', 
+                    iconSize: [24, 24] 
+                }) 
+            }).addTo(map).bindPopup(`Inicio: ${displayName}`);
+        } else {
+            document.getElementById('fin_lat').value = lat.toFixed(6);
+            document.getElementById('fin_lng').value = lng.toFixed(6);
+
+            // Remover marcador anterior y crear uno nuevo
+            if (endMarker) map.removeLayer(endMarker);
+            endMarker = L.marker([lat, lng], { 
+                icon: L.divIcon({ 
+                    className: 'fin-marker', 
+                    html: '<span style="color:red;font-size:24px">●</span>', 
+                    iconSize: [24, 24] 
+                }) 
+            }).addTo(map).bindPopup(`Fin: ${displayName}`);
+        }
+
+        map.flyTo([lat, lng], 15);
+        suggestionsList.style.display = 'none';
+
+        // Calcular distancia si ambos puntos están listos
+        calcularDistancia();
+    }
+
+    // Función para calcular la distancia entre inicio y fin
+    async function calcularDistancia() {
+        const ilat = document.getElementById('inicio_lat').value;
+        const ilng = document.getElementById('inicio_lng').value;
+        const flat = document.getElementById('fin_lat').value;
+        const flng = document.getElementById('fin_lng').value;
+
+        // Solo calcular si tenemos ambos puntos
+        if (!ilat || !ilng || !flat || !flng) {
+            return;
+        }
+
+        try {
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${ilng},${ilat};${flng},${flat}?overview=full&geometries=geojson`;
+            const response = await fetch(osrmUrl);
+            const data = await response.json();
+
+            if (data.code === 'Ok' && data.routes && data.routes[0]) {
+                // La distancia viene en metros, convertir a kilómetros
+                const distanciaMetros = data.routes[0].distance;
+                const distanciaKm = (distanciaMetros / 1000).toFixed(2).replace('.', ',');
+                
+                document.getElementById('longitud').value = distanciaKm;
+                
+                // Dibujar la ruta en el mapa
+                if (data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+                    const coords = data.routes[0].geometry.coordinates;
+                    const latlngs = coords.map(c => [c[1], c[0]]);
+                    
+                    // Remover línea anterior si existe
+                    if (routePolyline) {
+                        map.removeLayer(routePolyline);
+                    }
+                    
+                    // Dibujar nueva polyline
+                    routePolyline = L.polyline(latlngs, {
+                        color: '#0066ff',
+                        weight: 3,
+                        opacity: 0.7,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+                    
+                    // Ajustar zoom al mapa
+                    const bounds = L.latLngBounds();
+                    if (startMarker) bounds.extend(startMarker.getLatLng());
+                    if (endMarker) bounds.extend(endMarker.getLatLng());
+                    Object.values(waypointMarkers).forEach(m => bounds.extend(m.getLatLng()));
+                    
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error calculando distancia:', error);
+        }
+    }
 
     function initMap() {
         console.log('Inicializando mapa...');
@@ -257,44 +463,35 @@ if (typeof L !== 'undefined') {
     }
 
     async function updateMapMarkers() {
+        // Actualizar marcador de inicio (verde)
         const inicioLat = parseFloat(document.getElementById('inicio_lat').value);
         const inicioLng = parseFloat(document.getElementById('inicio_lng').value);
-        const finLat = parseFloat(document.getElementById('fin_lat').value);
-        const finLng = parseFloat(document.getElementById('fin_lng').value);
-
-        // Actualizar marcador de inicio (verde)
+        const inicioNombre = document.getElementById('inicio_ruta').value;
+        
         if (isFinite(inicioLat) && isFinite(inicioLng)) {
             if (startMarker) {
                 startMarker.setLatLng([inicioLat, inicioLng]);
+                startMarker.bindPopup(`Inicio: ${inicioNombre}`);
             } else {
                 startMarker = L.marker([inicioLat, inicioLng], {
                     icon: L.divIcon({ className: 'inicio-marker', html: '<span style="color:green;font-size:24px">●</span>', iconSize: [24, 24] }),
-                    draggable: true
-                }).addTo(map).bindPopup('Inicio');
-                startMarker.on('dragend', function(e) {
-                    const latlng = e.target.getLatLng();
-                    document.getElementById('inicio_lat').value = latlng.lat.toFixed(6);
-                    document.getElementById('inicio_lng').value = latlng.lng.toFixed(6);
-                    updateMapMarkers();
-                });
+                }).addTo(map).bindPopup(`Inicio: ${inicioNombre}`);
             }
         }
 
         // Actualizar marcador de fin (rojo)
+        const finLat = parseFloat(document.getElementById('fin_lat').value);
+        const finLng = parseFloat(document.getElementById('fin_lng').value);
+        const finNombre = document.getElementById('fin_ruta').value;
+        
         if (isFinite(finLat) && isFinite(finLng)) {
             if (endMarker) {
                 endMarker.setLatLng([finLat, finLng]);
+                endMarker.bindPopup(`Fin: ${finNombre}`);
             } else {
                 endMarker = L.marker([finLat, finLng], {
                     icon: L.divIcon({ className: 'fin-marker', html: '<span style="color:red;font-size:24px">●</span>', iconSize: [24, 24] }),
-                    draggable: true
-                }).addTo(map).bindPopup('Fin');
-                endMarker.on('dragend', function(e) {
-                    const latlng = e.target.getLatLng();
-                    document.getElementById('fin_lat').value = latlng.lat.toFixed(6);
-                    document.getElementById('fin_lng').value = latlng.lng.toFixed(6);
-                    updateMapMarkers();
-                });
+                }).addTo(map).bindPopup(`Fin: ${finNombre}`);
             }
         }
 
@@ -435,82 +632,6 @@ if (typeof L !== 'undefined') {
         }
     }
 
-    // Función para obtener sugerencias de Nominatim
-    async function getSuggestions(query, tipoRuta) {
-        if (query.length < 2) {
-            const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
-            suggestionsList.style.display = 'none';
-            return;
-        }
-
-        const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
-        suggestionsList.innerHTML = '<li style="padding: 10px 12px; color: #666;">🔍 Buscando...</li>';
-        suggestionsList.style.display = 'block';
-
-        try {
-            const viewbox = '-73.4,6.65,-72.85,7.3';
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=20&viewbox=${viewbox}&dedupe=1`;
-            
-            const response = await fetch(url);
-            const data = await response.json();
-
-            suggestionsList.innerHTML = '';
-
-            if (data.length === 0) {
-                suggestionsList.innerHTML = '<li style="padding: 10px 12px; color: #999;">No se encontraron resultados.</li>';
-                suggestionsList.style.display = 'block';
-                return;
-            }
-
-            const validResults = data.filter(place => {
-                const lat = parseFloat(place.lat);
-                const lon = parseFloat(place.lon);
-                return lat >= 6.65 && lat <= 7.3 && lon >= -73.4 && lon <= -72.85;
-            });
-
-            if (validResults.length === 0) {
-                suggestionsList.innerHTML = '<li style="padding: 10px 12px; color: #999;">No se encontraron resultados en la zona.</li>';
-                suggestionsList.style.display = 'block';
-                return;
-            }
-
-            validResults.slice(0, 8).forEach((place) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${place.display_name.split(',')[0]}</strong><br><small>${place.display_name}</small>`;
-                li.onclick = () => selectPlace(place, tipoRuta);
-                suggestionsList.appendChild(li);
-            });
-
-            suggestionsList.style.display = 'block';
-        } catch (error) {
-            console.error('Error obteniendo sugerencias:', error);
-            suggestionsList.innerHTML = '<li style="padding: 10px 12px; color: #999;">⚠️ Error de conexión. Intenta de nuevo.</li>';
-            suggestionsList.style.display = 'block';
-        }
-    }
-
-    // Función para seleccionar un lugar de la lista
-    function selectPlace(place, tipoRuta) {
-        const lat = parseFloat(place.lat);
-        const lng = parseFloat(place.lon);
-        const displayName = place.display_name;
-
-        const suggestionsList = tipoRuta === 'inicio' ? document.getElementById('suggestions-inicio') : document.getElementById('suggestions-fin');
-        const inputEl = tipoRuta === 'inicio' ? document.getElementById('inicio_ruta') : document.getElementById('fin_ruta');
-
-        inputEl.value = displayName;
-        if (tipoRuta === 'inicio') {
-            document.getElementById('inicio_lat').value = lat.toFixed(6);
-            document.getElementById('inicio_lng').value = lng.toFixed(6);
-        } else {
-            document.getElementById('fin_lat').value = lat.toFixed(6);
-            document.getElementById('fin_lng').value = lng.toFixed(6);
-        }
-
-        suggestionsList.style.display = 'none';
-        updateMapMarkers();
-    }
-
     // Función para obtener sugerencias de Nominatim para waypoints
     async function getSuggestionsWaypoint(query) {
         if (query.length < 2) {
@@ -614,6 +735,7 @@ if (typeof L !== 'undefined') {
             });
 
             wpDiv.querySelector('.btn-delete-waypoint').addEventListener('click', function() {
+                const index = Array.from(container.querySelectorAll('.waypoint-item')).indexOf(wpDiv);
                 wpDiv.remove();
                 updateMapMarkers();
             });
@@ -625,6 +747,7 @@ if (typeof L !== 'undefined') {
                 document.getElementById('waypoint_search').focus();
             });
 
+            updateListadoParadas();
             updateMapMarkers();
         } else if (modo === 'edit_waypoint' && editingWaypointDiv) {
             // Editar waypoint existente
@@ -646,27 +769,9 @@ if (typeof L !== 'undefined') {
         input.addEventListener('input', updateMapMarkers);
     });
 
-    // Botones para editar inicio y fin
-    document.getElementById('btnEditarInicio').addEventListener('click', function() {
-        modo = 'inicio';
-        this.classList.add('active');
-        document.getElementById('btnEditarFin').classList.remove('active');
-        // Ocultar búsqueda de waypoint
-        document.getElementById('waypoint_search').style.display = 'none';
-    });
-
-    document.getElementById('btnEditarFin').addEventListener('click', function() {
-        modo = 'fin';
-        this.classList.add('active');
-        document.getElementById('btnEditarInicio').classList.remove('active');
-        document.getElementById('waypoint_search').style.display = 'none';
-    });
-
     // Agregar nuevo waypoint
     document.getElementById('btnAgregarWaypoint').addEventListener('click', function() {
         modo = 'waypoint';
-        document.getElementById('btnEditarInicio').classList.remove('active');
-        document.getElementById('btnEditarFin').classList.remove('active');
         document.getElementById('waypoint_search').style.display = 'block';
         document.getElementById('waypoint_search').focus();
     });
@@ -683,38 +788,33 @@ if (typeof L !== 'undefined') {
         });
     });
 
-    // Listeners para eliminar waypoints existentes
-    document.querySelectorAll('.btn-delete-waypoint').forEach(btn => {
-        btn.addEventListener('click', function() {
-            this.closest('.waypoint-item').remove();
-            updateMapMarkers();
-        });
-    });
-
     // Event listeners para búsqueda
-    let debounceTimer = {};
-
-    document.getElementById('inicio_ruta').addEventListener('input', function() {
-        clearTimeout(debounceTimer.inicio);
-        const value = this.value.trim();
-        debounceTimer.inicio = setTimeout(() => {
-            getSuggestions(value, 'inicio');
-        }, 300);
-    });
-
-    document.getElementById('fin_ruta').addEventListener('input', function() {
-        clearTimeout(debounceTimer.fin);
-        const value = this.value.trim();
-        debounceTimer.fin = setTimeout(() => {
-            getSuggestions(value, 'fin');
-        }, 300);
-    });
 
     document.getElementById('waypoint_search').addEventListener('input', function() {
         clearTimeout(debounceTimer.waypoint);
         const value = this.value.trim();
         debounceTimer.waypoint = setTimeout(() => {
             getSuggestionsWaypoint(value);
+        }, 300);
+    });
+
+    // Event listener para "Inicio de Ruta"
+    document.getElementById('inicio_ruta').addEventListener('input', function() {
+        clearTimeout(debounceTimer.inicio);
+        const value = this.value.trim();
+
+        debounceTimer.inicio = setTimeout(() => {
+            getSuggestions(value, 'inicio');
+        }, 300);
+    });
+
+    // Event listener para "Fin de Ruta"
+    document.getElementById('fin_ruta').addEventListener('input', function() {
+        clearTimeout(debounceTimer.fin);
+        const value = this.value.trim();
+
+        debounceTimer.fin = setTimeout(() => {
+            getSuggestions(value, 'fin');
         }, 300);
     });
 
@@ -740,29 +840,14 @@ if (typeof L !== 'undefined') {
     try {
         initMap();
         updateMapMarkers();
+        calcularDistancia(); // Calcular distancia inicial
 
         // Clic en el mapa
         map.on('click', async function(e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
 
-            if (modo === 'inicio') {
-                document.getElementById('inicio_lat').value = lat.toFixed(6);
-                document.getElementById('inicio_lng').value = lng.toFixed(6);
-                const address = await getAddressFromCoords(lat, lng);
-                document.getElementById('inicio_ruta').value = address;
-                updateMapMarkers();
-                modo = null;
-                document.getElementById('btnEditarInicio').classList.remove('active');
-            } else if (modo === 'fin') {
-                document.getElementById('fin_lat').value = lat.toFixed(6);
-                document.getElementById('fin_lng').value = lng.toFixed(6);
-                const address = await getAddressFromCoords(lat, lng);
-                document.getElementById('fin_ruta').value = address;
-                updateMapMarkers();
-                modo = null;
-                document.getElementById('btnEditarFin').classList.remove('active');
-            } else if (modo === 'waypoint') {
+            if (modo === 'waypoint') {
                 const address = await getAddressFromCoords(lat, lng);
                 selectWaypoint({ lat: lat.toFixed(6), lon: lng.toFixed(6), display_name: address });
             } else if (modo === 'edit_waypoint' && editingWaypointDiv) {

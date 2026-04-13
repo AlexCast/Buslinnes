@@ -17,7 +17,12 @@ if (!isset($_GET["id_pasajero"])) {
     exit();
 }
 
-$id_pasajero = $_GET["id_pasajero"];
+$id_pasajero_txt = trim((string) $_GET["id_pasajero"]);
+if (!preg_match('/^[0-9]+$/', $id_pasajero_txt) || (int) $id_pasajero_txt <= 0) {
+    echo "ID de pasajero invalido";
+    exit();
+}
+$id_pasajero = (int) $id_pasajero_txt;
 $sentencia = $base_de_datos->prepare("
     SELECT id_usuario AS id_pasajero,
            nom_pasajero,

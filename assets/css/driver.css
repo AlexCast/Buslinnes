@@ -1,7 +1,7 @@
 /* ===========================================================
-   Buslinnes — Estilos para la interfaz de rutas de buses
+   Buslinnes â€” Estilos para la interfaz de rutas de buses
    - Sigue la misma estructura y variables que index.css
-   - Adaptado específicamente para el visor de rutas y mapas
+   - Adaptado especÃ­ficamente para el visor de rutas y mapas
    =========================================================== */
 
 /* =========================
@@ -14,9 +14,9 @@
     --sidebar-width: 350px;
 
     /* branding / accents */
-    --accent: #8059d4;
+    --accent: var(--primary-color, #8059d4ff);
     --text-color: #25212c;
-    --header-text: #8059d4; /* Cambiado a color morado */
+    --header-text: var(--primary-color, #8059d4ff); /* Cambiado a color morado */
     
     /* rutas y elementos */
     --bg-color: #0a0014;
@@ -51,27 +51,19 @@ body {
     line-height: 1.6;
     min-height: 100vh;
     position: relative;
-    background-color: var(--bg-color);
+    background-color: #d1d1d1ff;
     overflow-x: hidden;
     padding-top: var(--header-height);
+    /* Fondo patrón de puntos (Modo Claro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 body.no-scroll {
     overflow: hidden;
-}
-
-/* Fondo animado - Corregido para coincidir exactamente con index.css */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("/buslinnes/assets/img/pattern.svg");
-    background-repeat: repeat;
-    background-size: 150px;
-    z-index: -1;
 }
 
 /* =========================
@@ -121,6 +113,125 @@ header {
     display: flex;
     align-items: center;
     gap: 20px;
+}
+
+.profile-alert-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+}
+
+.profile-alert-modal.active {
+    display: flex;
+}
+
+.profile-alert-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 0, 20, 0.66);
+    backdrop-filter: blur(6px);
+}
+
+.profile-alert-modal__dialog {
+    position: relative;
+    width: min(520px, 100%);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 243, 255, 0.98));
+    border: 1px solid rgba(128, 89, 212, 0.16);
+    box-shadow: 0 24px 80px rgba(10, 0, 20, 0.35);
+    overflow: hidden;
+    z-index: 1;
+}
+
+.profile-alert-modal__content {
+    padding: 28px;
+    color: #1f1726;
+}
+
+.profile-alert-modal__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(128, 89, 212, 0.12);
+    color: var(--primary-color, #8059d4ff);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+.profile-alert-modal__title {
+    margin: 16px 0 10px;
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.profile-alert-modal__text {
+    margin: 0;
+    color: #5d5470;
+}
+
+.profile-alert-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.profile-alert-modal__btn {
+    appearance: none;
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.profile-alert-modal__btn:hover {
+    transform: translateY(-1px);
+}
+
+.profile-alert-modal__btn:focus-visible {
+    outline: 3px solid rgba(128, 89, 212, 0.25);
+    outline-offset: 2px;
+}
+
+.profile-alert-modal__btn--secondary {
+    background: #ece7f7;
+    color: #2f2540;
+}
+
+.profile-alert-modal__btn--primary {
+    background: var(--primary-color, #8059d4ff);
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(128, 89, 212, 0.28);
+}
+
+.profile-alert-modal__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(31, 23, 38, 0.06);
+    color: #2f2540;
+    cursor: pointer;
+}
+
+.profile-alert-modal__close:hover {
+    background: rgba(31, 23, 38, 0.1);
+}
+
+body.modal-open {
+    overflow: hidden;
 }
 
 .search-box {
@@ -226,7 +337,7 @@ header {
 .dark-toggle:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    background: #362163ff;
+    background: var(--primary-color, #8059d4ff);
 }
 
 .dark-toggle:active {
@@ -250,7 +361,7 @@ header {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: #8059d4ff;
+        color: var(--primary-color, #8059d4ff);
         background: rgba(128, 89, 212, 0.08);
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
         text-decoration: none;
@@ -258,6 +369,7 @@ header {
     }
 
     .notif-bell .fa-bell {
+        color: var(--primary-color);
         font-size: 18px;
     }
 
@@ -290,7 +402,7 @@ header {
 
     @media (prefers-color-scheme: dark) {
         .notif-bell {
-            color: #8059d4ff;
+            color: var(--primary-color, #8059d4ff);
             background: rgba(255, 255, 255, 0.07);
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
         }
@@ -414,7 +526,7 @@ body.dark .route-item.selected {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8059d4 0%, #8059d4 100%);
+    background: linear-gradient(135deg, var(--primary-color, #8059d4ff) 0%, var(--primary-color, #8059d4ff) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -439,7 +551,7 @@ body.dark .user-role {
 }
 
 .logout-desktop {
-    background: #8059d4ff;
+    background: var(--primary-color, #8059d4ff);
     color: #ffffff;
     border: none;
     padding: 10px 18px;
@@ -773,7 +885,7 @@ body {
 }
 
 /* =========================
-   MODO OSCURO - Solo se aplica cuando la clase .dark está presente
+   MODO OSCURO - Solo se aplica cuando la clase .dark estÃ¡ presente
    ========================= */
 body.dark {
     --text-color: #d1d1d1;
@@ -784,10 +896,13 @@ body.dark {
     --gray-light: #2c2c2c;
     --route-selected-bg: #312e81;
     --route-selected-border: #6366f1;
-}
-
-body.dark::before {
-    background-image: url("/buslinnes/assets/img/pattern2.svg");
+    background-color: #25212cff;
+    /* Fondo patrón de puntos (Modo Oscuro) */
+    background-image: 
+        radial-gradient(var(--primary-color) 3%, transparent 6%),
+        radial-gradient(var(--primary-color) 3%, transparent 6%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
 }
 
 /* Mejoras para el mapa en modo oscuro */
@@ -841,8 +956,8 @@ body.dark .notif-bell {
 
 body.dark .dark-toggle {
     background: #1f1f1f56;
-    border-color: #8059d4ff;
-    color: #8059d4ff;
+    border-color: var(--primary-color, #8059d4ff);
+    color: var(--primary-color, #8059d4ff);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
@@ -882,7 +997,7 @@ body.dark .icon-circle.logout-icon {
 
 body.dark .burger-toggle {
     background: #1f1f1f56;
-    border-color: #8059d4ff;
+    border-color: var(--primary-color, #8059d4ff);
     color: #d1d1d1;
 }
 
@@ -900,9 +1015,9 @@ body.dark .burger-line {
     height: 42px;
     margin-left: 8px;
     border-radius: 12px;
-    border: 1px solid #8059d4;
+    border: 1px solid var(--primary-color, #8059d4ff);
     background: #26262600;
-    color: #8059d4ff;
+    color: var(--primary-color, #8059d4ff);
     cursor: pointer;
     padding: 10px;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
@@ -915,7 +1030,7 @@ body.dark .burger-line {
 .burger-toggle:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    background: #362163ff;
+    background: var(--primary-color, #8059d4ff);
 }
 
 .burger-toggle:active {
@@ -962,7 +1077,7 @@ body.dark .burger-line {
 }
 
 .btn-primary {
-    background: #8059d4ff;
+    background: var(--primary-color, #8059d4ff);
     color: white;
 }
 
@@ -983,13 +1098,13 @@ body.dark header {
 }
 
 #map-container {
-    border: 4px solid #8059d4;
+    border: 4px solid var(--primary-color, #8059d4ff);
     border-radius: 14px;
     overflow: hidden;
 }
 
 .routes-sidebar {
-    border: 2px solid #8059d4;
+    border: 2px solid var(--primary-color, #8059d4ff);
     border-radius: 14px;
     overflow: hidden;
 }
@@ -997,7 +1112,7 @@ body.dark header {
 .route-filter-btn {
     margin-right: 10px;
     text-decoration: none;
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
     font-weight: 600;
     padding: 8px 12px;
     border-radius: 8px;
@@ -1070,7 +1185,7 @@ body.dark header {
 
 .assigned-route-label {
     font-size: 0.75rem;
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
     font-weight: 700;
     margin-bottom: 2px;
     text-transform: uppercase;
@@ -1106,7 +1221,7 @@ body.dark header {
 .route-color-7 .route-number { background-color: #0891b2; }
 
 .search-input:focus {
-    border-color: #8059d4;
+    border-color: var(--primary-color, #8059d4ff);
     box-shadow: 0 0 0 3px rgba(128, 89, 212, 0.1);
     outline: none;
 }
@@ -1143,7 +1258,7 @@ body.dark header {
 
 body.dark .routes-sidebar {
     background: rgba(31, 31, 31, 0.95);
-    border: 2px solid #8059d4;
+    border: 2px solid var(--primary-color, #8059d4ff);
 }
 
 body.dark .assigned-route-label {
@@ -1155,7 +1270,7 @@ body.dark .route-desc-text {
 }
 
 body.dark .user-location-icon i {
-    color: #8059d4;
+    color: var(--primary-color, #8059d4ff);
 }
 
 body.dark .user-location-icon {

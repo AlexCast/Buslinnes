@@ -42,16 +42,26 @@ $validarEntero = static function ($valor, string $campo, int $min = 1, int $max 
     return $numero;
 };
 
+$normalizarPlacaBus = static function ($valor): string {
+    $texto = strtoupper(trim((string) $valor));
+    $compacto = preg_replace('/\s+/', '', $texto);
+    if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $compacto)) {
+        exit('El campo id_bus debe tener formato AAA123.');
+    }
+    return $compacto;
+};
+
 include_once "../base_de_datos.php";
 $id_ruta_bus = $validarEntero($_POST["id_ruta_bus"], "id_ruta_bus");
 $id_ruta = $validarEntero($_POST["id_ruta"], "id_ruta");
-$id_bus = $validarEntero($_POST["id_bus"], "id_bus");
+$id_bus = $normalizarPlacaBus($_POST["id_bus"]);
 
 $sentencia = $base_de_datos->prepare("SELECT fun_insert_ruta_bus(?, ?, ?) AS resultado;");
 $sentencia->execute([$id_ruta_bus, $id_ruta, $id_bus]);
 $resultado = $sentencia->fetch(PDO::FETCH_ASSOC);
+$ok = $resultado && ($resultado['resultado'] === true || $resultado['resultado'] === 1 || $resultado['resultado'] === '1' || $resultado['resultado'] === 't' || $resultado['resultado'] === 'true');
 
-if ($resultado && $resultado["resultado"] === true) {
+if ($ok) {
     header("Location: listar_rutas_buses.php");
     exit();
 } else {

@@ -47,31 +47,44 @@ $validarEntero = static function ($valor, string $campo, int $min = 1, int $max 
 
 $validarTexto = static function ($valor, string $campo, int $min, int $max) use ($redirigirConError): string {
     $texto = trim((string) $valor);
-    $longitud = mb_strlen($texto);
+    $longitud = function_exists('mb_strlen')
+        ? mb_strlen($texto)
+        : (function_exists('iconv_strlen') ? iconv_strlen($texto, 'UTF-8') : strlen($texto));
     if ($longitud < $min || $longitud > $max) {
         $redirigirConError("El campo {$campo} debe tener entre {$min} y {$max} caracteres.");
     }
     return $texto;
 };
 
+$normalizarPlacaBus = static function ($valor, string $campo) use ($redirigirConError): string {
+    $texto = strtoupper(trim((string) $valor));
+    $compacto = preg_replace('/\s+/', '', $texto);
+    if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $compacto)) {
+        $redirigirConError("El campo {$campo} debe tener formato AAA123.");
+    }
+    return $compacto;
+};
+
 include_once "../base_de_datos.php";
 
 // Recoger todos los valores del formulario
 $id_parque_automotor  = $validarEntero($_POST["id_parque_automotor"], "id_parque_automotor");
-$id_bus               = $validarEntero($_POST["id_bus"], "id_bus");
+$id_bus               = $normalizarPlacaBus($_POST["id_bus"], "id_bus");
 $dir_parque_automotor = $validarTexto($_POST["dir_parque_automotor"], "dir_parque_automotor", 5, 255);
 
 try {
     // Preparar la llamada a la funci�n de PostgreSQL
     $sentencia = $base_de_datos->prepare("SELECT fun_insert_parque_automotor(?, ?, ?);");
     // Ejecutar con todos los par�metros
-    $resultado = $sentencia->execute([
+    $sentencia->execute([
         $id_parque_automotor,
         $id_bus,
         $dir_parque_automotor
     ]);
+    $resultado = $sentencia->fetchColumn();
+    $ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
     
-    if ($resultado) {
+    if ($ok) {
         // �xito: redirigir al listado con mensaje
         header("Location: listar_parque_automotor.php?insertado=1");
         exit();
@@ -80,6 +93,9 @@ try {
         $errorInfo = $sentencia->errorInfo();
         throw new Exception("Error al insertar: " . $errorInfo[2]);
     }
+} catch (PDOException $e) {
+    header("Location: forma_parque_automotor.php?error=" . urlencode("Error de base de datos al registrar parque automotor."));
+    exit();
 } catch (Exception $e) {
     // Manejo de errores m�s detallado
     $mensajeError = "Error: " . $e->getMessage();

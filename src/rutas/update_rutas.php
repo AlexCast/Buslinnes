@@ -138,10 +138,28 @@ $inicio_lat  = $validarCoordenada($_POST["inicio_lat"] ?? null, "inicio_lat", -9
 $inicio_lng  = $validarCoordenada($_POST["inicio_lng"] ?? null, "inicio_lng", -180, 180);
 $fin_lat     = $validarCoordenada($_POST["fin_lat"] ?? null, "fin_lat", -90, 90);
 $fin_lng     = $validarCoordenada($_POST["fin_lng"] ?? null, "fin_lng", -180, 180);
+
+error_log("=== DEBUG UPDATE_RUTAS ===");
+error_log("POST keys: " . implode(', ', array_keys($_POST)));
+error_log("waypoints_json CRUDO Post: " . ($_POST["waypoints_json"] ?? 'NO EXISTE'));
+
 // SecurityMiddleware sanitiza $_POST con htmlspecialchars, lo cual puede romper JSON (comillas -> &quot;)
+// Primero decodificar el HTML
 $waypoints_json = !empty($_POST["waypoints_json"])
     ? html_entity_decode((string)$_POST["waypoints_json"], ENT_QUOTES | ENT_HTML5, 'UTF-8')
     : null;
+
+error_log("waypoints_json DECODIFICADO: " . ($waypoints_json ?? 'null'));
+
+// Validar que sea JSON válido
+if ($waypoints_json !== null && $waypoints_json !== '[]') {
+    $decoded = json_decode($waypoints_json, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("ERROR JSON: " . json_last_error_msg());
+    } else {
+        error_log("JSON VÁLIDO: " . count($decoded) . " waypoints");
+    }
+}
 
 if ($waypoints_json !== null) {
     $waypointsValidacion = json_decode($waypoints_json, true);
@@ -185,13 +203,16 @@ if ($resultado === true) {
     if ($waypoints_json !== null) {
         try {
             $waypoints = json_decode($waypoints_json, true);
+            error_log("Procesando waypoints - JSON decodificado: " . print_r($waypoints, true));
             
             if (is_array($waypoints)) {
                 // Eliminar waypoints existentes para esta ruta
                 $deleteStmt = $base_de_datos->prepare("DELETE FROM tab_ruta_waypoints WHERE id_ruta = ?");
                 $deleteStmt->execute([$id_ruta]);
+                error_log("Eliminados waypoints existentes para ruta $id_ruta");
                 
                 if (count($waypoints) > 0) {
+                    error_log("Insertando " . count($waypoints) . " waypoints nuevos");
                     // Preparar INSERT
                     try {
                         $insertStmt = $base_de_datos->prepare("
@@ -200,17 +221,21 @@ if ($resultado === true) {
                         ");
                     } catch (PDOException $e) {
                         // Fallback si no hay usr_insert/fec_insert
+                        error_log("Usando INSERT sin usr_insert/fec_insert");
                         $insertStmt = $base_de_datos->prepare("
                             INSERT INTO tab_ruta_waypoints (id_ruta, orden, lat, lng, nombre)
                             VALUES (?, ?, ?, ?, ?)
                         ");
                     }
                     
-                    foreach ($waypoints as $waypoint) {
+                    $insertados = 0;
+                    foreach ($waypoints as $i => $waypoint) {
                         $orden = isset($waypoint['orden']) ? $waypoint['orden'] : null;
                         $lat = isset($waypoint['lat']) ? $waypoint['lat'] : null;
                         $lng = isset($waypoint['lng']) ? $waypoint['lng'] : null;
                         $nombre = isset($waypoint['nombre']) ? $waypoint['nombre'] : null;
+                        
+                        error_log("Procesando waypoint $i: orden=$orden, lat=$lat, lng=$lng, nombre=$nombre");
                         
                         if (
                             $orden !== null &&
@@ -225,17 +250,31 @@ if ($resultado === true) {
                             $lat = (float) $lat;
                             $lng = (float) $lng;
                             if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+                                error_log("Waypoint $i RECHAZADO: coordenadas fuera de rango");
                                 continue;
                             }
-                            $insertStmt->execute([$id_ruta, $orden, $lat, $lng, $nombre]);
+                            try {
+                                $insertStmt->execute([$id_ruta, $orden, $lat, $lng, $nombre]);
+                                $insertados++;
+                                error_log("Waypoint $i INSERTADO exitosamente");
+                            } catch (Exception $ex) {
+                                error_log("ERROR insertando waypoint $i: " . $ex->getMessage());
+                            }
+                        } else {
+                            error_log("Waypoint $i RECHAZADO: datos inválidos");
                         }
                     }
+                    error_log("TOTAL INSERTADOS: $insertados waypoints");
+                } else {
+                    error_log("No hay waypoints para insertar");
                 }
             }
         } catch (Exception $e) {
             error_log("Error al actualizar waypoints (id_ruta={$id_ruta}): " . $e->getMessage());
             error_log("waypoints_json recibido: " . (string)$waypoints_json);
         }
+    } else {
+        error_log("waypoints_json es null - no se procesarán waypoints");
     }
 
     header("Location: listar_rutas.php");

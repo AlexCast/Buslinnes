@@ -64,6 +64,7 @@ $propietariosEliminados = array_filter($Propietarios, function($p) {
 						<?php foreach ($propietariosEliminados as $registro): ?>
 						  <tr>
 							<td><?php echo $registro->id_propietario; ?></td>
+							<td><?php echo htmlspecialchars($registro->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
 							<td><?php echo htmlspecialchars($registro->nom_propietario); ?></td>
 							<td><?php echo htmlspecialchars($registro->ape_propietario); ?></td>
 							<td><?php echo htmlspecialchars($registro->tel_propietario); ?></td>
@@ -106,7 +107,7 @@ $propietariosEliminados = array_filter($Propietarios, function($p) {
 					</thead>
 <tbody>
 						<?php if (count($Propietarios) === 0): ?>
-							<tr><td colspan="6" class="text-center">No hay propietarios registrados.</td></tr>
+							<tr><td colspan="7" class="text-center">No hay propietarios registrados.</td></tr>
 						<?php else: ?>
 							<?php foreach ($Propietarios as $p): 
 								$eliminado = !empty($p->fec_delete);
@@ -114,7 +115,7 @@ $propietariosEliminados = array_filter($Propietarios, function($p) {
 							?>
 							<tr>
 							<td><?php echo $p->id_propietario; ?></td>
-							<td><?php echo $p->id_bus; ?></td>
+							<td><?php echo htmlspecialchars($p->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
 							<td><?php echo htmlspecialchars($p->nom_propietario); ?></td>
 							<td><?php echo htmlspecialchars($p->ape_propietario); ?></td>
 							<td><?php echo htmlspecialchars($p->tel_propietario); ?></td>
@@ -147,6 +148,7 @@ $propietariosEliminados = array_filter($Propietarios, function($p) {
 				<?php else: ?>
 					<?php foreach ($Propietarios as $p): 
 						$eliminado = !empty($p->fec_delete);
+						if ($eliminado) continue; // Ocultar eliminados de la vista móvil
 					?>
 					<div class="col-12 mb-3">
 						<div class="tarjeta-card card <?php echo $eliminado ? 'registro-eliminado' : ''; ?>">
@@ -192,7 +194,7 @@ $propietariosEliminados = array_filter($Propietarios, function($p) {
 								<ul class="list-group list-group-flush">
 									<li class="list-group-item d-flex justify-content-between align-items-center">
 										<strong>ID Bus: </strong>
-										<span><?php echo $p->id_bus; ?></span>
+											<span><?php echo htmlspecialchars($p->id_bus, ENT_QUOTES, 'UTF-8'); ?></span>
 									</li>
 									<li class="list-group-item d-flex justify-content-between align-items-center">
 										<strong>Nombre: </strong>

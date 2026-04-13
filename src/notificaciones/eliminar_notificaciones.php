@@ -28,7 +28,12 @@ if (!isset($_POST["id_notificacion"])) {
     exit();
 }
 
-$id_notificacion = $_POST["id_notificacion"];
+$id_notificacion_txt = trim((string) $_POST["id_notificacion"]);
+if (!preg_match('/^[0-9]+$/', $id_notificacion_txt) || (int) $id_notificacion_txt <= 0) {
+    header("Location: listar_notificaciones.php?error_delete=1&msg=" . urlencode("id_notificacion invalido"));
+    exit();
+}
+$id_notificacion = (int) $id_notificacion_txt;
 
 include_once "../base_de_datos.php";
 

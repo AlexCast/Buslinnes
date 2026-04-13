@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buslinnes - Rutas en Vivo</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/assets/img/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/assets/img/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/assets/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/buslinnes/mkcert/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/buslinnes/mkcert/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/buslinnes/mkcert/favicon.ico">
   <meta name="theme-color" content="#ffffff">
+  <link rel="stylesheet" href="/buslinnes/assets/css/_variables.css">
   <link rel="stylesheet" href="/buslinnes/assets/fontawesome/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="/buslinnes/assets/css/styles.css">
@@ -16,12 +17,14 @@
     .map-section { height: calc(100vh - var(--header-height) - 40px); }
     #map-container, #map { height: 100%; min-height: 480px; }
     #map-container {
-      border: 4px solid #8059d4;
+      border: 4px solid var(--primary-color, #8059d4ff);
       border-radius: 14px;
       overflow: hidden;
     }
   </style>
   <script src="/buslinnes/assets/js/darkmode.js" defer></script>
+  <!-- <script src="/buslinnes/assets/js/branding-runtime.js" defer></script> -->
+  <script src="/buslinnes/assets/js/branding-runtime.js" defer></script>
 </head>
 <body>
   <!-- Enlace de salto para navegación con teclado -->
@@ -32,7 +35,7 @@
         <div class="header-left">
           <a href="/buslinnes/index.php" class="logo" aria-label="Inicio">
             <span class="logo-icon">
-              <img src="/buslinnes/assets/img/logomorado.svg" alt="Logo Buslinnes">
+              <img class="logo-img" src="/buslinnes/assets/img/logomorado.svg" alt="Logo Buslinnes">
             </span>
           </a>
           <span class="separator"></span>
@@ -73,8 +76,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="/buslinnes/assets/js/security.js"></script>
-  <script src="/buslinnes/assets/js/app_lockdown.js"></script>
+  <!-- Removido: security.js y app_lockdown.js para permitir acceso sin autenticación -->
   <script>
     // Initialize map
     const map = L.map('map').setView([7.119349, -73.122741], 13);
@@ -85,11 +87,9 @@
 
     function maybeShowUserMarker() {
       if (!userLocation || !map) {
-        console.log('maybeShowUserMarker ignorada', {userLocation, hasMap: !!map});
         return;
       }
       if (!userMarker) {
-        console.log('Creando marcador de usuario en', userLocation);
         const userIcon = L.divIcon({
           className: 'user-location-icon',
           html: '<i class="fas fa-user"></i>',
@@ -139,7 +139,7 @@
         }
 
         body.dark .user-location-icon i {
-          color: #8059d4;
+          color: var(--primary-color, #8059d4ff);
         }
 
         body.dark .user-location-icon {
@@ -258,13 +258,22 @@
 
     async function cargarYDibujarRutas() {
       try {
-        const response = await securityHelper.get('/buslinnes/src/rutas/api_listar_rutas.php');
+        // Usar fetch directo sin autenticación requerida
+        const response = await fetch('/buslinnes/src/rutas/api_listar_rutas.php', {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
+        });
         
-        // Parse JSON from Response object if needed
-        let data = response;
-        if (response instanceof Response) {
-          data = await response.json();
+        if (!response.ok) {
+          console.error('API retornó error:', response.status, response.statusText);
+          return; // Fallar silenciosamente pero permitir que la página cargue
         }
+        
+        // Parse JSON
+        const data = await response.json();
         
         // Validate that we have an array of routes
         const rutas = Array.isArray(data) ? data : (data?.rutas || data?.data || []);

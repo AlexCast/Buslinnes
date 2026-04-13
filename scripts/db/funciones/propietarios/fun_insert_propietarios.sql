@@ -7,18 +7,21 @@ CREATE OR REPLACE FUNCTION fun_insert_propietarios(
     wemail_propietario tab_propietarios.email_propietario%TYPE
 ) RETURNS BOOLEAN AS
 $$
+    DECLARE
+        v_bus tab_buses.id_bus%TYPE;
     BEGIN
         -- Validar que no haya nulos importantes
         IF wid_propietario IS NULL OR wid_bus IS NULL OR wnom_propietario IS NULL OR wape_propietario IS NULL OR wtel_propietario IS NULL OR wemail_propietario IS NULL THEN
             RAISE EXCEPTION USING errcode = 23502;
         END IF;
 
-        IF wid_propietario < 1000000000 THEN
+        IF wid_propietario < 100000 OR wid_propietario > 9999999999 THEN
             RAISE EXCEPTION USING errcode = 22003;
         END IF;
 
-        IF wid_bus <= 0 THEN
-            RAISE EXCEPTION USING errcode = 22003;
+        v_bus := UPPER(REGEXP_REPLACE(TRIM(COALESCE(wid_bus, '')), '\\s+', '', 'g'));
+        IF v_bus !~ '^[A-Z]{3}[0-9]{3}$' THEN
+            RAISE EXCEPTION USING errcode = 22023;
         END IF;
 
         IF LENGTH(TRIM(wnom_propietario)) < 3 OR LENGTH(TRIM(wape_propietario)) < 3 THEN
@@ -42,7 +45,7 @@ $$
             tel_propietario,
             email_propietario
         ) VALUES (
-            wid_propietario, wid_bus, wnom_propietario, wape_propietario,
+            wid_propietario, v_bus, wnom_propietario, wape_propietario,
             wtel_propietario, wemail_propietario
         );
         
@@ -56,6 +59,9 @@ $$
             RETURN FALSE;
         WHEN SQLSTATE '22003' THEN
             RAISE NOTICE 'Alguno de los valores numericos esta fuera de rango';
+            RETURN FALSE;
+        WHEN SQLSTATE '22023' THEN
+            RAISE NOTICE 'El ID de bus debe tener formato AAA123';
             RETURN FALSE;
         WHEN SQLSTATE '23503' THEN
             RAISE NOTICE 'El bus indicado no existe';

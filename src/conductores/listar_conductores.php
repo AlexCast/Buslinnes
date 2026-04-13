@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // === SEGURIDAD: Proteccion anti-scraping y CSRF ===
 require_once __DIR__ . '/../../app/SecurityMiddleware.php';
 
@@ -27,7 +27,7 @@ validarTokenJWT(['admin', 'conductor']); // Solo admin y conductor pueden ver co
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->query('
-    SELECT id_conductor,
+    SELECT id_usuario,
            nom_conductor,
            ape_conductor,
            email_conductor AS tel_conductor,
@@ -85,7 +85,7 @@ $conductoresEliminados = array_filter($conductores, function($conductor) {
                       <tbody>
                         <?php foreach ($conductoresEliminados as $conductor): ?>
                           <tr>
-                            <td><?php echo $conductor->id_conductor; ?></td>
+                            <td><?php echo $conductor->id_usuario; ?></td>
                             <td><?php echo $conductor->nom_conductor; ?></td>
                             <td><?php echo $conductor->ape_conductor; ?></td>
                             <td><?php echo $conductor->tel_conductor; ?></td>
@@ -94,7 +94,7 @@ $conductoresEliminados = array_filter($conductores, function($conductor) {
                             <td><?php echo date('d/m/Y H:i', strtotime($conductor->fec_delete)); ?></td>
                             <td>
                               <form method="POST" action="restore_conductores.php" onsubmit="return confirm('¿Restaurar este conductor?');" style="display:inline-block;">
-                                <input type="hidden" name="id_conductor" value="<?php echo $conductor->id_conductor; ?>">
+                                <input type="hidden" name="id_usuario" value="<?php echo $conductor->id_usuario; ?>">
                                 <button type="submit" class="btn btn-sm btn-restore">
                                   <i class="fas fa-trash-restore"></i> Restaurar
                                 </button>
@@ -133,17 +133,17 @@ $conductoresEliminados = array_filter($conductores, function($conductor) {
                                 if ($eliminado) continue; // Ocultar eliminados de la tabla principal
                             ?>
                             <tr>
-                                <td><?php echo $conductor->id_conductor; ?></td>
+                                <td><?php echo $conductor->id_usuario; ?></td>
                                 <td><?php echo $conductor->nom_conductor; ?></td>
                                 <td><?php echo $conductor->ape_conductor; ?></td>
                                 <td><?php echo $conductor->tel_conductor; ?></td>
                                 <td><span class="badge bg-info"><?php echo $conductor->licencia_conductor; ?></span></td>
                                 <td class="actions-cell">
-                                    <a class="btn btn-warning btn-sm" href="editar_conductores.php?id_conductor=<?php echo $conductor->id_conductor; ?>">
+                                    <a class="btn btn-warning btn-sm" href="editar_conductores.php?id_usuario=<?php echo $conductor->id_usuario; ?>">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <form method="POST" action="eliminar_conductores.php" onsubmit="return confirm('¿Seguro que deseas eliminar este conductor?');" style="display: inline-block;">
-                                        <input type="hidden" name="id_conductor" value="<?php echo $conductor->id_conductor; ?>">
+                                        <input type="hidden" name="id_usuario" value="<?php echo $conductor->id_usuario; ?>">
                                         <button type="submit" class="btn btn-danger btn-sm">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -177,11 +177,11 @@ $conductoresEliminados = array_filter($conductores, function($conductor) {
                                 
                                 <!-- Botones directamente en el header -->
                                 <div class="d-flex gap-2">
-                                    <a class="btn btn-warning btn-sm" href="editar_conductores.php?id_conductor=<?php echo $conductor->id_conductor; ?>">
+                                    <a class="btn btn-warning btn-sm" href="editar_conductores.php?id_usuario=<?php echo $conductor->id_usuario; ?>">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <form method="POST" action="eliminar_conductores.php" onsubmit="return confirm('¿Seguro que deseas eliminar este conductor?');" style="display:inline-block;">
-                                        <input type="hidden" name="id_conductor" value="<?php echo $conductor->id_conductor; ?>">
+                                        <input type="hidden" name="id_usuario" value="<?php echo $conductor->id_usuario; ?>">
                                         <button type="submit" class="btn btn-danger btn-sm">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -193,7 +193,7 @@ $conductoresEliminados = array_filter($conductores, function($conductor) {
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>ID: </strong>
-                                        <span><?php echo $conductor->id_conductor; ?></span>
+                                        <span><?php echo $conductor->id_usuario; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>Teléfono: </strong>
@@ -220,3 +220,4 @@ $conductoresEliminados = array_filter($conductores, function($conductor) {
 <script src="../../assets/js/bootstrap.bundle.min.js"></script>
 <!-- Script único para el modal de eliminados -->
 <script src="../../assets/js/modalEliminados.js"></script>
+

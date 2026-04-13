@@ -26,7 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['id_notificacion'])) 
     exit();
 }
 
-$id_notificacion = $_POST['id_notificacion'];
+$id_notificacion_txt = trim((string) $_POST['id_notificacion']);
+if (!preg_match('/^[0-9]+$/', $id_notificacion_txt) || (int) $id_notificacion_txt <= 0) {
+    header("Location: listar_notificaciones.php?error_restore=1&msg=" . urlencode("id_notificacion invalido"));
+    exit();
+}
+$id_notificacion = (int) $id_notificacion_txt;
 
 $sentencia = $base_de_datos->prepare("SELECT fun_restore_notificaciones(?);");
 $resultado = $sentencia->execute([$id_notificacion]);

@@ -24,15 +24,20 @@ if (!isset($_POST["id_ruta_bus"])) {
     exit();
 }
 
-$id_ruta_bus = $_POST["id_ruta_bus"];
+$id_ruta_bus = trim((string) $_POST["id_ruta_bus"]);
+if (!preg_match('/^[0-9]+$/', $id_ruta_bus)) {
+    echo "ID de ruta-bus invalido";
+    exit();
+}
 
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("SELECT fun_softdelete_ruta_bus(?);");
 $sentencia->execute([$id_ruta_bus]);
 $resultado = $sentencia->fetchColumn();
+$ok = $resultado === true || $resultado === 1 || $resultado === '1' || $resultado === 't' || $resultado === 'true';
 
-if ($resultado === true) {
+if ($ok) {
     header("Location: listar_rutas_buses.php");
     exit();
 } else {

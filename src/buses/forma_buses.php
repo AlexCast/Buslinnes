@@ -1,6 +1,18 @@
 <?php
 // === Configurar encoding UTF-8 ===
 header('Content-Type: text/html; charset=utf-8');
+
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => false,  // GET no requiere CSRF
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+// === FIN SEGURIDAD ===
 /*
 CRUD con PostgreSQL y PHP
 @Carlos Eduardo Perez Rueda
@@ -17,6 +29,10 @@ Formulario para agregar nuevos buses al sistema
 ?>
 
 <?php
+if (!defined('VALIDAR_JWT_MANUAL')) define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin', 'conductor']);
+
 include_once "../base_de_datos.php";
 include_once "encab_buses.php";
 ?>
@@ -34,33 +50,20 @@ include_once "encab_buses.php";
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="id_bus" class="form-label">ID Bus</label>
-                                    <input required name="id_bus" type="number" id="id_bus" class="form-control" placeholder="Identificador único del bus" min="1" max="999999" step="1" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+                                    <input required name="id_bus" type="text" id="id_bus" class="form-control" placeholder="Ejemplo: AAA 123" pattern="[A-Za-z]{3}\s?[0-9]{3}" maxlength="7" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                                 </div>
                                 <?php
-                                $sentencia = $base_de_datos->query("SELECT id_conductor, nom_conductor, ape_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor");
+                                $sentencia = $base_de_datos->query("SELECT id_usuario, nom_conductor, ape_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor");
                                 $conductores = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
-                                    <label for="id_conductor" class="form-label">ID Conductor</label>
-                                    <select name="id_conductor" id="id_conductor" class="form-select" required>
+                                    <label for="id_usuario" class="form-label">ID Conductor</label>
+                                    <select name="id_usuario" id="id_usuario" class="form-select" required>
                                         <option value="" disabled selected>Seleccione conductor</option>
                                         <?php foreach($conductores as $conductor): ?>
-                                            <option value="<?php echo $conductor->id_conductor ?>"><?php echo $conductor->id_conductor . ' - ' . $conductor->nom_conductor . ' ' . $conductor->ape_conductor ?></option>
+                                            <option value="<?php echo (int) $conductor->id_usuario ?>"><?php echo (int) $conductor->id_usuario . ' - ' . htmlspecialchars($conductor->nom_conductor, ENT_QUOTES, 'UTF-8') . ' ' . htmlspecialchars($conductor->ape_conductor, ENT_QUOTES, 'UTF-8') ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                </div>
-                                <?php
-                                $sentencia = $base_de_datos->query("SELECT num_chasis FROM tab_buses WHERE fec_delete IS NULL ORDER BY num_chasis");
-                                $chasis = $sentencia->fetchAll(PDO::FETCH_OBJ);
-                                ?>
-                                <div class="form-group mb-3">
-                                    <label for="num_chasis" class="form-label">Número de Chasis</label>
-                                    <input required name="num_chasis" type="text" id="num_chasis" class="form-control" placeholder="Número de chasis" list="chasis_list" maxlength="17">
-                                    <datalist id="chasis_list">
-                                        <?php foreach($chasis as $c): ?>
-                                            <option value="<?php echo $c->num_chasis ?>"></option>
-                                        <?php endforeach; ?>
-                                    </datalist>
                                 </div>
 
                             </div>
@@ -108,19 +111,6 @@ include_once "encab_buses.php";
                                         <option value="A">Activo</option>
                                     </select>
                                 </div>
-                                <?php
-                                $sentencia = $base_de_datos->query("SELECT matricula FROM tab_buses WHERE fec_delete IS NULL ORDER BY matricula");
-                                $matriculas = $sentencia->fetchAll(PDO::FETCH_OBJ);
-                                ?>
-                                <div class="form-group mb-3">
-                                    <label for="matricula" class="form-label">Matrícula</label>
-                                    <input required name="matricula" type="text" id="matricula" class="form-control" placeholder="Matrícula del bus" list="matricula_list" maxlength="6">
-                                    <datalist id="matricula_list">
-                                        <?php foreach($matriculas as $m): ?>
-                                            <option value="<?php echo $m->matricula ?>"></option>
-                                        <?php endforeach; ?>
-                                    </datalist>
-                                </div>
                             </div>
                         </div>
 
@@ -139,4 +129,5 @@ include_once "encab_buses.php";
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
 

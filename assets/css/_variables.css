@@ -1,0 +1,61 @@
+/* ============================================================================
+   BUSLINNES - VARIABLES GLOBALES CENTRALIZADAS
+   SOLO el color principal (#8059d4ff) es personalizable para SaaS
+   Todos los demás colores permanecen fijos
+   ============================================================================ */
+
+/* ============================================================================
+   VARIABLE PRINCIPAL - PERSONALIZABLE EN SaaS
+   ============================================================================ */
+:root {
+    /* COLOR PRINCIPAL - Este es el único que cambia en SaaS */
+    --primary-color: #8059d4ff;          /* Color principal - Personalizable */
+}
+
+/* ============================================================================
+   COLORES FIJOS - NO CAMBIAN EN SaaS
+   ============================================================================ */
+:root {
+    /* Modo normal - Colores fijos */
+    --text-color: #25212cff;
+    --text-dark: #25212cff;
+    --text-light: #718096;
+    --text-white: #ffffff;
+    --header-text: #ffffff;
+    
+    --bg-primary: #d1d1d1ff;
+    --bg-secondary: #ffffff;
+    --bg-dark: #0a0014;
+    
+    --btn-primary-bg: #ffffff;
+    --btn-hover-text: #ffffff;
+    
+    --footer-bg: #d1d1d1ff;
+    --footer-text-color: #333333;
+    
+    --border-color: rgba(0, 0, 0, 0.1);
+    --border-light: rgba(0, 0, 0, 0.05);
+    
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================================
+   MODO OSCURO - Solo varía lo necesario
+   ============================================================================ */
+body.dark {
+    /* Solo invierte texto y fondos, morado se mantiene igual */
+    --text-color: #d1d1d1ff;
+    --text-dark: #d1d1d1ff;
+    --text-light: #b0b0b0;
+    
+    --bg-primary: #25212cff;
+    --bg-secondary: #2a262f;
+    
+    --header-text: #d1d1d1ff;
+    
+    --footer-bg: #2b0000;
+    --footer-text-color: #ffecec;
+    
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-light: rgba(255, 255, 255, 0.05);
+}

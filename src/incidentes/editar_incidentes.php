@@ -10,10 +10,15 @@ if (!isset($_GET["id_incidente"])) {
     exit();
 }
 
-$id_incidente = $_GET["id_incidente"];
+$id_incidente_txt = trim((string) $_GET["id_incidente"]);
+if (!preg_match('/^[0-9]+$/', $id_incidente_txt) || (int) $id_incidente_txt <= 0) {
+    echo "ID de incidente invalido";
+    exit();
+}
+$id_incidente = (int) $id_incidente_txt;
 include_once "../base_de_datos.php";
 
-$sentencia = $base_de_datos->prepare("SELECT id_incidente, titulo_incidente, desc_incidente, id_bus, id_conductor, tipo_incidente, usr_insert, fec_insert FROM tab_incidentes WHERE id_incidente = ?;");
+$sentencia = $base_de_datos->prepare("SELECT i.id_incidente, 'Incidente #' || i.id_incidente AS titulo_incidente, i.desc_incidente, i.id_bus, b.id_usuario, i.tipo_incidente, i.usr_insert, i.fec_insert FROM tab_incidentes i LEFT JOIN tab_buses b ON i.id_bus = b.id_bus WHERE i.id_incidente = ?;");
 $sentencia->execute([$id_incidente]);
 $incidente = $sentencia->fetchObject();
 
@@ -47,7 +52,7 @@ if (!$incidente) {
                                 </div>
                                 <div class="form-group mb-3">
                                     <label for="desc_incidente" class="form-label">Descripción del Incidente</label>
-                                    <textarea required name="desc_incidente" id="desc_incidente" class="form-control" rows="3"><?php echo $incidente->desc_incidente; ?></textarea>
+                                    <textarea required name="desc_incidente" id="desc_incidente" class="form-control" rows="3" minlength="5" maxlength="2000"><?php echo htmlspecialchars($incidente->desc_incidente, ENT_QUOTES, 'UTF-8'); ?></textarea>
                                 </div>
 
                                 <div class="form-group mb-3">
@@ -56,10 +61,10 @@ if (!$incidente) {
                                         <option value="" disabled>Seleccione un bus</option>
                                         <?php
                                         include_once "../base_de_datos.php";
-                                        $sentencia_buses = $base_de_datos->query("SELECT id_bus, matricula FROM tab_buses WHERE fec_delete IS NULL ORDER BY matricula");
+                                        $sentencia_buses = $base_de_datos->query("SELECT id_bus FROM tab_buses WHERE fec_delete IS NULL ORDER BY id_bus");
                                         $buses = $sentencia_buses->fetchAll(PDO::FETCH_OBJ);
                                         foreach($buses as $bus): ?>
-                                            <option value="<?php echo $bus->id_bus; ?>" <?php echo ($bus->id_bus == $incidente->id_bus) ? 'selected' : ''; ?>><?php echo $bus->matricula; ?></option>
+                                            <option value="<?php echo $bus->id_bus; ?>" <?php echo ($bus->id_bus == $incidente->id_bus) ? 'selected' : ''; ?>><?php echo $bus->id_bus; ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -68,14 +73,14 @@ if (!$incidente) {
                             <!-- Columna 2 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="id_conductor" class="form-label">Conductor</label>
-                                    <select name="id_conductor" id="id_conductor" class="form-select" required>
+                                    <label for="id_usuario" class="form-label">Conductor</label>
+                                    <select name="id_usuario" id="id_usuario" class="form-select" required>
                                         <option value="" disabled>Seleccione un conductor</option>
                                         <?php
-                                        $sentencia_conductores = $base_de_datos->query("SELECT id_conductor, nom_conductor, ape_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor, ape_conductor");
+                                        $sentencia_conductores = $base_de_datos->query("SELECT id_usuario, nom_conductor, ape_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor, ape_conductor");
                                         $conductores = $sentencia_conductores->fetchAll(PDO::FETCH_OBJ);
                                         foreach($conductores as $conductor): ?>
-                                            <option value="<?php echo $conductor->id_conductor; ?>" <?php echo ($conductor->id_conductor == $incidente->id_conductor) ? 'selected' : ''; ?>><?php echo $conductor->nom_conductor . ' ' . $conductor->ape_conductor . ' (#' . $conductor->id_conductor . ')'; ?></option>
+                                            <option value="<?php echo $conductor->id_usuario; ?>" <?php echo ($conductor->id_usuario == $incidente->id_usuario) ? 'selected' : ''; ?>><?php echo $conductor->nom_conductor . ' ' . $conductor->ape_conductor . ' (#' . $conductor->id_usuario . ')'; ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -107,5 +112,8 @@ if (!$incidente) {
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
+
+
 
 

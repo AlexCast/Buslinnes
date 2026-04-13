@@ -24,7 +24,7 @@ if (!isset($_POST["id_incidente"])   ||
     !isset($_POST["titulo_incidente"]) ||
     !isset($_POST["desc_incidente"]) ||
     !isset($_POST["id_bus"])         ||
-    !isset($_POST["id_conductor"])    ||
+    !isset($_POST["id_usuario"])    ||
     !isset($_POST["tipo_incidente"])) 
 {
     echo "Faltan campos obligatorios en el formulario";
@@ -50,7 +50,13 @@ $validarEntero = static function ($valor, string $campo, int $min = 1, int $max 
 
 $validarTexto = static function ($valor, string $campo, int $min, int $max) use ($redirigirConError): string {
     $texto = trim((string) $valor);
-    $longitud = mb_strlen($texto);
+    if (function_exists('mb_strlen')) {
+        $longitud = mb_strlen($texto);
+    } elseif (function_exists('iconv_strlen')) {
+        $longitud = iconv_strlen($texto, 'UTF-8');
+    } else {
+        $longitud = strlen($texto);
+    }
     if ($longitud < $min || $longitud > $max) {
         $redirigirConError("El campo {$campo} debe tener entre {$min} y {$max} caracteres.");
     }
@@ -65,7 +71,7 @@ $id_incidente         = $validarEntero($_POST["id_incidente"], "id_incidente");
 $titulo_incidente     = $validarTexto($_POST["titulo_incidente"], "titulo_incidente", 3, 120);
 $desc_incidente       = $validarTexto($_POST["desc_incidente"], "desc_incidente", 5, 2000);
 $id_bus               = $validarEntero($_POST["id_bus"], "id_bus");
-$id_conductor         = $validarEntero($_POST["id_conductor"], "id_conductor");
+$id_usuario         = $validarEntero($_POST["id_usuario"], "id_usuario");
 $tipo_incidente       = strtoupper(trim((string) $_POST["tipo_incidente"]));
 if (!in_array($tipo_incidente, ['C', 'E', 'D', 'A', 'O'], true)) {
     $redirigirConError("El tipo de incidente no es valido.");
@@ -80,7 +86,7 @@ try {
         $titulo_incidente,
         $desc_incidente,
         $id_bus,
-        $id_conductor,
+        $id_usuario,
         $tipo_incidente
     ]);
     
@@ -126,6 +132,7 @@ try {
     header("Location: forma_incidentes.php?error=" . urlencode($mensajeError));
     exit();
 }
+
 
 
 

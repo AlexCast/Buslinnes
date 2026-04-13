@@ -13,7 +13,12 @@ if (!isset($_GET["id_rol"])) {
     exit();
 }
 
-$id_rol = $_GET["id_rol"];
+$id_rol_txt = trim((string) $_GET["id_rol"]);
+if (!preg_match('/^[0-9]+$/', $id_rol_txt) || (int) $id_rol_txt <= 0) {
+    echo "ID de rol invalido";
+    exit();
+}
+$id_rol = (int) $id_rol_txt;
 include_once "../base_de_datos.php";
 
 $sentencia = $base_de_datos->prepare("SELECT id_rol, nombre_rol FROM tab_roles WHERE id_rol = ?");
@@ -36,13 +41,13 @@ include_once "encab_roles.php";
                 </div>
                 <div class="card-body">
                     <form action="update_roles.php" method="POST">
-                        <input type="hidden" name="id_rol" value="<?php echo $rol->id_rol; ?>">
+                        <input type="hidden" name="id_rol" value="<?php echo (int) $rol->id_rol; ?>">
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="nombre_rol" class="form-label">Nombre del Rol</label>
-                                    <input value="<?php echo $rol->nombre_rol; ?>" required name="nombre_rol" type="text" id="nombre_rol" class="form-control" placeholder="Nombre del rol">
+                                    <input value="<?php echo htmlspecialchars($rol->nombre_rol, ENT_QUOTES, 'UTF-8'); ?>" required name="nombre_rol" type="text" id="nombre_rol" class="form-control" minlength="3" maxlength="40" pattern="[A-Za-z0-9_\-\s]+" placeholder="Nombre del rol">
                                 </div>
                             </div>
                         </div>

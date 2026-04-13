@@ -23,8 +23,7 @@ include_once "../base_de_datos.php";
 $sentencia = $base_de_datos->query("
     SELECT pa.id_parque_automotor, pa.id_bus, pa.dir_parque_automotor,
            pa.usr_insert, pa.fec_insert, pa.usr_update, pa.fec_update,
-           pa.usr_delete, pa.fec_delete,
-           'N/A' AS nom_empresa
+        pa.usr_delete, pa.fec_delete
     FROM tab_parque_automotor pa
     ORDER BY pa.fec_insert DESC
 ");
@@ -64,7 +63,6 @@ $parquesEliminados = array_filter($parques, function($parque) {
                       <thead class="table-danger">
                         <tr>
                           <th>ID</th>
-                          <th>Empresa</th>
                           <th>Eliminado por</th>
                           <th>Fecha Eliminación</th>
                           <th>Acciones</th>
@@ -74,7 +72,6 @@ $parquesEliminados = array_filter($parques, function($parque) {
                         <?php foreach ($parquesEliminados as $registro): ?>
                           <tr>
                             <td><?php echo $registro->id_parque_automotor; ?></td>
-                            <td><?php echo $registro->nom_empresa ?? 'Desconocida'; ?></td>
                             <td><?php echo htmlspecialchars($registro->usr_delete); ?></td>
                             <td><?php echo date('d/m/Y', strtotime($registro->fec_delete)); ?></td>
                             <td>
@@ -103,14 +100,13 @@ $parquesEliminados = array_filter($parques, function($parque) {
                         <tr>
                             <th>ID</th>
                             <th>ID Bus</th>
-                            <th>Empresa</th>
                             <th>Dirección</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (count($parques) === 0): ?>
-                            <tr><td colspan="7" class="text-center">No hay parques automotores registrados.</td></tr>
+                               <tr><td colspan="4" class="text-center">No hay parques automotores registrados.</td></tr>
                         <?php else: ?>
                             <?php foreach ($parques as $parque): 
                                 $eliminado = !empty($parque->fec_delete);
@@ -118,9 +114,8 @@ $parquesEliminados = array_filter($parques, function($parque) {
                             ?>
                             <tr>
                                 <td><?php echo $parque->id_parque_automotor; ?></td>
-                                <td><?php echo $parque->id_bus; ?></td>
-                                <td><?php echo $parque->nom_empresa ?? 'Desconocida'; ?></td>
-                                <td><?php echo $parque->dir_parque_automotor; ?></td>
+                                <td><?php echo htmlspecialchars($parque->id_bus, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($parque->dir_parque_automotor, ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td class="actions-cell">
                                     <?php if (!$eliminado): ?>
                                         <a class="btn btn-warning btn-sm" href="editar_parque_automotor.php?id=<?php echo $parque->id_parque_automotor; ?>">
@@ -164,6 +159,7 @@ $parquesEliminados = array_filter($parques, function($parque) {
                 <?php else: ?>
                     <?php foreach ($parques as $parque): 
                         $eliminado = !empty($parque->fec_delete);
+                        if ($eliminado) continue; // Ocultar eliminados de la vista móvil
                     ?>
                     <div class="col-12 mb-3">
                         <div class="card <?php echo $eliminado ? 'registro-eliminado' : ''; ?>">
@@ -209,15 +205,11 @@ $parquesEliminados = array_filter($parques, function($parque) {
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <strong>ID Bus: </strong>
-                                        <span><?php echo $parque->id_bus; ?></span>
+                                        <span><?php echo htmlspecialchars($parque->id_bus, ENT_QUOTES, 'UTF-8'); ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <strong>Empresa: </strong>
-                                        <span><?php echo $parque->nom_empresa ?? 'Desconocida'; ?></span>
-                                    </li>
-                                    <li class="list-group-item">
                                         <strong>Dirección: </strong>
-                                        <p class="mt-2"><?php echo $parque->dir_parque_automotor; ?></p>
+                                        <p class="mt-2"><?php echo htmlspecialchars($parque->dir_parque_automotor, ENT_QUOTES, 'UTF-8'); ?></p>
                                     </li>
                                 </ul>
                             </div>

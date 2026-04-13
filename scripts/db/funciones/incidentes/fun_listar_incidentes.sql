@@ -9,7 +9,7 @@ BEGIN
         RETURN FALSE;
     END IF;
 
-    SELECT id_incidente, titulo_incidente, desc_incidente, id_bus, id_conductor, tipo_incidente
+    SELECT id_incidente, titulo_incidente, desc_incidente, id_bus, id_usuario, tipo_incidente
     INTO wreg_incidente
     FROM tab_incidentes
         WHERE id_incidente = wid_incidente
@@ -20,12 +20,12 @@ BEGIN
         RETURN FALSE;
     END IF;
 
-    RAISE NOTICE 'ID: %, Título: %, Descripción: %, ID Bus: %, ID Conductor: %, Tipo: %',
+    RAISE NOTICE 'ID: %, Título: %, Descripción: %, ID Bus: %, ID Usuario: %, Tipo: %',
         wreg_incidente.id_incidente,
         wreg_incidente.titulo_incidente,
         wreg_incidente.desc_incidente,
         wreg_incidente.id_bus,
-        wreg_incidente.id_conductor,
+        wreg_incidente.id_usuario,
         wreg_incidente.tipo_incidente;
 
     RETURN TRUE;

@@ -19,12 +19,22 @@ Elimina un bus por su ID
 Autor: alexndrcastt
 */
 
+if (!defined('VALIDAR_JWT_MANUAL')) define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin', 'conductor']);
+
 if (!isset($_POST["id_bus"])) {
     echo "No se especific� el bus a eliminar";
     exit();
 }
 
-$id_bus = $_POST["id_bus"];
+$id_bus_txt = strtoupper(trim((string) $_POST["id_bus"]));
+$id_bus_compacto = preg_replace('/\s+/', '', $id_bus_txt);
+if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $id_bus_compacto)) {
+    header("Location: listar_buses.php?error_delete=1&msg=" . urlencode("id_bus invalido"));
+    exit();
+}
+$id_bus = $id_bus_compacto;
 
 include_once "../base_de_datos.php";
 

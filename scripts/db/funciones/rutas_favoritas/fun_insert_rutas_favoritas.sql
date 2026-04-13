@@ -1,12 +1,12 @@
 CREATE OR REPLACE FUNCTION fun_insert_rutas_favoritas(
     wid_ruta_favorita tab_rutas_favoritas.id_ruta_favorita%TYPE,
-    wid_pasajero tab_rutas_favoritas.id_pasajero%TYPE,
+    wid_usuario tab_rutas_favoritas.id_usuario%TYPE,
     wid_ruta tab_rutas_favoritas.id_ruta%TYPE
     ) RETURNS BOOLEAN AS
 $$
     BEGIN
     -- Validar nulos
-        IF wid_ruta_favorita IS NULL OR wid_pasajero IS NULL OR wid_ruta IS NULL THEN
+        IF wid_ruta_favorita IS NULL OR wid_usuario IS NULL OR wid_ruta IS NULL THEN
             RAISE NOTICE 'Campos obligatorios no pueden ser NULL';
             RETURN FALSE;
         END IF;
@@ -32,10 +32,10 @@ $$
         -- Insertar el nuevo registro
         INSERT INTO tab_rutas_favoritas (
             id_ruta_favorita,
-            id_pasajero,
+            id_usuario,
             id_ruta
         ) VALUES (
-            wid_ruta_favorita, wid_pasajero, wid_ruta
+            wid_ruta_favorita, wid_usuario, wid_ruta
         );
 
         RAISE NOTICE 'Ruta favorita insertada correctamente';

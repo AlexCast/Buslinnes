@@ -1,11 +1,11 @@
 CREATE OR REPLACE FUNCTION fun_softdelete_parque_automotor(
     wid_parque_automotor tab_parque_automotor.id_parque_automotor%TYPE
-) RETURNS VARCHAR AS
+) RETURNS BOOLEAN AS
 $$
 BEGIN
     -- Validación
     IF wid_parque_automotor IS NULL THEN
-        RETURN 'Error: el ID del parque automotor no puede ser nulo.';
+        RETURN FALSE;
     END IF;
 
     -- Actualización del delete lógico
@@ -16,12 +16,12 @@ BEGIN
       AND fec_delete IS NULL;
 
     IF NOT FOUND THEN
-        RETURN 'Advertencia: el registro no existe o ya fue eliminado.';
+        RETURN FALSE;
     END IF;
 
-    RETURN 'Registro eliminado lógicamente correctamente.';
+    RETURN TRUE;
 EXCEPTION
     WHEN OTHERS THEN
-        RETURN 'Error inesperado: ' || SQLERRM;
+        RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql;

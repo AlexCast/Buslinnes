@@ -20,7 +20,7 @@ if (!defined('JWT_AUDIENCE')) {
     define('JWT_AUDIENCE', 'buslinnes_users');
 }
 if (!defined('JWT_LIFETIME')) {
-    define('JWT_LIFETIME', 1200); // 20 minutos (1200 segundos)
+    define('JWT_LIFETIME', 0); // Sin expiración por tiempo
 }
 
 // Función para validar el token JWT
@@ -64,6 +64,11 @@ function validarTokenJWT($rolesPermitidos = []) {
     
     // Si no hay token, responder según el tipo de petición
     if (!$token) {
+        // Si estamos en modo manual, retornar null o lanzar excepción maneable
+        if (defined('VALIDAR_JWT_MANUAL') && VALIDAR_JWT_MANUAL) {
+            throw new Exception('No token provided');
+        }
+        
         if ($isAjax) {
             http_response_code(401);
             header('Content-Type: application/json');
@@ -84,10 +89,11 @@ function validarTokenJWT($rolesPermitidos = []) {
             throw new Exception('Token inválido');
         }
         
-        // Validar expiración (15 minutos)
+        // Los tokens tienen expiración muy lejana (1 año) pero no expiran por inactividad
+        // Solo validar que el token no esté completamente corrupto
         $now = time();
-        if ($decoded->exp < $now) {
-            // Token expirado, eliminar cookie y forzar cierre de sesión
+        if (isset($decoded->exp) && $decoded->exp < $now) {
+            // Token realmente expirado (muy raro ya que expira en 1 año)
             setcookie('jwt_token', '', time() - 3600, '/');
             
             if ($isAjax) {
@@ -100,28 +106,6 @@ function validarTokenJWT($rolesPermitidos = []) {
                 exit();
             }
         }
-
-        // Renovar token automáticamente en cada petición activa
-        $newTokenPayload = [
-            'iss' => $jwt_issuer,
-            'aud' => $jwt_audience,
-            'iat' => $now,
-            'exp' => $now + $jwt_lifetime,
-            'sub' => $decoded->sub,
-            'email' => $decoded->email,
-            'rol' => $decoded->rol,
-            'id_rol' => $decoded->id_rol ?? null,
-            'id_usuario' => $decoded->id_usuario ?? null,
-            'nombre' => $decoded->nombre ?? null
-        ];
-        $refreshedToken = JWT::encode($newTokenPayload, $jwt_secret, 'HS256');
-        setcookie('jwt_token', $refreshedToken, $now + $jwt_lifetime, '/', '', false, true);
-
-        // Agregar cabecera opcional para front-end (si utiliza autorización Bearer en AJAX)
-        header('X-New-JWT: ' . $refreshedToken);
-
-        // Actualizar exp en el objeto decodificado para uso interno
-        $decoded->exp = $now + $jwt_lifetime;
 
         // Validar roles si se especificaron
         if (!empty($rolesPermitidos)) {

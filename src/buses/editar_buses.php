@@ -1,19 +1,41 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => false,  // GET no requiere CSRF
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+// === FIN SEGURIDAD ===
+
 /*
 CRUD con PostgreSQL y PHP
 Autor: alexndrcastt
 */
+if (!defined('VALIDAR_JWT_MANUAL')) define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin', 'conductor']);
+
 if (!isset($_GET["id_bus"])) {
     echo "No se especificó el bus a editar";
     exit();
 }
 
-$id_bus = $_GET["id_bus"];
+$id_bus_txt = strtoupper(trim((string) $_GET["id_bus"]));
+$id_bus_compacto = preg_replace('/\s+/', '', $id_bus_txt);
+if (!preg_match('/^[A-Z]{3}[0-9]{3}$/', $id_bus_compacto)) {
+    echo "ID de bus invalido. Formato esperado: AAA 123";
+    exit();
+}
+$id_bus = $id_bus_compacto;
 include_once "../base_de_datos.php";
 
-$sentencia = $base_de_datos->prepare("SELECT id_bus, id_conductor, num_chasis, matricula, anio_fab, capacidad_pasajeros, tipo_bus, gps, ind_estado_buses, usr_insert, fec_insert FROM tab_buses WHERE id_bus = ?;");
+$sentencia = $base_de_datos->prepare("SELECT id_bus, id_usuario, anio_fab, capacidad_pasajeros, tipo_bus, gps, ind_estado_buses, usr_insert, fec_insert FROM tab_buses WHERE id_bus = ?;");
 $sentencia->execute([$id_bus]);
 $bus = $sentencia->fetchObject();
 
@@ -23,7 +45,7 @@ if (!$bus) {
 }
 
 // Consultar listas para autocompletar
-$conductores = $base_de_datos->query("SELECT id_conductor, nom_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor;")->fetchAll(PDO::FETCH_OBJ);
+$conductores = $base_de_datos->query("SELECT id_usuario, nom_conductor FROM tab_conductores WHERE fec_delete IS NULL ORDER BY nom_conductor;")->fetchAll(PDO::FETCH_OBJ);
 ?>
 
 <?php include_once "encab_buses.php"; ?>
@@ -37,8 +59,8 @@ $conductores = $base_de_datos->query("SELECT id_conductor, nom_conductor FROM ta
                 <div class="card-body">
                     <!-- Corrección en la acción del formulario -->
                     <form action="update_buses.php" method="POST">
-                        <input type="hidden" name="id_bus" value="<?php echo $bus->id_bus; ?>">
-                        <input type="hidden" name="usr_insert" value="<?php echo $bus->usr_insert; ?>">
+                        <input type="hidden" name="id_bus" value="<?php echo htmlspecialchars((string) $bus->id_bus, ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="usr_insert" value="<?php echo htmlspecialchars($bus->usr_insert, ENT_QUOTES, 'UTF-8'); ?>">
                         <input type="hidden" name="fec_insert" value="<?php echo date('Y-m-d H:i:s', strtotime($bus->fec_insert)); ?>">
 
                         <div class="row">
@@ -46,36 +68,26 @@ $conductores = $base_de_datos->query("SELECT id_conductor, nom_conductor FROM ta
                             <div class="col-md-6">
 
                                 <div class="form-group mb-3">
-                                    <label for="id_conductor" class="form-label">Conductor</label>
-                                    <select name="id_conductor" id="id_conductor" class="form-select" required>
+                                    <label for="id_usuario" class="form-label">Conductor</label>
+                                    <select name="id_usuario" id="id_usuario" class="form-select" required>
                                         <option value="">Seleccione...</option>
                                         <?php foreach ($conductores as $c): ?>
-                                            <option value="<?= $c->id_conductor ?>" <?= $bus->id_conductor == $c->id_conductor ? 'selected' : '' ?>><?= $c->nom_conductor ?> (ID: <?= $c->id_conductor ?>)</option>
+                                            <option value="<?= (int) $c->id_usuario ?>" <?= (int) $bus->id_usuario === (int) $c->id_usuario ? 'selected' : '' ?>><?= htmlspecialchars($c->nom_conductor, ENT_QUOTES, 'UTF-8') ?> (ID: <?= (int) $c->id_usuario ?>)</option>
                                         <?php endforeach; ?>
                                     </select>
-                                </div>
-
-                                <div class="form-group mb-3">
-                                    <label for="num_chasis" class="form-label">Número de Chasis</label>
-                                    <input value="<?php echo $bus->num_chasis; ?>" required name="num_chasis" type="text" id="num_chasis" class="form-control" maxlength="20">
                                 </div>
                             </div>
                             
                             <!-- Columna 2 -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="matricula" class="form-label">Matrícula</label>
-                                    <input value="<?php echo $bus->matricula; ?>" required name="matricula" type="text" id="matricula" class="form-control" maxlength="10">
-                                </div>
-
-                                <div class="form-group mb-3">
                                     <label for="anio_fab" class="form-label">Año de Fabricación</label>
-                                    <input value="<?php echo $bus->anio_fab; ?>" required name="anio_fab" type="number" id="anio_fab" class="form-control" min="1950" max="<?php echo date('Y'); ?>">
+                                    <input value="<?php echo (int) $bus->anio_fab; ?>" required name="anio_fab" type="number" id="anio_fab" class="form-control" min="1950" max="<?php echo date('Y'); ?>">
                                 </div>
 
                                 <div class="form-group mb-3">
                                     <label for="capacidad_pasajeros" class="form-label">Capacidad de Pasajeros</label>
-                                    <input value="<?php echo $bus->capacidad_pasajeros; ?>" required name="capacidad_pasajeros" type="number" id="capacidad_pasajeros" class="form-control" min="1" max="60">
+                                    <input value="<?php echo (int) $bus->capacidad_pasajeros; ?>" required name="capacidad_pasajeros" type="number" id="capacidad_pasajeros" class="form-control" min="1" max="60">
                                 </div>
 
                                 <div class="form-group mb-3">
@@ -125,6 +137,7 @@ $conductores = $base_de_datos->query("SELECT id_conductor, nom_conductor FROM ta
     </div>
 </main>
 <?php include_once "../pie.php"; ?>
+
 
 
 

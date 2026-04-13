@@ -76,7 +76,7 @@ try {
     $buses = $stmt->fetchColumn();
 
     // Conductores
-    $stmt = $base_de_datos->query("SELECT COUNT(id_conductor) FROM tab_conductores WHERE fec_delete IS NULL");
+    $stmt = $base_de_datos->query("SELECT COUNT(id_usuario) FROM tab_conductores WHERE fec_delete IS NULL");
     $conductores = $stmt->fetchColumn();
 
     // Usuarios/Pasajeros

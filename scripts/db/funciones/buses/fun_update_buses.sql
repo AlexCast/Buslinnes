@@ -1,8 +1,6 @@
 CREATE OR REPLACE FUNCTION fun_update_buses(
     wid_bus tab_buses.id_bus%TYPE,
-    wid_conductor tab_buses.id_conductor%TYPE,
-    wnum_chasis tab_buses.num_chasis%TYPE,
-    wmatricula tab_buses.matricula%TYPE,
+    wid_usuario tab_buses.id_usuario%TYPE,
     wanio_fab tab_buses.anio_fab%TYPE,
     wcapacidad_pasajeros tab_buses.capacidad_pasajeros%TYPE,
     wtipo_bus tab_buses.tipo_bus%TYPE,
@@ -14,20 +12,12 @@ $$
         wreg_bus RECORD;
     BEGIN
         -- Validaciones iniciales
-        IF wid_bus IS NULL OR wid_bus <= 0 THEN
+        IF wid_bus IS NULL OR btrim(wid_bus::text) = '' THEN
             RAISE EXCEPTION USING ERRCODE = '23502';
         END IF;
         
-        IF wid_conductor IS NULL OR wid_conductor <= 0 THEN
+        IF wid_usuario IS NULL OR wid_usuario <= 0 THEN
             RAISE EXCEPTION USING ERRCODE = '22002';
-        END IF;
-        
-        IF wnum_chasis IS NULL OR LENGTH(wnum_chasis) != 17 THEN
-            RAISE EXCEPTION USING ERRCODE = '22003';
-        END IF;
-        
-        IF wmatricula IS NULL OR LENGTH(wmatricula) != 6 THEN
-            RAISE EXCEPTION USING ERRCODE = '22004';
         END IF;
         
         IF wtipo_bus NOT IN ('U', 'M', 'A', 'E') THEN
@@ -39,16 +29,14 @@ $$
         END IF;
         
         -- Verificar si existe el registro
-        SELECT id_bus, id_conductor, num_chasis, matricula, anio_fab, capacidad_pasajeros, tipo_bus, gps, ind_estado_buses INTO wreg_bus FROM tab_buses 
+        SELECT id_bus, id_usuario, anio_fab, capacidad_pasajeros, tipo_bus, gps, ind_estado_buses INTO wreg_bus FROM tab_buses 
                 WHERE id_bus = wid_bus
                     AND fec_delete IS NULL;
         
         IF FOUND THEN
             -- Actualizar el registro existente
             UPDATE tab_buses SET
-                id_conductor = wid_conductor,
-                num_chasis = wnum_chasis,
-                matricula = wmatricula,
+                id_usuario = wid_usuario,
                 anio_fab = wanio_fab,
                 capacidad_pasajeros = wcapacidad_pasajeros,
                 tipo_bus = wtipo_bus,
@@ -65,19 +53,11 @@ $$
         
     EXCEPTION
         WHEN SQLSTATE '23502' THEN
-            RAISE NOTICE 'El ID del bus no puede ser nulo o menor/igual a 0';
+            RAISE NOTICE 'El ID del bus no puede ser nulo o vacio';
             RETURN FALSE;
             
         WHEN SQLSTATE '22002' THEN
-            RAISE NOTICE 'El ID del conductor no puede ser nulo o menor a 1000000000';
-            RETURN FALSE;
-            
-        WHEN SQLSTATE '22003' THEN
-            RAISE NOTICE 'El número de chasis debe tener exactamente 17 caracteres';
-            RETURN FALSE;
-            
-        WHEN SQLSTATE '22004' THEN
-            RAISE NOTICE 'La matrícula debe tener exactamente 6 caracteres';
+            RAISE NOTICE 'El ID del usuario no puede ser nulo o menor a 1000000000';
             RETURN FALSE;
             
         WHEN SQLSTATE '22005' THEN

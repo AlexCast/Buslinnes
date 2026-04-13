@@ -1,6 +1,18 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
+// === SEGURIDAD: Proteccion anti-scraping y CSRF ===
+require_once __DIR__ . '/../../app/SecurityMiddleware.php';
+
+SecurityMiddleware::protect([
+    'csrf' => false,  // GET no requiere CSRF
+    'rateLimit' => true,
+    'origin' => true,
+    'userAgent' => true,
+    'securityHeaders' => true
+]);
+// === FIN SEGURIDAD ===
+
 /*
 CRUD con PostgreSQL y PHP
 autor: alexndrcastt
@@ -11,6 +23,10 @@ Formulario para asignar roles a usuarios
 ?>
 
 <?php
+define('VALIDAR_JWT_MANUAL', true);
+require_once __DIR__ . '/../validar_jwt.php';
+validarTokenJWT(['admin']);
+
 include_once "../base_de_datos.php";
 include_once "encab_usuarios_roles.php";
 ?>
@@ -26,7 +42,7 @@ include_once "encab_usuarios_roles.php";
                         <div class="row">
                             <div class="col-md-6">
                                 <?php
-                                $sentencia = $base_de_datos->query("SELECT id_usuario, nombre FROM tab_usuarios WHERE fec_delete IS NULL ORDER BY nombre");
+                                $sentencia = $base_de_datos->query("SELECT id_usuario, nom_usuario AS nombre FROM tab_usuarios WHERE fec_delete IS NULL ORDER BY nom_usuario");
                                 $usuarios = $sentencia->fetchAll(PDO::FETCH_OBJ);
                                 ?>
                                 <div class="form-group mb-3">
@@ -34,7 +50,7 @@ include_once "encab_usuarios_roles.php";
                                     <select name="id_usuario" id="id_usuario" class="form-select" required>
                                         <option value="" disabled selected>Seleccione usuario</option>
                                         <?php foreach($usuarios as $usuario): ?>
-                                            <option value="<?php echo $usuario->id_usuario ?>"><?php echo $usuario->nombre ?></option>
+                                            <option value="<?php echo (int) $usuario->id_usuario ?>"><?php echo htmlspecialchars($usuario->nombre, ENT_QUOTES, 'UTF-8') ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -48,7 +64,7 @@ include_once "encab_usuarios_roles.php";
                                     <select name="id_rol" id="id_rol" class="form-select" required>
                                         <option value="" disabled selected>Seleccione rol</option>
                                         <?php foreach($roles as $rol): ?>
-                                            <option value="<?php echo $rol->id_rol ?>"><?php echo $rol->nombre_rol ?></option>
+                                            <option value="<?php echo (int) $rol->id_rol ?>"><?php echo htmlspecialchars($rol->nombre_rol, ENT_QUOTES, 'UTF-8') ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
